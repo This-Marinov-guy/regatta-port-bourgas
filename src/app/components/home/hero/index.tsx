@@ -1,12 +1,17 @@
-'use client'
 import Image from 'next/image'
 import { Link } from '@/i18n/routing'
 import { useTranslations, useLocale } from 'next-intl'
+import { toRoman } from '@/lib/utils'
 
 const Hero: React.FC = () => {
   const t = useTranslations('hero')
   const tCommon = useTranslations('common')
   const locale = useLocale()
+  
+  // Calculate years since 1993 and convert to Roman numerals
+  const currentYear = new Date().getFullYear()
+  const yearsSince1993 = currentYear - 1993
+  const romanYears = toRoman(yearsSince1993)
 
   return (
     <section className="!py-0">
@@ -27,20 +32,20 @@ const Hero: React.FC = () => {
           <div className="relative text-white dark:text-dark text-center md:text-start z-20">
             {/* <p className="text-inherit text-xm font-medium">{t('location')}</p> */}
             <h1 className="text-inherit text-6xl sm:text-9xl font-medium -tracking-wider md:max-w-45p mt-4 mb-6">
-              {t('title')}
+              {romanYears + ' ' + t("title")}
             </h1>
             <div className="flex flex-col xs:flex-row justify-center md:justify-start gap-4 mb-10">
               <Link
                 href={`/${locale}/contactus`}
                 className="px-8 py-4 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer"
               >
-                {tCommon('getInTouch')}
+                {tCommon("getInTouch")}
               </Link>
               <Link
                 href={`/${locale}/properties`}
                 className="px-8 py-4 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer"
               >
-                {tCommon('viewDetails')}
+                {tCommon("viewDetails")}
               </Link>
             </div>
           </div>
