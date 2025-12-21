@@ -25,8 +25,8 @@ const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 dark:from-black/60 dark:via-black/50 dark:to-black/40 z-[1]" />
         <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-60 md:pb-68 relative z-10">
           <div className="relative text-white dark:text-dark text-center md:text-start z-20">
-            <p className="text-inherit text-xm font-medium">{t('location')}</p>
-            <h1 className="text-inherit text-6xl sm:text-9xl font-semibold -tracking-wider md:max-w-45p mt-4 mb-6">
+            {/* <p className="text-inherit text-xm font-medium">{t('location')}</p> */}
+            <h1 className="text-inherit text-6xl sm:text-9xl font-medium -tracking-wider md:max-w-45p mt-4 mb-6">
               {t('title')}
             </h1>
             <div className="flex flex-col xs:flex-row justify-center md:justify-start gap-4 mb-10">
