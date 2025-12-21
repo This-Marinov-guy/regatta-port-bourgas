@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import NavLink from './navigation/NavLink'
 import { signOut, useSession } from 'next-auth/react'
+import LanguageSwitcher from '../language-switcher'
 
 const Header: React.FC = () => {
   const { data: session } = useSession();
@@ -91,6 +92,12 @@ const Header: React.FC = () => {
           </div>
 
           <div className='flex items-center gap-2 sm:gap-6'>
+
+            <LanguageSwitcher 
+              variant="header" 
+              isHomepage={isHomepage} 
+              isSticky={sticky} 
+            />
 
             <button
               className='hover:cursor-pointer'
@@ -214,6 +221,11 @@ const Header: React.FC = () => {
                 )}
               </ul>
             </nav>
+            
+            <LanguageSwitcher 
+              variant="mobile" 
+              onLanguageChange={() => setNavbarOpen(false)} 
+            />
           </div>
 
           <div className='flex flex-col gap-1 my-16 text-white'>

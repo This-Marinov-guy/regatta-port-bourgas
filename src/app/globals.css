@@ -106,20 +106,29 @@ a[class*="rounded-full"][href] {
   @apply mb-0
 }
 
+/* Title font - Cormorant Infant */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-cormorant-infant), serif;
+}
+
 .blog-details h1 {
   @apply mb-8 text-3xl font-bold text-dark dark:text-white sm:text-4xl md:text-[40px] md:leading-[1.28];
+  font-family: var(--font-cormorant-infant), serif;
 }
 
 .blog-details h2 {
   @apply mb-2 text-2xl font-bold text-dark dark:text-white sm:text-3xl md:text-[35px] md:leading-[1.28];
+  font-family: var(--font-cormorant-infant), serif;
 }
 
 .blog-details h3 {
   @apply mb-6 text-2xl text-dark dark:text-white sm:leading-[40px];
+  font-family: var(--font-cormorant-infant), serif;
 }
 
 .blog-details h4 {
   @apply mb-6 text-xl leading-[1.2] text-dark dark:text-white;
+  font-family: var(--font-cormorant-infant), serif;
 }
 
 .blog-details hr {

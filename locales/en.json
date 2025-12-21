@@ -1,0 +1,21 @@
+{
+  "common": {
+    "scrollToTop": "Scroll to top",
+    "getInTouch": "Get in touch",
+    "viewDetails": "View Details"
+  },
+  "navigation": {
+    "home": "Home",
+    "properties": "Properties",
+    "blogs": "Blogs",
+    "contactUs": "Contact Us",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out"
+  },
+  "hero": {
+    "location": "Palm springs, CA",
+    "title": "Futuristic Haven"
+  }
+}
+

@@ -1,0 +1,21 @@
+{
+  "common": {
+    "scrollToTop": "Превъртете нагоре",
+    "getInTouch": "Свържете се с нас",
+    "viewDetails": "Вижте детайли"
+  },
+  "navigation": {
+    "home": "Начало",
+    "properties": "Имоти",
+    "blogs": "Блогове",
+    "contactUs": "Свържете се с нас",
+    "signIn": "Вход",
+    "signUp": "Регистрация",
+    "signOut": "Изход"
+  },
+  "hero": {
+    "location": "Палм Спрингс, Калифорния",
+    "title": "Футуристично убежище"
+  }
+}
+
