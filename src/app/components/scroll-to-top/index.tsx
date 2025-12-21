@@ -29,9 +29,7 @@ export default function ScrollToTop() {
   return (
     <div className="fixed bottom-8 right-8 z-999">
       <div className="flex items-center gap-2.5">
-        <Link href={"https://getnextjstemplates.com/products/homely-nextjs-website-template"} className="hidden lg:block bg-primary hover:bg-dark text-sm text-white duration-300 font-medium px-4 py-3.5 leading-none rounded-lg text-nowrap">
-          Get This Template
-        </Link>
+    
         {isVisible && (
           <div
             onClick={scrollToTop}
