@@ -85,8 +85,8 @@ const Header: React.FC = () => {
               <Image
                 src={"/images/logos/logo-50.gif"}
                 alt="logo"
-                width={100}
-                height={100}
+                width={80}
+                height={80}
                 unoptimized={true}
                 className={`logo ${
                   isHomepage
@@ -101,8 +101,8 @@ const Header: React.FC = () => {
               <Image
                 src={"/images/logos/logo-50.gif"}
                 alt="logo"
-                width={100}
-                height={100}
+                width={80}
+                height={80}
                 unoptimized={true}
                 className={`logo ${
                   isHomepage
@@ -162,26 +162,10 @@ const Header: React.FC = () => {
                 </p>
               </div>
             )}
-
-            <div className={`hidden md:block`}>
-              <Link
-                href="#"
-                className={`text-base text-inherit flex items-center gap-2 border-r pr-6 ${
-                  isHomepage
-                    ? sticky
-                      ? "text-dark dark:text-white hover:text-primary border-dark dark:border-white"
-                      : "text-white hover:text-primary"
-                    : "text-dark hover:text-primary"
-                }`}
-              >
-                <Icon icon={"ph:phone-bold"} width={24} height={24} />
-                +1-212-456-789
-              </Link>
-            </div>
             <div>
               <button
                 onClick={() => setNavbarOpen(!navbarOpen)}
-                className={`flex items-center gap-3 p-2 sm:px-5 sm:py-3 rounded-full font-semibold hover:cursor-pointer border ${
+                className={`flex items-center gap-3 p-2 sm:px-2 sm:py-2 rounded-full font-semibold hover:cursor-pointer border ${
                   isHomepage
                     ? sticky
                       ? "text-white bg-dark dark:bg-white dark:text-dark dark:hover:text-white dark:hover:bg-dark hover:text-dark hover:bg-white border-dark dark:border-white"
@@ -193,7 +177,6 @@ const Header: React.FC = () => {
                 <span>
                   <Icon icon={"ph:list"} width={24} height={24} />
                 </span>
-                <span className="hidden sm:block">Menu</span>
               </button>
             </div>
           </div>
