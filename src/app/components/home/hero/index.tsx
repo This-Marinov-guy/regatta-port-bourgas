@@ -26,13 +26,13 @@ const Hero: React.FC = () => {
             <div className="flex flex-col xs:flex-row justify-center md:justify-start gap-4 mb-10">
               <Link
                 href="/contactus"
-                className="px-8 py-4 border border-white dark:border-dark bg-white dark:bg-dark text-dark dark:text-white duration-300 dark:hover:text-dark hover:bg-transparent hover:text-white text-base font-semibold rounded-md hover:cursor-pointer"
+                className="px-8 py-4 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer"
               >
                 Get in touch
               </Link>
               <Link
                 href={"/properties"}
-                className="px-8 py-4 border border-white dark:border-dark bg-transparent text-white dark:text-dark hover:bg-white dark:hover:bg-dark dark:hover:text-white hover:text-dark duration-300 text-base font-semibold rounded-md hover:cursor-pointer"
+                className="px-8 py-4 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer"
               >
                 View Details
               </Link>

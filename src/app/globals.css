@@ -75,11 +75,11 @@ section {
 }
 
 /* Global button styles - make all buttons rectangular */
-button,
-a[class*="rounded-full"],
+button.rounded-full,
+a.rounded-full[href],
 button[class*="rounded-full"],
-[class*="rounded-full"] button {
-  border-radius: 0.375rem !important; /* rounded-md */
+a[class*="rounded-full"][href] {
+  border-radius: 0.375rem !important; /* rounded-md - override to make buttons rectangular */
 }
 
 .blog-details p, .blog-details hr {
