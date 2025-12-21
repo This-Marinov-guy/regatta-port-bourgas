@@ -138,3 +138,12 @@ h1, h2, h3, h4, h5, h6 {
 .blog-details p {
   @apply text-dark dark:text-white text-xm leading-[1.2]
 }
+
+.logo {
+  border-radius: 50%;
+
+  @media (max-width: 768px) {
+    width: 68px;
+    height: 68px;
+  }
+}
