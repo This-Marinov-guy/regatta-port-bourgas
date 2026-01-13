@@ -15,7 +15,36 @@
   },
   "hero": {
     "location": "Bourgas, Bulgaria",
-    "title": "International Regatta Port Bourgas"
+    "title": "International Regatta Port Bourgas",
+    "generalSponsor": "General Sponsor"
+  },
+  "notFound": {
+    "error404": "Error 404",
+    "title": "The page you are looking for is not found",
+    "description": "Looks like you've hit a dead end — but don't worry, we'll help you get back on track",
+    "goHome": "Go Home",
+    "contactUs": "Contact Us"
+  },
+  "partners": {
+    "title": "With the help of",
+    "description": "We are proud to work with industry-leading partners who share our commitment to excellence"
+  },
+  "contactPanel": {
+    "contact": "Contact"
+  },
+  "contactForm": {
+    "badge": "Contact us",
+    "title": "Have questions or want to get in touch with the organizers?",
+    "description": "Get in touch with us for any inquiries or information about our services.",
+    "contactInfo": "Contact information",
+    "contactDescription": "Ready to get in touch? We're here to help!",
+    "namePlaceholder": "Name*",
+    "phonePlaceholder": "Phone number*",
+    "emailPlaceholder": "Email address*",
+    "messagePlaceholder": "Write your message here*",
+    "sendButton": "Send message",
+    "successMessage": "Great! Your message has been successfully sent. We will get in touch as soon as possible.",
+    "address": "View on Map"
   }
 }
 

@@ -1,17 +1,11 @@
 import Image from 'next/image'
 import { Link } from '@/i18n/routing'
 import { useTranslations, useLocale } from 'next-intl'
-import { toRoman } from '@/lib/utils'
 
 const Hero: React.FC = () => {
   const t = useTranslations('hero')
   const tCommon = useTranslations('common')
   const locale = useLocale()
-  
-  // Calculate years since 1993 and convert to Roman numerals
-  const currentYear = new Date().getFullYear()
-  const yearsSince1993 = currentYear - 1993
-  const romanYears = toRoman(yearsSince1993)
 
   return (
     <section className="!py-0">
@@ -32,17 +26,18 @@ const Hero: React.FC = () => {
           <div className="relative text-white dark:text-dark text-center md:text-start z-20">
             {/* <p className="text-inherit text-xm font-medium">{t('location')}</p> */}
             <h1 className="text-inherit text-6xl sm:text-9xl font-medium -tracking-wider md:max-w-45p mt-4 mb-6">
-              {romanYears + ' ' + t("title")}
+              {/* {romanYears + " " + t("title")} */}
+              {t("title")}
             </h1>
             <div className="flex flex-col xs:flex-row justify-center md:justify-start gap-4 mb-10">
               <Link
-                href={`/${locale}/contactus`}
+                href={`/contact-us`}
                 className="px-8 py-4 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer"
               >
                 {tCommon("getInTouch")}
               </Link>
               <Link
-                href={`/${locale}/properties`}
+                href={`/properties`}
                 className="px-8 py-4 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer"
               >
                 {tCommon("viewDetails")}
@@ -60,81 +55,26 @@ const Hero: React.FC = () => {
             />
           </div> */}
         </div>
-        <div className="hidden md:absolute bottom-0 md:-right-68 xl:right-0 bg-white dark:bg-black py-12 px-8 mobile:px-16 md:pl-16 md:pr-[295px] rounded-2xl md:rounded-none md:rounded-tl-2xl mt-24 relative z-20">
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:flex gap-16 md:gap-24 sm:text-center dark:text-white text-black">
-            <div className="flex flex-col sm:items-center gap-3">
+        
+        
+        {/* General Sponsor Panel
+        <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 bg-white/95 dark:bg-black/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-white/20 dark:border-white/10 z-30">
+          <div className="flex flex-col items-center gap-2 min-w-[120px]">
+            <p className="font-semibold text-dark dark:text-white uppercase tracking-wide">
+              {t('generalSponsor')}
+            </p>
+            <div className="flex items-center justify-center w-full">
               <Image
-                src={"/images/hero/sofa.svg"}
-                alt="sofa"
-                width={32}
-                height={32}
-                className="block dark:hidden"
+                src="/images/brands/bulstrad.png"
+                alt="Bulstrad"
+                width={300}
+                height={300}
+                className="max-w-full max-h-full object-contain"
                 unoptimized={true}
               />
-              <Image
-                src={"/images/hero/dark-sofa.svg"}
-                alt="sofa"
-                width={32}
-                height={32}
-                className="hidden dark:block"
-                unoptimized={true}
-              />
-              <p className="text-sm sm:text-base font-normal text-inherit">
-                4 Bedrooms
-              </p>
-            </div>
-            <div className="flex flex-col sm:items-center gap-3">
-              <Image
-                src={"/images/hero/tube.svg"}
-                alt="sofa"
-                width={32}
-                height={32}
-                className="block dark:hidden"
-                unoptimized={true}
-              />
-              <Image
-                src={"/images/hero/dark-tube.svg"}
-                alt="sofa"
-                width={32}
-                height={32}
-                className="hidden dark:block"
-                unoptimized={true}
-              />
-              <p className="text-sm sm:text-base font-normal text-inherit">
-                4 Restroom
-              </p>
-            </div>
-            <div className="flex flex-col sm:items-center gap-3">
-              <Image
-                src={"/images/hero/parking.svg"}
-                alt="sofa"
-                width={32}
-                height={32}
-                className="block dark:hidden"
-                unoptimized={true}
-              />
-              <Image
-                src={"/images/hero/dark-parking.svg"}
-                alt="sofa"
-                width={32}
-                height={32}
-                className="hidden dark:block"
-                unoptimized={true}
-              />
-              <p className="text-sm sm:text-base font-normal text-inherit">
-                Parking space
-              </p>
-            </div>
-            <div className="flex flex-col sm:items-center gap-3">
-              <p className="text-2xl sm:text-3xl font-medium text-inherit">
-                $4,750,000
-              </p>
-              <p className="text-sm sm:text-base font-normal text-black/50 dark:text-white/50">
-                For selling price
-              </p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

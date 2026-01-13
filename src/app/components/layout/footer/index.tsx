@@ -56,7 +56,7 @@ const Footer = () => {
                 Begin your path to
                 success contact us today.
               </h2>
-              <Link href="/contactus" className="bg-primary text-base font-semibold py-4 px-8 rounded-full text-white hover:bg-white hover:text-dark duration-300 hover:cursor-pointer">
+              <Link href="/contact-us" className="bg-primary text-base font-semibold py-4 px-8 rounded-full text-white hover:bg-white hover:text-dark duration-300 hover:cursor-pointer">
                 Get In Touch
               </Link>
             </div>

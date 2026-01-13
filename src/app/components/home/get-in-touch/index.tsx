@@ -20,7 +20,7 @@ const GetInTouch: React.FC = () => {
                             <h2 className='text-white lg:text-52 md:text-40 text-3xl max-w-3/4 text-center font-medium'>
                                 Enter a realm where exquisite design and timeless luxury come together.
                             </h2>
-                            <Link href="/contactus" className='bg-white py-4 px-8 rounded-full text-dark hover:bg-dark hover:text-white duration-300'>
+                            <Link href="/contact-us" className='bg-white py-4 px-8 rounded-full text-dark hover:bg-dark hover:text-white duration-300'>
                                 Get In Touch
                             </Link>
                         </div>
