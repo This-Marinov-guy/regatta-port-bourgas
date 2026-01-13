@@ -1,41 +1,49 @@
-'use client'
-import { Icon } from '@iconify/react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState, useEffect } from 'react'
+"use client";
+import { Icon } from "@iconify/react";
+import Image from "next/image";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import {
+  CLUB_EMAIL,
+  CLUB_PHONE,
+  MANAGER_EMAIL,
+  ADDRESS,
+} from "@/utils/defines/CONTACTS";
 
 export default function ContactUs() {
+  const t = useTranslations("contactForm");
   const [formData, setFormData] = useState({
-    name: '',
-    mobile: '',
-    email: '',
-    message: '',
-  })
-  const [submitted, setSubmitted] = useState(false)
+    name: "",
+    mobile: "",
+    email: "",
+    message: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e: any) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const reset = () => {
     setFormData({
-      name: '',
-      mobile: '',
-      email: '',
-      message: '',
-    })
-  }
+      name: "",
+      mobile: "",
+      email: "",
+      message: "",
+    });
+  };
 
   const handleSubmit = async (e: any) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    fetch('https://formsubmit.co/ajax/bhainirav772@gmail.com', {
-      method: 'POST',
-      headers: { 'Content-type': 'application/json' },
+    fetch("https://formsubmit.co/ajax/bhainirav772@gmail.com", {
+      method: "POST",
+      headers: { "Content-type": "application/json" },
       body: JSON.stringify({
         name: formData.name,
         mobile: formData.mobile,
@@ -45,159 +53,159 @@ export default function ContactUs() {
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log(data)
-        setSubmitted(data.success)
-        reset()
+        console.log(data);
+        setSubmitted(data.success);
+        reset();
       })
       .catch((error) => {
-        console.log(error.message)
-      })
-  }
+        console.log(error.message);
+      });
+  };
 
   useEffect(() => {
     if (submitted) {
       const timer = setTimeout(() => {
-        setSubmitted(false)
-      }, 10000) 
+        setSubmitted(false);
+      }, 10000);
 
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     }
-  }, [submitted])
+  }, [submitted]);
 
   return (
-    <div className='container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28'>
-      <div className='mb-16'>
-        <div className='flex gap-2.5 items-center justify-center mb-3'>
-          <span>
-            <Icon
-              icon={'ph:house-simple-fill'}
-              width={20}
-              height={20}
-              className='text-primary'
-            />
-          </span>
-          <p className='text-base font-semibold text-badge dark:text-white/90'>
-            Contact us
-          </p>
+    <section className="py-16 md:py-24 bg-white dark:bg-black">
+      <div className="container max-w-8xl mx-auto px-5 2xl:px-0">
+        <div className="mb-12 md:mb-16">
+          <div className="text-center">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium tracking-tighter text-black dark:text-white mb-3 leading-tight sm:leading-10 md:leading-14">
+              {t("title")}
+            </h3>
+          </div>
         </div>
-        <div className='text-center'>
-          <h3 className='text-4xl sm:text-52 font-medium tracking-tighter text-black dark:text-white mb-3 leading-10 sm:leading-14'>
-            Have questions? ready to help!
-          </h3>
-          <p className='text-xm font-normal tracking-tight text-black/50 dark:text-white/50 leading-6'>
-            Looking for your dream home or ready to sell? Our expert team offers
-            personalized guidance and market expertise tailored to you.
-          </p>
-        </div>
-      </div>
 
-      {/* form */}
-      <div className='border border-black/10 dark:border-white/10 rounded-2xl p-4 shadow-xl dark:shadow-white/10'>
-        <div className='flex flex-col lg:flex-row lg:items-center gap-12'>
-          <div className='relative w-fit'>
-            <Image
-              src={'/images/contactUs/contactUs.jpg'}
-              alt='wall'
-              width={497}
-              height={535}
-              className='rounded-2xl brightness-50 h-full'
-              unoptimized={true}
-            />
-            <div className='absolute top-6 left-6 lg:top-12 lg:left-12 flex flex-col gap-2'>
-              <h5 className='text-xl xs:text-2xl mobile:text-3xl font-medium tracking-tight text-white'>
-                Contact information
-              </h5>
-              <p className='text-sm xs:text-base mobile:text-xm font-normal text-white/80'>
-                Ready to find your dream home or sell your property? We’re here
-                to help!
-              </p>
-            </div>
-            <div className='absolute bottom-6 left-6 lg:bottom-12 lg:left-12 flex flex-col gap-4 text-white'>
-              <Link href={'/'} className='w-fit'>
-                <div className='flex items-center gap-4 group w-fit'>
-                  <Icon icon={'ph:phone'} width={32} height={32} />
-                  <p className='text-sm xs:text-base mobile:text-xm font-normal group-hover:text-primary'>
-                    +1 0239 0310 1122
-                  </p>
-                </div>
-              </Link>
-              <Link href={'/'} className='w-fit'>
-                <div className='flex items-center gap-4 group w-fit'>
-                  <Icon icon={'ph:envelope-simple'} width={32} height={32} />
-                  <p className='text-sm xs:text-base mobile:text-xm font-normal group-hover:text-primary'>
-                    support@gleamer.com
-                  </p>
-                </div>
-              </Link>
-              <div className='flex items-center gap-4'>
-                <Icon icon={'ph:map-pin'} width={32} height={32} />
-                <p className='text-sm xs:text-base mobile:text-xm font-normal'>
-                  Blane Street, Manchester
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className='flex-1/2'>
-            <form onSubmit={handleSubmit}>
-              <div className='flex flex-col gap-8'>
-                <div className='flex flex-col lg:flex-row gap-6'>
-                  <input
-                    type='text'
-                    name='name'
-                    id='name'
-                    autoComplete='name'
-                    placeholder='Name*'
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full'
-                  />
-                  <input
-                    type='number'
-                    name='mobile'
-                    id='mobile'
-                    autoComplete='mobile'
-                    placeholder='Phone number*'
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    required
-                    className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full'
-                  />
-                </div>
-                <input
-                  type='email'
-                  name='email'
-                  id='email'
-                  autoComplete='email'
-                  placeholder='Email address*'
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline'
-                />
-                <textarea
-                  rows={8}
-                  cols={50}
-                  name='message'
-                  id='message'
-                  placeholder='Write here your message'
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-2xl outline-primary focus:outline'></textarea>
-                <button className='px-8 py-4 rounded-full bg-primary text-white text-base font-semibold w-full mobile:w-fit hover:cursor-pointer hover:bg-dark duration-300'>
-                  Send message
-                </button>
-              </div>
-              {submitted && (
-                <h5 className='text-primary mt-4'>
-                  Great!!! Email has been Successfully Sent. We will get in touch asap.
+        {/* form */}
+        <div className="border border-black/10 dark:border-white/10 rounded-2xl p-3 md:p-4 shadow-xl dark:shadow-white/10">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-6 md:gap-12">
+            <div className="relative w-full lg:w-150">
+              <Image
+                src={"/images/contactUs/contactUs.jpg"}
+                alt="wall"
+                width={400}
+                height={400}
+                className="rounded-2xl brightness-50 h-full w-full object-cover"
+                unoptimized={true}
+              />
+              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 md:top-8 md:left-8 lg:top-12 lg:left-12 flex flex-col gap-1.5 md:gap-2">
+                <h5 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-medium tracking-tight text-white drop-shadow-lg">
+                  {t("contactInfo")}
                 </h5>
-              )}
-            </form>
+              </div>
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 md:bottom-8 md:left-8 md:right-auto lg:bottom-12 lg:left-12 flex flex-col gap-2.5 sm:gap-3 md:gap-4 text-white">
+                <Link
+                  href={`tel:${CLUB_PHONE.replace(/\s/g, "")}`}
+                  className="w-full sm:w-fit"
+                >
+                  <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
+                    <Icon icon={"ph:phone"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
+                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary break-words leading-relaxed">
+                      <span className="block sm:inline">{CLUB_PHONE}</span>
+                      <span className="hidden sm:inline"> - </span>
+                      <span className="block sm:inline">Krasimir Naumov</span>
+                    </p>
+                  </div>
+                </Link>
+                <Link href={`mailto:${CLUB_EMAIL}`} className="w-full sm:w-fit">
+                  <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
+                    <Icon icon={"ph:envelope-simple"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
+                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary break-all leading-relaxed">
+                      {CLUB_EMAIL}
+                    </p>
+                  </div>
+                </Link>
+                <Link href={`mailto:${MANAGER_EMAIL}`} className="w-full sm:w-fit">
+                  <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
+                    <Icon icon={"ph:envelope-simple"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
+                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary break-all leading-relaxed">
+                      {MANAGER_EMAIL}
+                    </p>
+                  </div>
+                </Link>
+                <Link
+                  href={ADDRESS}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-fit"
+                >
+                  <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
+                    <Icon icon={"ph:map-pin"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
+                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary leading-relaxed">
+                      {t("address")}
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+            <div className="flex-1 lg:flex-1/2">
+              <form onSubmit={handleSubmit}>
+                <div className="flex flex-col gap-4 sm:gap-6 md:gap-8">
+                  <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+                    <input
+                      type="text"
+                      name="name"
+                      id="name"
+                      autoComplete="name"
+                      placeholder={t("namePlaceholder")}
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full text-sm sm:text-base"
+                    />
+                    <input
+                      type="tel"
+                      name="mobile"
+                      id="mobile"
+                      autoComplete="tel"
+                      placeholder={t("phonePlaceholder")}
+                      value={formData.mobile}
+                      onChange={handleChange}
+                      required
+                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full text-sm sm:text-base"
+                    />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    autoComplete="email"
+                    placeholder={t("emailPlaceholder")}
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full text-sm sm:text-base"
+                  />
+                  <textarea
+                    rows={6}
+                    cols={50}
+                    name="message"
+                    id="message"
+                    placeholder={t("messagePlaceholder")}
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-2xl outline-primary focus:outline w-full text-sm sm:text-base resize-none"
+                  ></textarea>
+                  <button className="px-6 py-3 sm:px-7 sm:py-3.5 md:px-8 md:py-4 rounded-md bg-primary text-white text-sm sm:text-base font-semibold w-full sm:w-fit hover:cursor-pointer hover:bg-primary/90 duration-300">
+                    {t("sendButton")}
+                  </button>
+                </div>
+                {submitted && (
+                  <h5 className="text-primary mt-3 sm:mt-4 text-sm sm:text-base">{t("successMessage")}</h5>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    </section>
+  );
 }

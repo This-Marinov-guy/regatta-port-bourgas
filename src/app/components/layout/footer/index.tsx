@@ -1,104 +1,145 @@
 "use client";
 import Link from "next/link";
-import { Icon } from "@iconify/react"
+import Image from "next/image";
+import { Icon } from "@iconify/react";
 import { useEffect, useState } from "react";
+import { CLUB_FB, CLUB_INSTA } from "@/utils/defines/SOCIAL";
 
 const Footer = () => {
   const [footerLinks, setFooterLinks] = useState<any>(null);
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/layout-data')
-        if (!res.ok) throw new Error('Failed to fetch')
-        const data = await res.json()
-        setFooterLinks(data?.footerLinks)
+        const res = await fetch("/api/layout-data");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        setFooterLinks(data?.footerLinks);
       } catch (error) {
-        console.error('Error fetching services:', error)
+        console.error("Error fetching services:", error);
       }
-    }
-    fetchData()
-  }, [])
+    };
+    fetchData();
+  }, []);
   return (
     <footer className="relative z-10 bg-dark">
-      <div className="container mx-auto max-w-8xl pt-14 px-4 sm:px-6 lg:px-0">
-        <div className="flex lg:items-center justify-between items-end lg:gap-11 pb-14 border-b border-white/10 lg:flex-nowrap flex-wrap gap-6">
-          <p className="text-white text-sm lg:max-w-1/5">
-            Stay updated with the latest news,
-            promotions, and exclusive offers.
-          </p>
-          <div className="flex lg:flex-row flex-col items-center lg:gap-10 gap-3">
-            <div className="flex gap-2 lg:order-1 order-2">
-              <input type="email" placeholder="Enter Your Email" className="rounded-full py-4 px-6 bg-white/10 placeholder:text-white text-white focus-visible:outline-0" />
-              <button className="text-dark bg-white py-4 px-8 font-semibold rounded-full hover:bg-primary hover:text-white duration-300 hover:cursor-pointer">
-                Subscribe
-              </button>
-            </div>
-            <p className="text-white/40 text-sm lg:max-w-[45%] order-1 lg:order-2">
-              By subscribing, you agree to receive our promotional emails. You can unsubscribe  at any time.
-            </p>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link href="#">
-              <Icon icon="ph:x-logo-bold" width={24} height={24} className="text-white hover:text-primary duration-300" />
-            </Link>
-            <Link href="#">
-              <Icon icon="ph:facebook-logo-bold" width={24} height={24} className="text-white hover:text-primary duration-300" />
-            </Link>
-            <Link href="#">
-              <Icon icon="ph:instagram-logo-bold" width={24} height={24} className="text-white hover:text-primary duration-300" />
-            </Link>
-          </div>
-        </div>
-        <div className="py-16 border-b border-white/10">
-          <div className="grid grid-cols-12 sm:gap-10 gap-y-6">
-            <div className="md:col-span-7 col-span-12">
-              <h2 className="text-white leading-[1.2] text-40 font-medium mb-6 lg:max-w-3/4">
-                Begin your path to
-                success contact us today.
-              </h2>
-              <Link href="/contact-us" className="bg-primary text-base font-semibold py-4 px-8 rounded-full text-white hover:bg-white hover:text-dark duration-300 hover:cursor-pointer">
-                Get In Touch
+      <div className="container mx-auto max-w-8xl pt-10 md:pt-14 px-5 2xl:px-0">
+        <div className="py-10 md:py-16 border-b border-white/10">
+          <div className="grid grid-cols-2 md:flex md:flex-row md:justify-between gap-6 md:gap-12">
+            {/* Logo and Social Media Links */}
+            <div className="flex flex-col gap-4 md:gap-6">
+              <Link href="/" className="w-fit">
+                <Image
+                  src="/images/logos/logo-50.gif"
+                  alt="Regatta Port Bourgas Logo"
+                  width={120}
+                  height={120}
+                  unoptimized={true}
+                  className="h-auto w-20 md:w-32 rounded-full"
+                />
               </Link>
-            </div>
-            <div className="md:col-span-3 sm:col-span-6 col-span-12">
-              <div className="flex flex-col gap-4 w-fit">
-                {footerLinks?.slice(0, 4)?.map((item:any, index:any) => (
-                  <div key={index}>
-                    <Link href={item.href} className="text-white/40 text-xm hover:text-white">
-                      {item.label}
-                    </Link>
-                  </div>
-                ))}
+              <div className="flex items-center gap-3 md:gap-6">
+                <a
+                  href={CLUB_FB}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-primary duration-300 transition-colors"
+                  aria-label="Facebook"
+                >
+                  <Icon
+                    icon="ph:facebook-logo-bold"
+                    width={24}
+                    height={24}
+                    className="md:w-8 md:h-8"
+                  />
+                </a>
+                <a
+                  href={CLUB_INSTA}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-primary duration-300 transition-colors"
+                  aria-label="Instagram"
+                >
+                  <Icon
+                    icon="ph:instagram-logo-bold"
+                    width={24}
+                    height={24}
+                    className="md:w-8 md:h-8"
+                  />
+                </a>
               </div>
             </div>
-            <div className="md:col-span-2 sm:col-span-6 col-span-12">
-              <div className="flex flex-col gap-4 w-fit">
-                {footerLinks?.slice(4, 8)?.map((item:any, index:any) => (
-                  <div key={index}>
-                    <Link href={item.href} className="text-white/40 text-xm hover:text-white">
-                      {item.label}
-                    </Link>
-                  </div>
-                ))}
-              </div>
+
+            {/* Footer Links - Combined for mobile, split for desktop */}
+            <div className="flex flex-col gap-2 md:gap-4">
+              {footerLinks?.slice(0, 4)?.map((item: any, index: any) => (
+                <Link
+                  key={index}
+                  href={item.href}
+                  className="text-white/60 hover:text-white text-xs md:text-sm lg:text-base transition-colors duration-300 w-fit"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Footer Links - Second Column (hidden on mobile, shown on desktop) */}
+            <div className="hidden md:flex flex-col gap-3 md:gap-4">
+              {footerLinks?.slice(4, 8)?.map((item: any, index: any) => (
+                <Link
+                  key={index}
+                  href={item.href}
+                  className="text-white/60 hover:text-white text-sm md:text-base transition-colors duration-300 w-fit"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Additional links for mobile (second column) */}
+            <div className="flex flex-col gap-2 md:hidden">
+              {footerLinks?.slice(4, 8)?.map((item: any, index: any) => (
+                <Link
+                  key={index}
+                  href={item.href}
+                  className="text-white/60 hover:text-white text-xs transition-colors duration-300 w-fit"
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
-        <div className="flex justify-between md:flex-nowrap flex-wrap items-center py-6 gap-6">
-          <p className="text-white/40 text-sm ">
-            ©2025 Homely - Design & Developed by <Link href="https://getnextjstemplates.com/" className="hover:text-primary" target="_blanck">GetNextJs Templates</Link>
+
+        {/* Bottom Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-6 md:py-8 gap-4 sm:gap-6">
+          <p className="text-white/60 text-xs sm:text-sm">
+            © {new Date().getFullYear()} Regatta Port Bourgas. Developed by{" "}
+            <Link
+              href="https://vladislavmarinov.com/"
+              className="hover:text-primary transition-colors duration-300"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Cold Lake Technologies
+            </Link>
           </p>
-          <div className="flex gap-8 items-center">
-            <Link href="/terms-and-conditions" className="text-white/40 hover:text-primary text-sm">
+          <div className="flex flex-wrap gap-4 sm:gap-8 items-center">
+            <Link
+              href="/terms-and-conditions"
+              className="text-white/60 hover:text-primary text-xs sm:text-sm transition-colors duration-300"
+            >
               Terms & Conditions
             </Link>
-            <Link href="/privacy-policy" className="text-white/40 hover:text-primary text-sm">
-              Privacy policy
+            <Link
+              href="/privacy-policy"
+              className="text-white/60 hover:text-primary text-xs sm:text-sm transition-colors duration-300"
+            >
+              Privacy Policy
             </Link>
           </div>
         </div>
       </div>
-    </footer >
+    </footer>
   );
 };
 

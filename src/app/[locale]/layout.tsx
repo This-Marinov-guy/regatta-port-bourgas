@@ -9,6 +9,7 @@ import { ThemeProvider } from 'next-themes'
 import NextTopLoader from 'nextjs-toploader';
 import Header from '../components/layout/header';
 import Footer from '../components/layout/footer';
+import CookieBanner from '../components/layout/cookie-banner';
 import SessionProviderComp from '../../providers/SessionProvider';
 import ScrollToTop from '../components/scroll-to-top';
 
@@ -50,8 +51,8 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
-      <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} bg-white dark:bg-black antialiased`}>
+    <html lang={locale} suppressHydrationWarning>
+      <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} bg-white dark:bg-black antialiased`} suppressHydrationWarning>
         <NextTopLoader color="#3435AA" />
         <NextIntlClientProvider messages={messages}>
           <SessionProviderComp session={session}>
@@ -62,6 +63,7 @@ export default async function LocaleLayout({
               <Header />
               {children}
               <Footer />
+              <CookieBanner />
               <ScrollToTop />
             </ThemeProvider>
           </SessionProviderComp>
