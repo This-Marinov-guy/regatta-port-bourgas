@@ -48,38 +48,61 @@ export const GET = async (request: NextRequest) => {
     locale = routing.defaultLocale;
   }
 
-  // Load translations from JSON files
-  const localesPath = join(process.cwd(), 'locales', `${locale}.json`);
-  const messages = JSON.parse(readFileSync(localesPath, 'utf8'));
-
-  // Helper function to get nested translation value
-  const getTranslation = (key: string, obj: any): string => {
-    const keys = key.split('.');
-    let value: any = obj;
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = value[k];
-      } else {
-        return key; // Return key if translation not found
-      }
+  try {
+    // Load translations from JSON files
+    const localesPath = join(process.cwd(), 'locales', `${locale}.json`);
+    let messages: any = {};
+    
+    try {
+      messages = JSON.parse(readFileSync(localesPath, 'utf8'));
+    } catch (fileError) {
+      console.error(`Failed to read locale file for ${locale}:`, fileError);
+      // Return empty object if file read fails
+      messages = {};
     }
-    return typeof value === 'string' ? value : key;
-  };
 
-  // Build nav links with translations and locale-aware hrefs
-  const navLinks = navLinksStructure.map((link) => ({
-    label: getTranslation(link.labelKey, messages),
-    href: `/${locale}${link.href}`,
-  }));
+    // Helper function to get nested translation value
+    const getTranslation = (key: string, obj: any): string => {
+      const keys = key.split('.');
+      let value: any = obj;
+      for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+          value = value[k];
+        } else {
+          return key; // Return key if translation not found
+        }
+      }
+      return typeof value === 'string' ? value : key;
+    };
 
-  // Build footer links with translations and locale-aware hrefs
-  const footerLinks = footerLinksStructure.map((link) => ({
-    label: getTranslation(link.labelKey, messages),
-    href: `/${locale}${link.href}`,
-  }));
+    // Build nav links with translations and locale-aware hrefs
+    const navLinks = navLinksStructure.map((link) => ({
+      label: getTranslation(link.labelKey, messages),
+      href: `/${locale}${link.href}`,
+    }));
 
-  return NextResponse.json({
-    navLinks,
-    footerLinks,
-  });
+    // Build footer links with translations and locale-aware hrefs
+    const footerLinks = footerLinksStructure.map((link) => ({
+      label: getTranslation(link.labelKey, messages),
+      href: `/${locale}${link.href}`,
+    }));
+
+    return NextResponse.json({
+      navLinks,
+      footerLinks,
+    });
+  } catch (error) {
+    console.error('Error in layout-data API route:', error);
+    // Return fallback structure with keys as labels
+    return NextResponse.json({
+      navLinks: navLinksStructure.map((link) => ({
+        label: link.labelKey,
+        href: `/${locale}${link.href}`,
+      })),
+      footerLinks: footerLinksStructure.map((link) => ({
+        label: link.labelKey,
+        href: `/${locale}${link.href}`,
+      })),
+    }, { status: 200 }); // Still return 200 so client can handle it
+  }
 };

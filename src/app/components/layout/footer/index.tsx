@@ -2,27 +2,44 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
-import { useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useEffect, useState, useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { CLUB_FB, CLUB_INSTA } from "@/utils/defines/SOCIAL";
 
 const Footer = () => {
-  const [footerLinks, setFooterLinks] = useState<any>(null);
   const locale = useLocale();
+  const t = useTranslations();
   
+  // Create fallback links using translations
+  const fallbackLinks = useMemo(() => [
+    { label: t('navigation.events'), href: `/${locale}/events` },
+    { label: t('navigation.gallery'), href: `/${locale}/gallery` },
+    { label: t('navigation.contactUs'), href: `/${locale}/contact-us` },
+    { label: t('navigation.documents'), href: `/${locale}/documents` },
+  ], [locale, t])
+
+  const [footerLinks, setFooterLinks] = useState<any>(fallbackLinks);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await fetch(`/api/layout-data?locale=${locale}`);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        setFooterLinks(data?.footerLinks);
+        if (data?.footerLinks && Array.isArray(data.footerLinks) && data.footerLinks.length > 0) {
+          setFooterLinks(data.footerLinks);
+        } else {
+          // Fallback to translated links
+          setFooterLinks(fallbackLinks);
+        }
       } catch (error) {
-        console.error("Error fetching services:", error);
+        console.error("Error fetching footer links:", error);
+        // Fallback to translated links on error
+        setFooterLinks(fallbackLinks);
       }
     };
     fetchData();
-  }, [locale]);
+  }, [locale, fallbackLinks]);
   return (
     <footer className="relative z-10 bg-dark">
       <div className="container mx-auto max-w-8xl pt-10 md:pt-14 px-5 2xl:px-0">
@@ -30,7 +47,7 @@ const Footer = () => {
           <div className="grid grid-cols-2 md:flex md:flex-row md:justify-between gap-6 md:gap-12">
             {/* Logo and Social Media Links */}
             <div className="flex flex-col gap-4 md:gap-6">
-              <Link href="/" className="w-fit">
+              <Link href={`/${locale}`} className="w-fit">
                 <Image
                   src="/images/logos/logo-50.gif"
                   alt="Regatta Port Bourgas Logo"

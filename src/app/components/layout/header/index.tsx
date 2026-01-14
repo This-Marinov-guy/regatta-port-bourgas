@@ -1,7 +1,7 @@
 'use client'
 import { Icon } from '@iconify/react'
 import Link from 'next/link'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
@@ -13,7 +13,6 @@ import { CLUB_EMAIL, CLUB_PHONE } from '@/utils/defines/CONTACTS'
 
 const Header: React.FC = () => {
   const { data: session } = useSession();
-  const [navLinks, setNavLinks] = useState<any>(null);
   const [user, setUser] = useState<{ user: any } | null>(null);
   const [sticky, setSticky] = useState(false)
   const [navbarOpen, setNavbarOpen] = useState(false)
@@ -21,6 +20,17 @@ const Header: React.FC = () => {
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations()
+
+  // Create fallback links using translations
+  const fallbackLinks = useMemo(() => [
+    { label: t('navigation.home'), href: `/${locale}` },
+    { label: t('navigation.events'), href: `/${locale}/events` },
+    { label: t('navigation.gallery'), href: `/${locale}/gallery` },
+    { label: t('navigation.contactUs'), href: `/${locale}/contact-us` },
+    { label: t('navigation.documents'), href: `/${locale}/documents` },
+  ], [locale, t])
+
+  const [navLinks, setNavLinks] = useState<any>(fallbackLinks);
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
 
@@ -40,13 +50,20 @@ const Header: React.FC = () => {
         const res = await fetch(`/api/layout-data?locale=${locale}`)
         if (!res.ok) throw new Error('Failed to fetch')
         const data = await res.json()
-        setNavLinks(data?.navLinks)
+        if (data?.navLinks && Array.isArray(data.navLinks) && data.navLinks.length > 0) {
+          setNavLinks(data.navLinks)
+        } else {
+          // Fallback to translated links
+          setNavLinks(fallbackLinks)
+        }
       } catch (error) {
-        console.error('Error fetching services:', error)
+        console.error('Error fetching nav links:', error)
+        // Fallback to translated links on error
+        setNavLinks(fallbackLinks)
       }
     }
     fetchData()
-  }, [locale])
+  }, [locale, fallbackLinks])
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll)
