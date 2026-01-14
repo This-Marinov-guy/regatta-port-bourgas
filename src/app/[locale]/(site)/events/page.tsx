@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import EventCard from '@/app/components/events/EventCard'
 import { EVENTS } from '@/lib/events'
+import Divider from '@/app/components/common/Divider'
 
 export default async function EventsPage() {
   const t = await getTranslations()
@@ -20,7 +21,7 @@ export default async function EventsPage() {
           </p>
         </div>
 
-        <section className="mb-12 md:mb-16">
+        <section className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-semibold text-dark dark:text-white mb-6">
             {t('events.future')}
           </h2>
@@ -40,7 +41,11 @@ export default async function EventsPage() {
           </div>
         </section>
 
-        <section>
+        {/* <Divider /> */}
+
+        <hr/>
+
+        <section className="mt-8">
           <h2 className="text-2xl sm:text-3xl font-semibold text-dark dark:text-white mb-6">
             {t('events.past')}
           </h2>

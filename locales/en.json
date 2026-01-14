@@ -2,7 +2,7 @@
   "common": {
     "scrollToTop": "Scroll to top",
     "getInTouch": "Get in touch",
-    "viewDetails": "View Details"
+    "viewDetails": "View Events"
   },
   "navigation": {
     "home": "Home",
@@ -87,6 +87,18 @@
     "seeMore": "See more",
     "previewSubtitle": "Here are the next upcoming events. Visit the events page for the full list.",
     "back": "Back to events",
+    "tabs": {
+      "documents": "Competition Documents",
+      "noticeBoard": "Notice Board",
+      "applications": "Participation Applications",
+      "results": "Results"
+    },
+    "tabsContent": {
+      "documents": "Competition documents and regulations will be available here.",
+      "noticeBoard": "Important notices and updates will be posted here.",
+      "applications": "Submit your participation application here.",
+      "results": "Competition results will be displayed here."
+    },
     "items": {
       "regatta-port-bourgas-2025": {
         "title": "International Regatta Port Bourgas 2025",
@@ -109,6 +121,20 @@
         "body": "This is a mock event recap. Add results, photos, and a recap story here."
       }
     }
+  },
+  "seo": {
+    "title": "International Regatta Port Bourgas | Sailing Events & Competitions",
+    "titleTemplate": "%s | International Regatta Port Bourgas",
+    "description": "Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.",
+    "keywords": "regatta, sailing, yacht racing, Bourgas, Bulgaria, sailing events, sailing competitions, yacht club, sailing regatta, sailing rules, racing rules of sailing, sailing community, sailing photos, sailing gallery",
+    "siteName": "International Regatta Port Bourgas",
+    "ogTitle": "International Regatta Port Bourgas | Sailing Events & Competitions",
+    "ogDescription": "Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.",
+    "ogImageAlt": "International Regatta Port Bourgas - Sailing Competition",
+    "twitterTitle": "International Regatta Port Bourgas | Sailing Events & Competitions",
+    "twitterDescription": "Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, and connect with the sailing community.",
+    "category": "Sports",
+    "classification": "Sailing, Yacht Racing, Regatta"
   }
 }
 

@@ -126,7 +126,7 @@ const Footer = () => {
               Cold Lake Technologies
             </Link>
           </p>
-          <div className="flex flex-wrap gap-4 sm:gap-8 items-center">
+          {/* <div className="flex flex-wrap gap-4 sm:gap-8 items-center">
             <Link
               href="/terms-and-conditions"
               className="text-white/60 hover:text-primary text-xs sm:text-sm transition-colors duration-300"
@@ -139,7 +139,7 @@ const Footer = () => {
             >
               Privacy Policy
             </Link>
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>

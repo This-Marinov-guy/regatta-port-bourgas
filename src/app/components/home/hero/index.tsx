@@ -37,7 +37,7 @@ const Hero: React.FC = () => {
                 {tCommon("getInTouch")}
               </Link>
               <Link
-                href={`/properties`}
+                href={`/events`}
                 className="px-4 py-2 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
               >
                 {tCommon("viewDetails")}

@@ -1,32 +1,33 @@
-import Image from 'next/image'
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { format } from 'date-fns'
-import { getTranslations } from 'next-intl/server'
+import Image from "next/image";
+import { Link } from "@/i18n/routing";
+import { notFound } from "next/navigation";
+import { format } from "date-fns";
+import { getTranslations } from "next-intl/server";
 
-import { EVENTS } from '@/lib/events'
+import { EVENTS } from "@/lib/events";
+import EventTabs from "@/app/components/events/EventTabs";
 
 type Props = {
-  params: Promise<{ slug: string }>
-}
+  params: Promise<{ slug: string }>;
+};
 
 export default async function EventDetailsPage({ params }: Props) {
-  const { slug } = await params
-  const event = EVENTS.find((e) => e.slug === slug)
-  if (!event) notFound()
+  const { slug } = await params;
+  const event = EVENTS.find((e) => e.slug === slug);
+  if (!event) notFound();
 
-  const t = await getTranslations()
-  const from = format(new Date(event.dateFrom), 'MMM dd, yyyy')
-  const to = format(new Date(event.dateTo), 'MMM dd, yyyy')
+  const t = await getTranslations();
+  const from = format(new Date(event.dateFrom), "MMM dd, yyyy");
+  const to = format(new Date(event.dateTo), "MMM dd, yyyy");
 
   return (
     <main className="bg-white dark:bg-black">
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28">
         <Link
-          href="/events"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-dark/70 dark:text-white/70 hover:text-primary transition-colors"
+          href={`/events`}
+          className="inline-flex items-center gap-2 font-semibold text-dark/70 dark:text-white/70 hover:text-primary transition-colors"
         >
-          ← {t('events.back')}
+          ← {t("events.back")}
         </Link>
 
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
@@ -60,8 +61,9 @@ export default async function EventDetailsPage({ params }: Props) {
             </div>
           </div>
         </div>
+
+        <EventTabs />
       </div>
     </main>
-  )
+  );
 }
-
