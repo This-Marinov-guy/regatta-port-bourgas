@@ -51,6 +51,61 @@
     "description": "We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking 'Accept All', you consent to our use of cookies. You can also choose 'Mandatory Only' to accept only essential cookies.",
     "acceptAll": "Accept All",
     "mandatoryOnly": "Mandatory Only"
+  },
+  "gallery": {
+    "title": "Gallery",
+    "subtitle": "Browse photos by year. Expand a year to view all images and click any photo to preview it.",
+    "photosLabel": "photos",
+    "preview": "Preview",
+    "close": "Close",
+    "tapOutsideToClose": "Tap outside to close",
+    "previewDialogLabel": "Photo preview for {year}",
+    "openPreview": "Open preview for {year} photo {index}",
+    "photos": {
+      "2024": [
+        "Regatta 2024 photo 1",
+        "Regatta 2024 photo 2",
+        "Regatta 2024 photo 3"
+      ],
+      "2025": [
+        "Regatta 2025 photo 1",
+        "Regatta 2025 photo 2",
+        "Regatta 2025 photo 3"
+      ]
+    }
+  },
+  "events": {
+    "title": "Events",
+    "subtitle": "Discover upcoming events and revisit past moments. Click “Details” for full information.",
+    "future": "Future events",
+    "past": "Past events",
+    "details": "Details",
+    "current": "Current",
+    "seeMore": "See more",
+    "previewSubtitle": "Here are the next upcoming events. Visit the events page for the full list.",
+    "back": "Back to events",
+    "items": {
+      "regatta-port-bourgas-2025": {
+        "title": "International Regatta Port Bourgas 2025",
+        "excerpt": "Join us for the 2025 edition of the International Regatta Port Bourgas.",
+        "body": "This is a mock event details page. Replace this text with the real program, schedule, and registration information."
+      },
+      "training-weekend-spring-2025": {
+        "title": "Spring Training Weekend 2025",
+        "excerpt": "A two-day training weekend focused on technique, safety, and teamwork.",
+        "body": "This is a mock event details page. Add training agenda, coaches, and participation details here."
+      },
+      "regatta-port-bourgas-2024": {
+        "title": "International Regatta Port Bourgas 2024",
+        "excerpt": "Highlights from the 2024 edition—great wind, great races, great memories.",
+        "body": "This is a mock event recap. Add results, gallery links, and a short summary here."
+      },
+      "autumn-cup-2024": {
+        "title": "Autumn Cup 2024",
+        "excerpt": "A classic autumn competition with tight races and a great atmosphere.",
+        "body": "This is a mock event recap. Add results, photos, and a recap story here."
+      }
+    }
   }
 }
 

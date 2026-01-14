@@ -32,16 +32,27 @@ const Hero: React.FC = () => {
             <div className="flex flex-col xs:flex-row justify-center md:justify-start gap-4 mb-10">
               <Link
                 href={`/contact-us`}
-                className="px-8 py-4 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer"
+                className="px-4 py-2 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md  hover:cursor-pointer flex items-center justify-center"
               >
                 {tCommon("getInTouch")}
               </Link>
               <Link
                 href={`/properties`}
-                className="px-8 py-4 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer"
+                className="px-4 py-2 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
               >
                 {tCommon("viewDetails")}
               </Link>
+              <a
+                href={`https://www.bulstrad.bg/`}
+                className="px-4 py-2 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
+              >
+                <Image
+                  src="/images/brands/bulstrad.png"
+                  alt="PDF"
+                  width={150}
+                  height={150}
+                />
+              </a>
             </div>
           </div>
           {/* <div className='hidden md:block absolute -top-2 -right-68'>
@@ -55,8 +66,7 @@ const Hero: React.FC = () => {
             />
           </div> */}
         </div>
-        
-        
+
         {/* General Sponsor Panel
         <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 bg-white/95 dark:bg-black/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-white/20 dark:border-white/10 z-30">
           <div className="flex flex-col items-center gap-2 min-w-[120px]">

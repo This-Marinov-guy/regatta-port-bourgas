@@ -1,10 +1,7 @@
-import Services from '../components/home/services'
 import Hero from '../components/home/hero'
-import Testimonial from '../components/home/testimonial'
-import GetInTouch from '../components/home/get-in-touch'
-import FAQ from '../components/home/faqs'
 import Partners from '../components/home/partners'
 import ContactForm from '../components/home/contact-form'
+import EventsPreview from '../components/home/events-preview'
 
 export default function Home() {
   return (
@@ -12,6 +9,7 @@ export default function Home() {
       <Hero />
       {/* <Services /> */}
       <Partners />
+      <EventsPreview />
       {/* <Testimonial /> */}
       {/* <GetInTouch /> */}
       <ContactForm />
