@@ -50,8 +50,17 @@ const Header: React.FC = () => {
         const res = await fetch(`/api/layout-data?locale=${locale}`)
         if (!res.ok) throw new Error('Failed to fetch')
         const data = await res.json()
+        // Check if links have proper translations (not raw keys)
         if (data?.navLinks && Array.isArray(data.navLinks) && data.navLinks.length > 0) {
-          setNavLinks(data.navLinks)
+          const hasValidTranslations = data.navLinks.every((link: any) => 
+            link.label && !link.label.startsWith('navigation.')
+          )
+          if (hasValidTranslations) {
+            setNavLinks(data.navLinks)
+          } else {
+            // API returned keys instead of translations, use fallback
+            setNavLinks(fallbackLinks)
+          }
         } else {
           // Fallback to translated links
           setNavLinks(fallbackLinks)

@@ -55,6 +55,10 @@ export const GET = async (request: NextRequest) => {
     
     try {
       messages = JSON.parse(readFileSync(localesPath, 'utf8'));
+      // Verify messages structure
+      if (!messages.navigation) {
+        console.error(`Locale file for ${locale} is missing 'navigation' key`);
+      }
     } catch (fileError) {
       console.error(`Failed to read locale file for ${locale}:`, fileError);
       // Return empty object if file read fails
@@ -63,29 +67,52 @@ export const GET = async (request: NextRequest) => {
 
     // Helper function to get nested translation value
     const getTranslation = (key: string, obj: any): string => {
+      if (!obj || typeof obj !== 'object') {
+        console.warn(`Translation object is invalid for key: ${key}`);
+        return key;
+      }
       const keys = key.split('.');
       let value: any = obj;
       for (const k of keys) {
         if (value && typeof value === 'object' && k in value) {
           value = value[k];
         } else {
+          console.warn(`Translation key not found: ${key} at segment: ${k}`);
           return key; // Return key if translation not found
         }
       }
-      return typeof value === 'string' ? value : key;
+      if (typeof value === 'string' && value.length > 0) {
+        return value;
+      }
+      console.warn(`Translation value is not a string for key: ${key}`);
+      return key;
     };
 
     // Build nav links with translations and locale-aware hrefs
-    const navLinks = navLinksStructure.map((link) => ({
-      label: getTranslation(link.labelKey, messages),
-      href: `/${locale}${link.href}`,
-    }));
+    const navLinks = navLinksStructure.map((link) => {
+      const translatedLabel = getTranslation(link.labelKey, messages);
+      // If translation failed (returned key), log warning
+      if (translatedLabel === link.labelKey) {
+        console.warn(`Translation failed for key: ${link.labelKey}, locale: ${locale}`);
+      }
+      return {
+        label: translatedLabel,
+        href: `/${locale}${link.href}`,
+      };
+    });
 
     // Build footer links with translations and locale-aware hrefs
-    const footerLinks = footerLinksStructure.map((link) => ({
-      label: getTranslation(link.labelKey, messages),
-      href: `/${locale}${link.href}`,
-    }));
+    const footerLinks = footerLinksStructure.map((link) => {
+      const translatedLabel = getTranslation(link.labelKey, messages);
+      // If translation failed (returned key), log warning
+      if (translatedLabel === link.labelKey) {
+        console.warn(`Translation failed for key: ${link.labelKey}, locale: ${locale}`);
+      }
+      return {
+        label: translatedLabel,
+        href: `/${locale}${link.href}`,
+      };
+    });
 
     return NextResponse.json({
       navLinks,

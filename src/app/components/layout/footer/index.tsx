@@ -26,8 +26,17 @@ const Footer = () => {
         const res = await fetch(`/api/layout-data?locale=${locale}`);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
+        // Check if links have proper translations (not raw keys)
         if (data?.footerLinks && Array.isArray(data.footerLinks) && data.footerLinks.length > 0) {
-          setFooterLinks(data.footerLinks);
+          const hasValidTranslations = data.footerLinks.every((link: any) => 
+            link.label && !link.label.startsWith('navigation.')
+          )
+          if (hasValidTranslations) {
+            setFooterLinks(data.footerLinks);
+          } else {
+            // API returned keys instead of translations, use fallback
+            setFooterLinks(fallbackLinks);
+          }
         } else {
           // Fallback to translated links
           setFooterLinks(fallbackLinks);
