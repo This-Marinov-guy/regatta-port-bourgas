@@ -9,6 +9,7 @@
     "properties": "Properties",
     "blogs": "Blogs",
     "events": "Events",
+    "news": "News",
     "gallery": "Gallery",
     "contactUs": "Contact Us",
     "documents": "Documents",
@@ -119,6 +120,41 @@
         "title": "Autumn Cup 2024",
         "excerpt": "A classic autumn competition with tight races and a great atmosphere.",
         "body": "This is a mock event recap. Add results, photos, and a recap story here."
+      }
+    }
+  },
+  "news": {
+    "title": "News",
+    "subtitle": "Stay updated with the latest news, announcements, and updates from the International Regatta Port Bourgas.",
+    "latest": "Latest News",
+    "previewSubtitle": "Stay informed with the latest updates and announcements from our sailing community.",
+    "seeMore": "See more",
+    "back": "Back to news",
+    "items": {
+      "regatta-2025-announcement": {
+        "title": "International Regatta Port Bourgas 2025 - Registration Open",
+        "description": "We are excited to announce that registration for the 2025 International Regatta Port Bourgas is now open. Join us for an unforgettable sailing experience.",
+        "body": "The International Regatta Port Bourgas 2025 promises to be an exceptional event with participants from around the world. Early registration is recommended as spots are limited. The regatta will feature multiple classes and categories, ensuring competitive racing for all skill levels.\n\nKey highlights:\n- Multiple racing classes\n- Professional race management\n- Social events and networking opportunities\n- Awards ceremony\n\nRegistration closes on May 1, 2025. Don't miss this opportunity to be part of one of the premier sailing events in the Black Sea region."
+      },
+      "new-training-program": {
+        "title": "New Training Program Launched",
+        "description": "We're launching a comprehensive training program designed for sailors of all levels, from beginners to advanced competitors.",
+        "body": "Our new training program offers structured learning paths for sailors at every stage of their journey. The program includes:\n\n- Beginner courses covering sailing fundamentals\n- Intermediate training focusing on racing techniques\n- Advanced coaching for competitive sailors\n- Safety and navigation workshops\n\nClasses are conducted by experienced instructors with international certifications. Flexible scheduling options are available to accommodate different needs.\n\nEnrollment is now open for the spring session. Contact us for more information and to reserve your spot."
+      },
+      "winter-season-update": {
+        "title": "Winter Season Update",
+        "description": "An update on our winter activities, maintenance schedule, and preparations for the upcoming sailing season.",
+        "body": "As we wrap up the 2024 season, we want to share updates on our winter activities and preparations for 2025.\n\nMaintenance and improvements:\n- Complete fleet inspection and maintenance\n- Dock facilities upgrades\n- Safety equipment updates\n- New equipment acquisitions\n\nWinter activities:\n- Indoor training sessions\n- Rules and regulations workshops\n- Planning meetings for 2025 events\n- Social gatherings for members\n\nWe're looking forward to an exciting 2025 season and thank all members for their continued support."
+      },
+      "championship-results-2024": {
+        "title": "2024 Championship Results Published",
+        "description": "The results from the 2024 championship series are now available. Congratulations to all participants and winners!",
+        "body": "We're pleased to announce the publication of the 2024 Championship Results. This year's competition featured outstanding performances across all categories.\n\nOverall winners:\n- First place: [Team/Sailor Name]\n- Second place: [Team/Sailor Name]\n- Third place: [Team/Sailor Name]\n\nCategory winners and detailed results are available on our results page. We extend our congratulations to all participants for their dedication and sportsmanship throughout the season.\n\nThank you to all competitors, volunteers, and supporters who made the 2024 championship series a success."
+      },
+      "safety-guidelines-update": {
+        "title": "Updated Safety Guidelines",
+        "description": "Important updates to our safety guidelines and procedures to ensure the well-being of all participants.",
+        "body": "We have updated our safety guidelines to align with the latest international standards and best practices. All participants are required to familiarize themselves with these updates.\n\nKey changes:\n- Enhanced weather monitoring procedures\n- Updated emergency response protocols\n- New equipment requirements\n- Revised communication procedures\n\nSafety briefings will be mandatory for all events. Please review the updated guidelines on our website and contact us if you have any questions.\n\nSafety is our top priority, and we appreciate your cooperation in maintaining the highest standards."
       }
     }
   },

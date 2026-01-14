@@ -7,6 +7,7 @@ import { routing } from "@/i18n/routing";
 const navLinksStructure = [
   { labelKey: "navigation.home", href: "/" },
   { labelKey: "navigation.events", href: "/events" },
+  { labelKey: "navigation.news", href: "/news" },
   { labelKey: "navigation.gallery", href: "/gallery" },
   { labelKey: "navigation.contactUs", href: "/contact-us" },
   { labelKey: "navigation.documents", href: "/documents" },
@@ -14,6 +15,7 @@ const navLinksStructure = [
 
 const footerLinksStructure = [
   { labelKey: "navigation.events", href: "/events" },
+  { labelKey: "navigation.news", href: "/news" },
   { labelKey: "navigation.gallery", href: "/gallery" },
   { labelKey: "navigation.contactUs", href: "/contact-us" },
   { labelKey: "navigation.documents", href: "/documents" },

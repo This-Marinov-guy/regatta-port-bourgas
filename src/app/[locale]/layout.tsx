@@ -50,7 +50,7 @@ export async function generateMetadata({
   const alternateLocale = locale === 'en' ? 'bg_BG' : 'en_US';
   const localeUrl = `${siteUrl}/${locale}`;
   const alternateUrl = locale === 'en' ? `${siteUrl}/bg` : `${siteUrl}/en`;
-  const ogImageUrl = `${siteUrl}/images/splashscreen/splash-screen-1.jpeg`;
+  const ogImageUrl = `${siteUrl}/images/logos/logo.jpg`;
 
   return {
     metadataBase: new URL(siteUrl),
@@ -80,7 +80,7 @@ export async function generateMetadata({
         {
           url: ogImageUrl,
           width: 1200,
-          height: 630,
+          height: 1200,
           alt: t('ogImageAlt'),
         },
       ],
