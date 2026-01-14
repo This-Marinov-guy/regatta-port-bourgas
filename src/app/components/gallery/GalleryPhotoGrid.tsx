@@ -24,7 +24,6 @@ export default function GalleryPhotoGrid({ photos, year }: GalleryPhotoGridProps
         <PhotoView
           key={photo.src}
           src={photo.src}
-          alt={photo.alt}
         >
           <button
             type="button"
