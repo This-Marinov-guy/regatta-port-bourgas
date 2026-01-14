@@ -3,14 +3,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { CLUB_FB, CLUB_INSTA } from "@/utils/defines/SOCIAL";
 
 const Footer = () => {
   const [footerLinks, setFooterLinks] = useState<any>(null);
+  const locale = useLocale();
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/layout-data");
+        const res = await fetch(`/api/layout-data?locale=${locale}`);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setFooterLinks(data?.footerLinks);
@@ -19,7 +22,7 @@ const Footer = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [locale]);
   return (
     <footer className="relative z-10 bg-dark">
       <div className="container mx-auto max-w-8xl pt-10 md:pt-14 px-5 2xl:px-0">

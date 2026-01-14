@@ -1,32 +1,85 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { routing } from "@/i18n/routing";
 
-const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Properties", href: "/properties" },
-  { label: "Blog", href: "/blogs" },
-  { label: "Events", href: "/events" },
-  { label: "Contact", href: "/contact-us" },
-  { label: "Docs", href: "/documentation" },
+// Link structure with translation keys
+const navLinksStructure = [
+  { labelKey: "navigation.home", href: "/" },
+  { labelKey: "navigation.events", href: "/events" },
+  { labelKey: "navigation.gallery", href: "/gallery" },
+  { labelKey: "navigation.contactUs", href: "/contact-us" },
+  { labelKey: "navigation.documents", href: "/documents" },
 ];
 
-const footerLinks = [
-  { label: "Luxury Villas", href: "/properties?category=luxury-villa" },
-  {
-    label: "Residential Homes",
-    href: "/properties?category=residential-home",
-  },
-  { label: "Apartments", href: "/properties?category=apartment" },
-  { label: "Contact Us", href: "/contact-us" },
-  { label: "Events", href: "/events" },
-  { label: "Blog", href: "/blogs" },
-  { label: "404 Page", href: "/not-found" },
-  { label: "Documentation", href: "/documentation" },
+const footerLinksStructure = [
+  { labelKey: "navigation.events", href: "/events" },
+  { labelKey: "navigation.gallery", href: "/gallery" },
+  { labelKey: "navigation.contactUs", href: "/contact-us" },
+  { labelKey: "navigation.documents", href: "/documents" },
 ];
 
-export const GET = async () => {
+export const GET = async (request: NextRequest) => {
+  // Get locale from query parameter, referer, or default
+  const { searchParams } = new URL(request.url);
+  let locale = searchParams.get("locale") as "en" | "bg" | null;
+
+  // If not in query, try to detect from referer
+  if (!locale) {
+    const referer = request.headers.get("referer") || "";
+    const localeMatch = referer.match(/\/(en|bg)(\/|$)/);
+    if (localeMatch) {
+      locale = localeMatch[1] as "en" | "bg";
+    }
+  }
+
+  // Fallback to Accept-Language header
+  if (!locale) {
+    const acceptLanguage = request.headers.get("accept-language") || "";
+    if (acceptLanguage.includes("bg")) {
+      locale = "bg";
+    } else {
+      locale = "en";
+    }
+  }
+
+  // Ensure locale is valid
+  if (!locale || !routing.locales.includes(locale)) {
+    locale = routing.defaultLocale;
+  }
+
+  // Load translations from JSON files
+  const localesPath = join(process.cwd(), 'locales', `${locale}.json`);
+  const messages = JSON.parse(readFileSync(localesPath, 'utf8'));
+
+  // Helper function to get nested translation value
+  const getTranslation = (key: string, obj: any): string => {
+    const keys = key.split('.');
+    let value: any = obj;
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return key; // Return key if translation not found
+      }
+    }
+    return typeof value === 'string' ? value : key;
+  };
+
+  // Build nav links with translations and locale-aware hrefs
+  const navLinks = navLinksStructure.map((link) => ({
+    label: getTranslation(link.labelKey, messages),
+    href: `/${locale}${link.href}`,
+  }));
+
+  // Build footer links with translations and locale-aware hrefs
+  const footerLinks = footerLinksStructure.map((link) => ({
+    label: getTranslation(link.labelKey, messages),
+    href: `/${locale}${link.href}`,
+  }));
+
   return NextResponse.json({
     navLinks,
     footerLinks,
   });
 };
-

@@ -8,7 +8,10 @@
     "home": "Home",
     "properties": "Properties",
     "blogs": "Blogs",
+    "events": "Events",
+    "gallery": "Gallery",
     "contactUs": "Contact Us",
+    "documents": "Documents",
     "signIn": "Sign In",
     "signUp": "Sign Up",
     "signOut": "Sign Out"

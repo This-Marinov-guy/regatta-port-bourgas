@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
 import Image from 'next/image'
 import NavLink from './navigation/NavLink'
 import { signOut, useSession } from 'next-auth/react'
 import LanguageSwitcher from '../language-switcher'
+import { CLUB_EMAIL, CLUB_PHONE } from '@/utils/defines/CONTACTS'
 
 const Header: React.FC = () => {
   const { data: session } = useSession();
@@ -17,6 +19,8 @@ const Header: React.FC = () => {
   const [navbarOpen, setNavbarOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
+  const locale = useLocale()
+  const t = useTranslations()
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
 
@@ -33,7 +37,7 @@ const Header: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/layout-data')
+        const res = await fetch(`/api/layout-data?locale=${locale}`)
         if (!res.ok) throw new Error('Failed to fetch')
         const data = await res.json()
         setNavLinks(data?.navLinks)
@@ -42,7 +46,7 @@ const Header: React.FC = () => {
       }
     }
     fetchData()
-  }, [])
+  }, [locale])
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll)
@@ -81,7 +85,7 @@ const Header: React.FC = () => {
       >
         <div className="flex justify-between items-center gap-2 w-full">
           <div>
-            <Link href="/">
+            <Link href={`/${locale}`}>
               <Image
                 src={"/images/logos/logo-50.gif"}
                 alt="logo"
@@ -228,7 +232,7 @@ const Header: React.FC = () => {
                       onClick={() => setNavbarOpen(false)}
                     />
                   ))}
-                {user?.user || session?.user ? (
+                {/* {user?.user || session?.user ? (
                   <>
                     <button
                       onClick={() => handleSignOut()}
@@ -254,7 +258,7 @@ const Header: React.FC = () => {
                       Sign up
                     </Link>
                   </li>
-                )}
+                )} */}
               </ul>
             </nav>
 
@@ -266,19 +270,19 @@ const Header: React.FC = () => {
 
           <div className="flex flex-col gap-1 my-16 text-white">
             <p className="text-base sm:text-xm font-normal text-white/40">
-              Contact
+              {t('contactPanel.contact')}
             </p>
             <Link
-              href="#"
+              href={`mailto:${CLUB_EMAIL}`}
               className="text-base sm:text-xm font-medium text-inherit hover:text-primary"
             >
-              hello@homely.com
+              {CLUB_EMAIL}
             </Link>
             <Link
-              href="#"
+              href={`tel:${CLUB_PHONE.replace(/\s/g, '')}`}
               className="text-base sm:text-xm font-medium text-inherit hover:text-primary"
             >
-              +1-212-456-7890{" "}
+              {CLUB_PHONE}
             </Link>
           </div>
         </div>
