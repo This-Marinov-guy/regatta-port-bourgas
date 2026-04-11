@@ -1,15 +1,14 @@
 import Image from 'next/image'
 import { Link } from '@/i18n/routing'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 
 const Hero: React.FC = () => {
   const t = useTranslations('hero')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
 
   return (
     <section className="!py-0">
-      <div className="bg-gradient-to-b from-skyblue via-lightskyblue dark:via-[#4298b0] to-white/10 dark:to-black/10 overflow-hidden relative">
+      <div className="bg-gradient-to-b from-skyblue via-lightskyblue dark:via-[#4298b0] to-white/10 dark:to-black/10 overflow-hidden relative min-h-[52vh] sm:min-h-[58vh] md:min-h-0">
         {/* Video Background */}
         <video
           autoPlay
@@ -22,11 +21,10 @@ const Hero: React.FC = () => {
         </video>
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 dark:from-black/60 dark:via-black/50 dark:to-black/40 z-[1]" />
-        <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-60 md:pb-68 relative z-10">
+        <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 pb-16 sm:pt-36 sm:pb-20 md:pt-60 md:pb-68 relative z-10">
           <div className="relative text-white dark:text-dark text-center md:text-start z-20">
-            {/* <p className="text-inherit text-xm font-medium">{t('location')}</p> */}
-            <h1 className="text-inherit text-6xl sm:text-9xl font-medium -tracking-wider md:max-w-45p mt-4 mb-6">
-              {/* {romanYears + " " + t("title")} */}
+            {/* Title — desktop only inside the video */}
+            <h1 className="hidden md:block text-inherit text-9xl font-medium -tracking-wider md:max-w-45p mt-4 mb-6">
               {t("title")}
             </h1>
             {/* Desktop buttons — visible inside the video on md+ */}
@@ -88,32 +86,25 @@ const Hero: React.FC = () => {
         </div> */}
       </div>
 
-      {/* Mobile buttons — rendered below the video on small screens */}
-      <div className="flex md:hidden flex-col xs:flex-row justify-center gap-3 px-5 py-6">
-        <Link
-          href={`/contact-us`}
-          className="px-4 py-3 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
-        >
-          {tCommon("getInTouch")}
-        </Link>
-        <Link
-          href={`/events`}
-          className="px-4 py-3 border border-dark bg-white text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
-        >
-          {tCommon("viewDetails")}
-        </Link>
-        <a
-          href={`https://www.bulstrad.bg/`}
-          className="px-4 py-3 border border-dark/10 bg-white text-dark duration-300 hover:bg-white/90 rounded-md hover:cursor-pointer flex items-center justify-center"
-        >
-          <Image
-            src="/images/brands/bulstrad.png"
-            alt="Bulstrad"
-            width={150}
-            height={40}
-            className="object-contain"
-          />
-        </a>
+      {/* Mobile: title + 2 buttons below the video */}
+      <div className="flex md:hidden flex-col px-5 pt-6 pb-4 gap-4">
+        <h1 className="text-dark dark:text-white text-4xl font-medium -tracking-wider text-center">
+          {t("title")}
+        </h1>
+        <div className="flex flex-row justify-center gap-3">
+          <Link
+            href={`/contact-us`}
+            className="flex-1 px-4 py-3 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
+          >
+            {tCommon("getInTouch")}
+          </Link>
+          <Link
+            href={`/events`}
+            className="flex-1 px-4 py-3 border border-dark bg-white text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
+          >
+            {tCommon("viewDetails")}
+          </Link>
+        </div>
       </div>
     </section>
   );

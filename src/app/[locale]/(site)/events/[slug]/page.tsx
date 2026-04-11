@@ -147,7 +147,6 @@ export default async function EventDetailsPage({ params }: Props) {
           eventId={event.id}
           eventTitle={title}
           eventDate={`${from} — ${to}`}
-          supportFiles={event.register_form}
         />
       </div>
     </main>

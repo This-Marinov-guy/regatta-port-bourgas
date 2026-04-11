@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
+import { publishRegistrationCreated } from '@/lib/registrations/publish'
 
 type CrewMemberPayload = {
   name?: unknown
-  role?: unknown
-  email?: unknown
+  date_of_birth?: unknown
 }
 
 type RegistrationPayload = {
   event_id?: unknown
-  email?: unknown
   boat_name?: unknown
   border_number?: unknown
   country?: unknown
@@ -119,21 +118,18 @@ function normalizeCrewList(value: unknown) {
 
       const payload = member as CrewMemberPayload
       const name = optionalText(payload.name)
-      const role = optionalText(payload.role)
-      const email = optionalText(payload.email)
+      const dateOfBirth = optionalDate(
+        payload.date_of_birth,
+        'Crew member date of birth'
+      )
 
-      if (!name && !role && !email) {
+      if (!name && !dateOfBirth) {
         return null
-      }
-
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error('Crew member email must be a valid email address.')
       }
 
       return {
         name: name ?? 'Unnamed crew member',
-        ...(role ? { role } : {}),
-        ...(email ? { email } : {})
+        ...(dateOfBirth ? { date_of_birth: dateOfBirth } : {})
       }
     })
     .filter(Boolean)
@@ -145,7 +141,6 @@ export async function POST(request: Request) {
 
     const payload = {
       event_id: requireText(body.event_id, 'Event'),
-      email: requireEmail(body.email, 'Boat email'),
       boat_name: requireText(body.boat_name, 'Boat name'),
       border_number: optionalText(body.border_number),
       country: requireText(body.country, 'Country'),
@@ -200,6 +195,17 @@ export async function POST(request: Request) {
 
     if (error) {
       throw new Error(error.message)
+    }
+
+    try {
+      await publishRegistrationCreated({
+        registrationId: data.id,
+        eventId: payload.event_id,
+        createdAt: new Date().toISOString(),
+      })
+    } catch (queueError) {
+      await supabase.from('registrations').delete().eq('id', data.id)
+      throw queueError
     }
 
     return NextResponse.json({ data }, { status: 201 })

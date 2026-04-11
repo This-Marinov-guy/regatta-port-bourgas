@@ -2662,10 +2662,6 @@ export default function AdminDashboard({
                             value={registration.boat_name}
                           />
                           <RegistrationDetailRow
-                            label="Boat email"
-                            value={registration.email}
-                          />
-                          <RegistrationDetailRow
                             label="Border number"
                             value={formatOptionalValue(
                               registration.border_number,
@@ -2758,6 +2754,12 @@ export default function AdminDashboard({
                             value={registration.contact_email}
                           />
                           <RegistrationDetailRow
+                            label="Generated form URL"
+                            value={formatOptionalValue(
+                              registration.generated_form_url,
+                            )}
+                          />
+                          <RegistrationDetailRow
                             label="Receive documents by email"
                             value={formatBooleanValue(
                               registration.receive_documents_by_email,
@@ -2808,17 +2810,11 @@ export default function AdminDashboard({
                                     <p className="text-sm font-semibold text-dark">
                                       {crewMember.name}
                                     </p>
-                                    <div className="mt-2 grid gap-2 text-sm text-dark/65 sm:grid-cols-2">
+                                    <div className="mt-2 grid gap-2 text-sm text-dark/65 sm:grid-cols-1">
                                       <p>
-                                        Role:{" "}
+                                        Date of birth:{" "}
                                         {formatOptionalValue(
-                                          crewMember.role ?? null,
-                                        )}
-                                      </p>
-                                      <p>
-                                        Email:{" "}
-                                        {formatOptionalValue(
-                                          crewMember.email ?? null,
+                                          crewMember.date_of_birth ?? null,
                                         )}
                                       </p>
                                     </div>

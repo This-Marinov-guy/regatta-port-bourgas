@@ -1,0 +1,236 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Registration processing stack with SNS, SQS, DLQs, S3, and Lambda workers.
+
+Parameters:
+  SupabaseUrl:
+    Type: String
+  SupabaseServiceKey:
+    Type: String
+    NoEcho: true
+  RegistrationSmtpUser:
+    Type: String
+  RegistrationSmtpPassword:
+    Type: String
+    NoEcho: true
+  RegistrationSmtpFrom:
+    Type: String
+  RegistrationSmtpHost:
+    Type: String
+    Default: smtp.gmail.com
+  RegistrationSmtpPort:
+    Type: Number
+    Default: 465
+  RegistrationSmtpSecure:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+  RegistrationNotificationEmails:
+    Type: String
+    Default: ''
+  RegistrationOutputPublicBaseUrl:
+    Type: String
+    Default: ''
+  RegistrationArtifactsBucketName:
+    Type: String
+    Default: ''
+  RegistrationTemplateKey:
+    Type: String
+    Default: registration-assets/register-form-empty.pdf
+  RegistrationPdfFontKey:
+    Type: String
+    Default: registration-assets/Manrope-Regular.ttf
+
+Conditions:
+  HasCustomBucketName: !Not [!Equals [!Ref RegistrationArtifactsBucketName, '']]
+  HasOutputPublicBaseUrl: !Not [!Equals [!Ref RegistrationOutputPublicBaseUrl, '']]
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 60
+    MemorySize: 512
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        NEXT_PUBLIC_SUPABASE_URL: !Ref SupabaseUrl
+        SUPABASE_SERVICE_KEY: !Ref SupabaseServiceKey
+        AWS_REGISTRATION_OUTPUT_BUCKET: !Ref RegistrationArtifactsBucket
+        AWS_REGISTRATION_TEMPLATE_BUCKET: !Ref RegistrationArtifactsBucket
+        AWS_REGISTRATION_TEMPLATE_KEY: !Ref RegistrationTemplateKey
+        AWS_REGISTRATION_PDF_FONT_BUCKET: !Ref RegistrationArtifactsBucket
+        AWS_REGISTRATION_PDF_FONT_KEY: !Ref RegistrationPdfFontKey
+        REGISTRATION_SMTP_HOST: !Ref RegistrationSmtpHost
+        REGISTRATION_SMTP_PORT: !Sub '${RegistrationSmtpPort}'
+        REGISTRATION_SMTP_SECURE: !Ref RegistrationSmtpSecure
+        REGISTRATION_SMTP_USER: !Ref RegistrationSmtpUser
+        REGISTRATION_SMTP_PASSWORD: !Ref RegistrationSmtpPassword
+        REGISTRATION_SMTP_FROM: !Ref RegistrationSmtpFrom
+        REGISTRATION_NOTIFICATION_EMAILS: !Ref RegistrationNotificationEmails
+        AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL: !If
+          - HasOutputPublicBaseUrl
+          - !Ref RegistrationOutputPublicBaseUrl
+          - !Ref AWS::NoValue
+
+Resources:
+  RegistrationArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !If
+        - HasCustomBucketName
+        - !Ref RegistrationArtifactsBucketName
+        - !Ref AWS::NoValue
+
+  RegistrationEventsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: registration-events
+
+  RegistrationBlanksDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: registration_blanks_dlq
+      MessageRetentionPeriod: 1209600
+
+  RegistrationNotificationsDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: registration_notifications_dlq
+      MessageRetentionPeriod: 1209600
+
+  RegistrationBlanksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: registration_blanks
+      VisibilityTimeout: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RegistrationBlanksDeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  RegistrationNotificationsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: registration_notifications
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RegistrationNotificationsDeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  RegistrationBlanksQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref RegistrationBlanksQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: sqs:SendMessage
+            Resource: !GetAtt RegistrationBlanksQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref RegistrationEventsTopic
+
+  RegistrationNotificationsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref RegistrationNotificationsQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: sqs:SendMessage
+            Resource: !GetAtt RegistrationNotificationsQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref RegistrationEventsTopic
+
+  RegistrationBlanksSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref RegistrationEventsTopic
+      Protocol: sqs
+      Endpoint: !GetAtt RegistrationBlanksQueue.Arn
+      RawMessageDelivery: true
+
+  RegistrationNotificationsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref RegistrationEventsTopic
+      Protocol: sqs
+      Endpoint: !GetAtt RegistrationNotificationsQueue.Arn
+      RawMessageDelivery: true
+
+  RegistrationBlanksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: registration-blanks
+      CodeUri: ..
+      Handler: src/lambdas/registrations/registrationBlanks.handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - S3CrudPolicy:
+            BucketName: !Ref RegistrationArtifactsBucket
+      Events:
+        RegistrationBlanksSqs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RegistrationBlanksQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambdas/registrations/registrationBlanks.ts
+        Minify: false
+        Sourcemap: false
+        Target: es2020
+
+  RegistrationNotificationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: registration-notifications
+      CodeUri: ..
+      Handler: src/lambdas/registrations/registrationNotifications.handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - S3ReadPolicy:
+            BucketName: !Ref RegistrationArtifactsBucket
+      Events:
+        RegistrationNotificationsSqs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RegistrationNotificationsQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambdas/registrations/registrationNotifications.ts
+        Minify: false
+        Sourcemap: false
+        Target: es2020
+
+Outputs:
+  RegistrationEventsTopicArn:
+    Value: !Ref RegistrationEventsTopic
+  RegistrationArtifactsBucketName:
+    Value: !Ref RegistrationArtifactsBucket
+  RegistrationBlanksFunctionName:
+    Value: !Ref RegistrationBlanksFunction
+  RegistrationNotificationsFunctionName:
+    Value: !Ref RegistrationNotificationsFunction
+  RegistrationBlanksQueueUrl:
+    Value: !Ref RegistrationBlanksQueue
+  RegistrationNotificationsQueueUrl:
+    Value: !Ref RegistrationNotificationsQueue

@@ -11,7 +11,6 @@ type Props = {
   eventId: string
   eventTitle: string
   eventDate: string
-  supportFiles: string[]
 }
 
 const ANIMATION_DURATION_MS = 240
@@ -20,7 +19,6 @@ export default function EventRegistrationModal({
   eventId,
   eventTitle,
   eventDate,
-  supportFiles,
 }: Props) {
   const t = useTranslations('events')
   const pathname = usePathname()
@@ -29,7 +27,7 @@ export default function EventRegistrationModal({
   const isOpen = searchParams.get('register') === '1'
   const [shouldRender, setShouldRender] = useState(isOpen)
   const [isVisible, setIsVisible] = useState(false)
-  const closeTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
+  const closeTimeoutRef = useRef<number | null>(null)
 
   function clearCloseTimeout() {
     if (closeTimeoutRef.current) {
@@ -157,7 +155,7 @@ export default function EventRegistrationModal({
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6">
-              <EventRegistrationForm eventId={eventId} supportFiles={supportFiles} />
+              <EventRegistrationForm eventId={eventId} />
             </div>
           </div>
         </div>

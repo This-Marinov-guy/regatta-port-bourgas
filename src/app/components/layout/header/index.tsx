@@ -100,52 +100,34 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className={`fixed h-24 py-1 z-50 w-full bg-transparent transition-all duration-300 lg:px-0 px-4 ${
+      className={`fixed py-1 z-50 w-full bg-transparent transition-all duration-300 lg:px-0 px-4 ${
         sticky ? "top-3" : "top-0 rounded-b-3xl"
       }`}
     >
       <nav
-        className={`container mx-auto max-w-8xl flex items-center justify-between py-4 duration-300 ${
+        className={`container mx-auto max-w-8xl flex items-center justify-between transition-all duration-300 ${
           sticky
-            ? "shadow-lg bg-white dark:bg-dark rounded-full top-5 px-4"
-            : "shadow-none top-0 rounded-b-3xl"
+            ? "py-2 shadow-lg bg-white dark:bg-dark rounded-full px-4"
+            : "py-4 shadow-none rounded-b-3xl"
         }`}
       >
         <div className="flex justify-between items-center gap-2 w-[98%] m-auto">
           <div>
             <Link href={`/${locale}`}>
-              <Image
-                src={"/images/logos/logo-50.gif"}
-                alt="logo"
-                width={80}
-                height={80}
-                unoptimized={true}
-                className={`logo ${
-                  isHomepage
-                    ? sticky
-                      ? "block dark:hidden"
-                      : "hidden"
-                    : sticky
-                    ? "block dark:hidden"
-                    : "block dark:hidden"
-                }`}
-              />
-              <Image
-                src={"/images/logos/logo-50.gif"}
-                alt="logo"
-                width={80}
-                height={80}
-                unoptimized={true}
-                className={`logo ${
-                  isHomepage
-                    ? sticky
-                      ? "hidden dark:block"
-                      : "block"
-                    : sticky
-                    ? "dark:block hidden"
-                    : "dark:block hidden"
-                }`}
-              />
+              <div
+                className="relative overflow-hidden transition-all duration-300"
+                style={{ width: sticky ? 48 : 72, height: sticky ? 48 : 72 }}
+              >
+                <Image
+                  src={"/images/logos/logo-50.gif"}
+                  alt="logo"
+                  fill
+                  unoptimized
+                  className={`object-contain rounded-full ${
+                    isHomepage && !sticky ? "hidden sm:block" : "block"
+                  }`}
+                />
+              </div>
             </Link>
           </div>
 

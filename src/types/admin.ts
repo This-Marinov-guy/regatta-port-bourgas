@@ -61,8 +61,7 @@ export type RegistrationStatus = 'pending' | 'approved' | 'rejected'
 
 export type CrewMember = {
   name: string
-  role?: string
-  email?: string
+  date_of_birth?: string
 }
 
 export type RegistrationRecord = {
@@ -70,7 +69,6 @@ export type RegistrationRecord = {
   event_id: string
 
   // Boat
-  email: string
   boat_name: string
   border_number: string | null
   country: string
@@ -105,6 +103,7 @@ export type RegistrationRecord = {
   gdpr_accepted: boolean
 
   crew_list: CrewMember[]
+  generated_form_url: string | null
   status: RegistrationStatus
   created_at: string
   updated_at: string

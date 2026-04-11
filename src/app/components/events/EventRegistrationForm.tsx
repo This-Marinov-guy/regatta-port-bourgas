@@ -2,17 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
+import { format } from 'date-fns'
+import { bg, enUS } from 'date-fns/locale'
+import DatePicker from 'react-datepicker'
 import { useLocale } from 'next-intl'
 import { Button } from '@/app/components/ui/button'
 
 type CrewMemberDraft = {
   name: string
-  role: string
-  email: string
+  date_of_birth: string
 }
 
 type RegistrationDraft = {
-  email: string
   boat_name: string
   border_number: string
   country: string
@@ -44,22 +45,9 @@ type RegistrationDraft = {
 
 type Props = {
   eventId: string
-  supportFiles: string[]
 }
 
-function normalizeSupportFiles(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter(
-      (item): item is string => typeof item === 'string' && item.trim().length > 0
-    )
-  }
-
-  if (typeof value === 'string' && value.trim().length > 0) {
-    return [value]
-  }
-
-  return []
-}
+type LegalModalKey = 'disclaimer' | 'gdpr'
 
 function syncSkipperIntoCrew(
   crewList: CrewMemberDraft[] | undefined,
@@ -69,10 +57,9 @@ function syncSkipperIntoCrew(
     crewList && crewList.length > 0
       ? crewList.map((member) => ({
           name: member.name ?? '',
-          role: member.role ?? '',
-          email: member.email ?? '',
+          date_of_birth: member.date_of_birth ?? '',
         }))
-      : [{ name: '', role: '', email: '' }]
+      : [{ name: '', date_of_birth: '' }]
 
   return normalizedCrew.map((member, index) =>
     index === 0 ? { ...member, name: skipperName } : member
@@ -80,7 +67,6 @@ function syncSkipperIntoCrew(
 }
 
 const defaultDraft = (): RegistrationDraft => ({
-  email: '',
   boat_name: '',
   border_number: '',
   country: '',
@@ -107,7 +93,7 @@ const defaultDraft = (): RegistrationDraft => ({
   third_party_insurance: false,
   disclaimer_accepted: false,
   gdpr_accepted: false,
-  crew_list: [{ name: '', role: '', email: '' }]
+  crew_list: [{ name: '', date_of_birth: '' }]
 })
 
 const content = {
@@ -127,7 +113,6 @@ const content = {
     skipperCrewTitle: 'Skipper',
     crewMemberTitle: 'Crew member',
     labels: {
-      email: 'Boat email',
       boat_name: 'Boat name',
       border_number: 'Border number',
       country: 'Country',
@@ -157,8 +142,7 @@ const content = {
       disclaimer_accepted: 'I accept the event disclaimer',
       gdpr_accepted: 'I accept the GDPR / privacy terms',
       crew_name: 'Crew member name',
-      crew_role: 'Role',
-      crew_email: 'Crew member email',
+      crew_date_of_birth: 'Date of birth',
     },
     placeholders: {
       country: 'Bulgaria',
@@ -168,7 +152,7 @@ const content = {
     },
     addCrew: 'Add crew member',
     removeCrew: 'Remove',
-    openCalendar: 'Open calendar',
+    datePlaceholder: 'Select a date',
     clearDraft: 'Clear saved draft',
     submit: 'Submit registration',
     submitting: 'Submitting...',
@@ -178,6 +162,17 @@ const content = {
     error: 'We could not submit your registration. Please try again.',
     crewEmpty:
       'The first row is the skipper and is filled from the skipper information above. Add more rows only for the rest of the crew.',
+    legal: {
+      disclaimerLink: 'Read disclaimer',
+      gdprLink: 'Read GDPR notice',
+      disclaimerTitle: 'Event disclaimer',
+      gdprTitle: 'GDPR notice',
+      close: 'Close',
+      disclaimerBody:
+        'By electronically agreeing this document, all competitors agree to be bound by The Racing Rules of Sailing and by all other rules that govern this event. Also they declare that they are sailing at own risk and responsibility. The organizing authority and any other person or entity involved in the organization of the event will not accept any liability for any loss, damage, injury or death which may occur to person or property, both ashore and afloat, as a consequence of participation in the event.',
+      gdprBody:
+        'By electronically agreeing this document, I assume responsibility for the accuracy of the data provided and understand that it will be used to fulfill the obligations imposed by law. Data will be protected in accordance with the provisions of Regulation (EU) No. 679/2016 of the European Parliament and of the Council of the European Union on the protection of individuals with regard to the processing of personal data and on the free movement of such data. As a result, I agree with the processing of this information.',
+    },
   },
   bg: {
     introTitle: 'Регистрационна форма',
@@ -195,7 +190,6 @@ const content = {
     skipperCrewTitle: 'Шкипер',
     crewMemberTitle: 'Член на екипажа',
     labels: {
-      email: 'Имейл на лодката',
       boat_name: 'Име на лодката',
       border_number: 'Борден номер',
       country: 'Държава',
@@ -225,8 +219,7 @@ const content = {
       disclaimer_accepted: 'Приемам декларацията на събитието',
       gdpr_accepted: 'Приемам GDPR / условията за поверителност',
       crew_name: 'Име на член от екипажа',
-      crew_role: 'Роля',
-      crew_email: 'Имейл на член от екипажа',
+      crew_date_of_birth: 'Дата на раждане',
     },
     placeholders: {
       country: 'България',
@@ -236,7 +229,7 @@ const content = {
     },
     addCrew: 'Добави член на екипажа',
     removeCrew: 'Премахни',
-    openCalendar: 'Отвори календар',
+    datePlaceholder: 'Изберете дата',
     clearDraft: 'Изчисти запазената чернова',
     submit: 'Изпрати регистрация',
     submitting: 'Изпращане...',
@@ -246,15 +239,22 @@ const content = {
     error: 'Неуспешно изпращане на регистрацията. Моля, опитайте отново.',
     crewEmpty:
       'Първият ред е за шкипера и се попълва автоматично от секцията за шкипер по-горе. Добавяйте следващи редове само за останалите членове на екипажа.',
+    legal: {
+      disclaimerLink: 'Прочети декларацията',
+      gdprLink: 'Прочети GDPR информацията',
+      disclaimerTitle: 'Декларация за участие',
+      gdprTitle: 'GDPR информация',
+      close: 'Затвори',
+      disclaimerBody:
+        'С подписването на този електронен документ, всички състезатели приемат и се съгласяват с условията му и ще бъдат обвързани със Състезателните правила по ветроходство и с всички други правила и документи, които управляват това събитие. Освен това същите заявяват, че ще се състезават на собствен риск и отговорност. Организаторът и всяко друго физическо или юридическо лице, участващи в организацията на събитието, няма да поеме никаква отговорност за загуби и/или щети на имущество или при нараняване или смърт на лице, както на сушата, така и във водата, както и в резултат от участието в събитието.',
+      gdprBody:
+        'С подписването на този електронен документ, аз се съгласявам да поема цялата отговорност за достоверността на предоставените от мен данни и разбирам, че той ще бъде използван за изпълнение на задълженията, наложени от закона. Данните ще бъдат защитени в съответствие с разпоредбите на Регламент (ЕС) 2016/679 на Европейския парламент и на Съвета, относно защитата на лицата по отношение на обработката на лични данни и за свободното движение на такива данни. В резултат на това съм съгласен с обработката на предоставената от мен информация.',
+    },
   },
 } as const
 
 function getStorageKey(eventId: string) {
   return `event-registration-draft:${eventId}`
-}
-
-function fileLabel(url: string) {
-  return decodeURIComponent(url.split('/').pop()?.split('?')[0] || url)
 }
 
 function DraftField({
@@ -281,46 +281,58 @@ function inputClassName() {
   return 'w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:border-white/10 dark:bg-black/30 dark:text-white'
 }
 
-function DateInput({
-  value,
-  onChange,
-  ariaLabel,
-}: {
-  value: string
-  onChange: (value: string) => void
-  ariaLabel: string
-}) {
-  const inputRef = useRef<HTMLInputElement | null>(null)
-
-  function openPicker() {
-    const input = inputRef.current
-    if (!input) {
-      return
-    }
-
-    input.focus()
-    if ('showPicker' in input && typeof input.showPicker === 'function') {
-      input.showPicker()
-    }
+function parseDateValue(value: string) {
+  if (!value) {
+    return null
   }
 
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) {
+    return null
+  }
+
+  return new Date(year, month - 1, day)
+}
+
+function formatDateValue(value: Date | null) {
+  if (!value) {
+    return ''
+  }
+
+  return format(value, 'yyyy-MM-dd')
+}
+
+function DateInput({
+  locale,
+  value,
+  onChange,
+  placeholder,
+}: {
+  locale: 'en' | 'bg'
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+}) {
   return (
     <div className="relative">
-      <input
-        ref={inputRef}
-        type="date"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={`${inputClassName()} pr-12 [color-scheme:light] dark:[color-scheme:dark]`}
+      <DatePicker
+        selected={parseDateValue(value)}
+        onChange={(date) => onChange(formatDateValue(date))}
+        dateFormat="dd.MM.yyyy"
+        placeholderText={placeholder}
+        locale={locale === 'bg' ? bg : enUS}
+        className={`${inputClassName()} pr-12`}
+        calendarClassName="event-registration-datepicker"
+        popperClassName="event-registration-datepicker-popper"
+        wrapperClassName="w-full"
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+        isClearable
       />
-      <button
-        type="button"
-        onClick={openPicker}
-        aria-label={ariaLabel}
-        className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl border border-black/10 bg-white text-primary transition hover:bg-primary/5 dark:border-white/10 dark:bg-black/20"
-      >
+      <span className="pointer-events-none absolute right-4 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-primary">
         <Icon icon="ph:calendar-blank-bold" width={18} height={18} />
-      </button>
+      </span>
     </div>
   )
 }
@@ -342,18 +354,59 @@ function SectionCard({
   )
 }
 
-export default function EventRegistrationForm({ eventId, supportFiles }: Props) {
+function LegalInfoModal({
+  title,
+  body,
+  closeLabel,
+  onClose,
+}: {
+  title: string
+  body: string
+  closeLabel: string
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[140] bg-black/55 px-4 py-6 backdrop-blur-sm">
+      <div
+        className="absolute inset-0"
+        aria-hidden="true"
+        onClick={onClose}
+      />
+      <div className="relative mx-auto flex min-h-full max-w-3xl items-center justify-center">
+        <div className="w-full rounded-[1.75rem] border border-black/10 bg-[#f8f6ef] p-6 shadow-2xl dark:border-white/10 dark:bg-[#11110f] sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-2xl font-semibold text-dark dark:text-white">
+                {title}
+              </h3>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="rounded-xl border-black/10 bg-white text-dark dark:border-white/10 dark:bg-black/20 dark:text-white"
+            >
+              {closeLabel}
+            </Button>
+          </div>
+          <div className="mt-5 max-h-[70vh] overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white/80 p-5 text-sm leading-7 whitespace-pre-line text-dark/80 dark:border-white/10 dark:bg-black/20 dark:text-white/80">
+            {body}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function EventRegistrationForm({ eventId }: Props) {
   const locale = useLocale() === 'bg' ? 'bg' : 'en'
   const t = content[locale]
-  const safeSupportFiles = useMemo(
-    () => normalizeSupportFiles(supportFiles),
-    [supportFiles]
-  )
   const storageKey = useMemo(() => getStorageKey(eventId), [eventId])
   const [form, setForm] = useState<RegistrationDraft>(() => defaultDraft())
   const [submitting, setSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [activeLegalModal, setActiveLegalModal] = useState<LegalModalKey | null>(null)
   const hydratedRef = useRef(false)
 
   useEffect(() => {
@@ -400,7 +453,7 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
                   ? { ...member, name: String(value) }
                   : member
               )
-            : [{ name: String(value), role: '', email: '' }]
+            : [{ name: String(value), date_of_birth: '' }]
 
         return {
           ...current,
@@ -432,7 +485,7 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
   function addCrewMember() {
     setForm((current) => ({
       ...current,
-      crew_list: [...current.crew_list, { name: '', role: '', email: '' }],
+      crew_list: [...current.crew_list, { name: '', date_of_birth: '' }],
     }))
   }
 
@@ -445,7 +498,7 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
       ...current,
       crew_list:
         current.crew_list.length === 1
-          ? [{ name: '', role: '', email: '' }]
+          ? [{ name: '', date_of_birth: '' }]
           : current.crew_list.filter((_, memberIndex) => memberIndex !== index),
     }))
   }
@@ -497,18 +550,26 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
 
   return (
     <div className="space-y-6">
+      {activeLegalModal ? (
+        <LegalInfoModal
+          title={
+            activeLegalModal === 'disclaimer'
+              ? t.legal.disclaimerTitle
+              : t.legal.gdprTitle
+          }
+          body={
+            activeLegalModal === 'disclaimer'
+              ? t.legal.disclaimerBody
+              : t.legal.gdprBody
+          }
+          closeLabel={t.legal.close}
+          onClose={() => setActiveLegalModal(null)}
+        />
+      ) : null}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <SectionCard title={t.boatSection}>
           <div className="grid gap-4 md:grid-cols-2">
-            <DraftField label={t.labels.email} required>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) => updateField('email', event.target.value)}
-                required
-                className={inputClassName()}
-              />
-            </DraftField>
             <DraftField label={t.labels.boat_name} required>
               <input
                 value={form.boat_name}
@@ -544,11 +605,12 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
             </DraftField>
             <DraftField label={t.labels.certificate_of_navigation_expiry}>
               <DateInput
+                locale={locale}
                 value={form.certificate_of_navigation_expiry}
                 onChange={(value) =>
                   updateField('certificate_of_navigation_expiry', value)
                 }
-                ariaLabel={t.openCalendar}
+                placeholder={t.datePlaceholder}
               />
             </DraftField>
             <DraftField label={t.labels.model_design} required>
@@ -665,11 +727,12 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
             </DraftField>
             <DraftField label={t.labels.certificate_of_competency_expiry}>
               <DateInput
+                locale={locale}
                 value={form.certificate_of_competency_expiry}
                 onChange={(value) =>
                   updateField('certificate_of_competency_expiry', value)
                 }
-                ariaLabel={t.openCalendar}
+                placeholder={t.datePlaceholder}
               />
             </DraftField>
           </div>
@@ -740,7 +803,7 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
 
                 <div
                   className={`grid gap-4 ${
-                    index === 0 ? 'md:grid-cols-2' : 'md:grid-cols-3'
+                    index === 0 ? 'md:grid-cols-2' : 'md:grid-cols-2'
                   }`}
                 >
                   <DraftField label={t.labels.crew_name}>
@@ -757,25 +820,14 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
                       }`}
                     />
                   </DraftField>
-                  {index > 0 ? (
-                    <DraftField label={t.labels.crew_role}>
-                      <input
-                        value={member.role}
-                        onChange={(event) =>
-                          updateCrewMember(index, 'role', event.target.value)
-                        }
-                        className={inputClassName()}
-                      />
-                    </DraftField>
-                  ) : null}
-                  <DraftField label={t.labels.crew_email}>
-                    <input
-                      type="email"
-                      value={member.email}
-                      onChange={(event) =>
-                        updateCrewMember(index, 'email', event.target.value)
+                  <DraftField label={t.labels.crew_date_of_birth}>
+                    <DateInput
+                      locale={locale}
+                      value={member.date_of_birth}
+                      onChange={(value) =>
+                        updateCrewMember(index, 'date_of_birth', value)
                       }
-                      className={inputClassName()}
+                      placeholder={t.datePlaceholder}
                     />
                   </DraftField>
                 </div>
@@ -783,12 +835,11 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
             ))}
           </div>
 
-          <div className="mt-5">
+          <div className="mt-6 flex justify-center">
             <Button
               type="button"
-              variant="outline"
               onClick={addCrewMember}
-              className="rounded-xl border-black/10 bg-white text-dark"
+              className="rounded-xl bg-primary px-6 text-white hover:bg-primary/90"
             >
               {t.addCrew}
             </Button>
@@ -806,19 +857,42 @@ export default function EventRegistrationForm({ eventId, supportFiles }: Props) 
                 'receive_documents_by_email',
               ] as const
             ).map((field) => (
-              <label
+              <div
                 key={field}
                 className="flex items-start gap-3 rounded-2xl border border-black/10 bg-white/70 px-4 py-4 text-sm text-dark dark:border-white/10 dark:bg-black/20 dark:text-white"
               >
                 <input
                   type="checkbox"
+                  id={field}
                   checked={form[field]}
                   onChange={(event) => updateField(field, event.target.checked)}
                   required={field === 'disclaimer_accepted' || field === 'gdpr_accepted'}
                   className="mt-1 h-4 w-4 rounded border-black/20 text-primary focus:ring-primary"
                 />
-                <span>{t.labels[field]}</span>
-              </label>
+                <div>
+                  <label htmlFor={field} className="cursor-pointer">
+                    {t.labels[field]}
+                  </label>
+                  {field === 'disclaimer_accepted' ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveLegalModal('disclaimer')}
+                      className="mt-2 block text-sm font-semibold text-primary hover:underline"
+                    >
+                      {t.legal.disclaimerLink}
+                    </button>
+                  ) : null}
+                  {field === 'gdpr_accepted' ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveLegalModal('gdpr')}
+                      className="mt-2 block text-sm font-semibold text-primary hover:underline"
+                    >
+                      {t.legal.gdprLink}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             ))}
           </div>
         </SectionCard>
