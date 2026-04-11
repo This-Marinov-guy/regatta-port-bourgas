@@ -17,9 +17,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: t('title'),
       description: t('subtitle'),
-      images: [{ url: `${siteUrl}/images/banner.jpg`, width: 1200, height: 630, alt: t('title') }],
+      images: [{ url: `${siteUrl}/images/banner.png`, width: 1200, height: 630, alt: t('title') }],
     },
-    twitter: { card: 'summary_large_image', title: t('title'), description: t('subtitle'), images: [`${siteUrl}/images/banner.jpg`] },
+    twitter: { card: 'summary_large_image', title: t('title'), description: t('subtitle'), images: [`${siteUrl}/images/banner.png`] },
     alternates: {
       canonical: `${siteUrl}/${locale}/events`,
       languages: { en: `${siteUrl}/en/events`, bg: `${siteUrl}/bg/events` },

@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     description: 'Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.',
     images: [
       {
-        url: `${siteUrl}/images/banner.jpg`,
+        url: `${siteUrl}/images/banner.png`,
         width: 1200,
         height: 630,
         alt: 'International Regatta Port Bourgas - Sailing Competition',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'International Regatta Port Bourgas | Sailing Events & Competitions',
     description: 'Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, and connect with the sailing community.',
-    images: [`${siteUrl}/images/banner.jpg`],
+    images: [`${siteUrl}/images/banner.png`],
   },
   alternates: {
     canonical: siteUrl,

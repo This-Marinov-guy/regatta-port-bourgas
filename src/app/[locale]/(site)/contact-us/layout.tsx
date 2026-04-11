@@ -20,9 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      images: [{ url: `${siteUrl}/images/banner.jpg`, width: 1200, height: 630, alt: title }],
+      images: [{ url: `${siteUrl}/images/banner.png`, width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: 'summary_large_image', title, description, images: [`${siteUrl}/images/banner.jpg`] },
+    twitter: { card: 'summary_large_image', title, description, images: [`${siteUrl}/images/banner.png`] },
     alternates: {
       canonical: `${siteUrl}/${locale}/contact-us`,
       languages: { en: `${siteUrl}/en/contact-us`, bg: `${siteUrl}/bg/contact-us` },

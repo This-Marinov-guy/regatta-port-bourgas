@@ -50,7 +50,7 @@ export async function generateMetadata({
   const alternateLocale = locale === 'en' ? 'bg_BG' : 'en_US';
   const localeUrl = `${siteUrl}/${locale}`;
   const alternateUrl = locale === 'en' ? `${siteUrl}/bg` : `${siteUrl}/en`;
-  const ogImageUrl = `${siteUrl}/images/banner.jpg`;
+  const ogImageUrl = `${siteUrl}/images/banner.png`;
 
   return {
     metadataBase: new URL(siteUrl),

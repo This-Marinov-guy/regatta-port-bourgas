@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = locale === 'bg' ? event.name_bg : event.name_en
   const description = (locale === 'bg' ? event.description_bg : event.description_en) ?? ''
-  const image = event.thumbnail_img || `${siteUrl}/images/banner.jpg`
+  const image = event.thumbnail_img || `${siteUrl}/images/banner.png`
 
   return {
     title,

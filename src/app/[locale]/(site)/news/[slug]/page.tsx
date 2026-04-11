@@ -31,9 +31,9 @@ export async function generateMetadata({ params }: Props) {
       type: 'article',
       publishedTime: news.created_at,
       modifiedTime: news.updated_at,
-      images: [{ url: `${siteUrl}/images/banner.jpg`, width: 1200, height: 630, alt: title }],
+      images: [{ url: `${siteUrl}/images/banner.png`, width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: 'summary_large_image', title, description, images: [`${siteUrl}/images/banner.jpg`] },
+    twitter: { card: 'summary_large_image', title, description, images: [`${siteUrl}/images/banner.png`] },
     alternates: {
       canonical: `${siteUrl}/${locale}/news/${slug}`,
       languages: { en: `${siteUrl}/en/news/${slug}`, bg: `${siteUrl}/bg/news/${slug}` },
@@ -68,7 +68,7 @@ export default async function NewsDetailPage({ params }: Props) {
     description,
     datePublished: news.created_at,
     dateModified: news.updated_at,
-    image: `${siteUrl}/images/banner.jpg`,
+    image: `${siteUrl}/images/banner.png`,
     url: `${siteUrl}/${locale}/news/${news.slug}`,
     publisher: {
       '@type': 'SportsOrganization',
