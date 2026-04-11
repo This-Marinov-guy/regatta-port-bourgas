@@ -1,25 +1,26 @@
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import EventCard from '@/app/components/events/EventCard'
-import { EVENTS } from '@/lib/events'
-import Divider from '@/app/components/common/Divider'
+import { getEvents } from '@/lib/events'
+import Breadcrumb from '@/app/components/breadcrumb'
 
 export default async function EventsPage() {
   const t = await getTranslations()
+  const locale = await getLocale()
 
-  const future = EVENTS.filter((e) => e.status === 'future')
-  const past = EVENTS.filter((e) => e.status === 'past')
+  const events = await getEvents()
+  const future = events.filter((e) => e.status === 1)
+  const past = events.filter((e) => e.status === 2)
 
   return (
-    <main className="bg-white dark:bg-black">
-      <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28">
-        <div className="mb-10 md:mb-14">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-dark dark:text-white mb-3">
-            {t('events.title')}
-          </h1>
-          <p className="text-dark/60 dark:text-white/60 text-sm sm:text-base max-w-3xl">
-            {t('events.subtitle')}
-          </p>
-        </div>
+    <main className="site-page-bg">
+      <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-12 md:pt-44 pb-14 md:pb-28">
+        <Breadcrumb
+          image="/images/breadcrumbs/1.jpg"
+          links={[
+            { href: `/${locale}`, text: t('navigation.home') },
+            { href: `/${locale}/events`, text: t('events.title') }
+          ]}
+        />
 
         <section className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-semibold text-dark dark:text-white mb-6">
@@ -28,12 +29,12 @@ export default async function EventsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {future.map((event) => (
               <EventCard
-                key={event.slug}
+                key={event.id}
                 href={`/events/${event.slug}`}
-                imageSrc={event.imageSrc}
-                title={t(event.titleKey)}
-                dateFrom={event.dateFrom}
-                dateTo={event.dateTo}
+                imageSrc={event.thumbnail_img ?? ''}
+                title={locale === 'bg' ? event.name_bg : event.name_en}
+                dateFrom={event.start_date}
+                dateTo={event.end_date}
                 detailsLabel={t('events.details')}
                 currentLabel={t('events.current')}
               />
@@ -41,9 +42,7 @@ export default async function EventsPage() {
           </div>
         </section>
 
-        {/* <Divider /> */}
-
-        <hr/>
+        <hr />
 
         <section className="mt-8">
           <h2 className="text-2xl sm:text-3xl font-semibold text-dark dark:text-white mb-6">
@@ -52,12 +51,12 @@ export default async function EventsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {past.map((event) => (
               <EventCard
-                key={event.slug}
+                key={event.id}
                 href={`/events/${event.slug}`}
-                imageSrc={event.imageSrc}
-                title={t(event.titleKey)}
-                dateFrom={event.dateFrom}
-                dateTo={event.dateTo}
+                imageSrc={event.thumbnail_img ?? ''}
+                title={locale === 'bg' ? event.name_bg : event.name_en}
+                dateFrom={event.start_date}
+                dateTo={event.end_date}
                 detailsLabel={t('events.details')}
                 currentLabel={t('events.current')}
               />
@@ -68,4 +67,3 @@ export default async function EventsPage() {
     </main>
   )
 }
-

@@ -162,7 +162,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} bg-white dark:bg-black antialiased`} suppressHydrationWarning>
+      <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} site-page-bg antialiased`} suppressHydrationWarning>
         <NextTopLoader color="#3435AA" />
         <NextIntlClientProvider messages={messages}>
           <SessionProviderComp session={session}>

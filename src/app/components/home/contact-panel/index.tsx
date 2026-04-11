@@ -1,7 +1,7 @@
 'use client'
 import { Icon } from '@iconify/react'
 import { useTranslations } from 'next-intl'
-import { CLUB_EMAIL, CLUB_PHONE } from '@/utils/defines/CONTACTS'
+import { CLUB_PHONE } from '@/utils/defines/CONTACTS'
 import { CLUB_FB, CLUB_INSTA } from '@/utils/defines/SOCIAL'
 import Link from 'next/link'
 
@@ -38,7 +38,7 @@ const ContactPanel: React.FC = () => {
               <span>{CLUB_PHONE}</span>
             </a>
             
-            <a
+            {/* <a
               href={`mailto:${CLUB_EMAIL}`}
               className="flex items-center gap-2 text-sm text-dark dark:text-white hover:text-primary transition-colors"
             >
@@ -49,7 +49,7 @@ const ContactPanel: React.FC = () => {
                 className="text-primary"
               />
               <span className="break-all">{CLUB_EMAIL}</span>
-            </a>
+            </a> */}
           </div>
 
           <div className="flex items-center gap-3 pt-2 border-t border-black/10 dark:border-white/10">

@@ -1,21 +1,21 @@
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
-
 import EventCard from '@/app/components/events/EventCard'
-import { EVENTS } from '@/lib/events'
+import { getEvents } from '@/lib/events'
 import Image from 'next/image'
 
 export default async function EventsPreview() {
   const t = await getTranslations()
+  const locale = await getLocale()
 
-  const future = EVENTS.filter((e) => e.status === 'future')
-    .slice()
-    .sort((a, b) => new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime())
-
-  const firstTwo = future.slice(0, 2)
+  const events = await getEvents()
+  const firstTwo = events
+    .filter((e) => e.status === 1)
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+    .slice(0, 2)
 
   return (
-    <section className="py-16 md:py-24 bg-white dark:bg-black">
+    <section className="py-16 md:py-24 bg-transparent">
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10 md:mb-14">
           <div>
@@ -39,12 +39,12 @@ export default async function EventsPreview() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {firstTwo.map((event) => (
             <EventCard
-              key={event.slug}
+              key={event.id}
               href={`/events/${event.slug}`}
-              imageSrc={event.imageSrc}
-              title={t(event.titleKey)}
-              dateFrom={event.dateFrom}
-              dateTo={event.dateTo}
+              imageSrc={event.thumbnail_img ?? ''}
+              title={locale === 'bg' ? event.name_bg : event.name_en}
+              dateFrom={event.start_date}
+              dateTo={event.end_date}
               detailsLabel={t("events.details")}
               currentLabel={t("events.current")}
             />
@@ -54,4 +54,3 @@ export default async function EventsPreview() {
     </section>
   );
 }
-

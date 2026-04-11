@@ -29,7 +29,7 @@ export default async function NotFoundPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white dark:bg-black">
+    <main className="site-page-bg min-h-screen">
       <div className="container mx-auto">
         <section className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="flex justify-center mb-8">

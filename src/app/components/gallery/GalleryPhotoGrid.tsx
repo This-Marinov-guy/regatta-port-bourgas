@@ -1,14 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import { Icon } from '@iconify/react'
 import { useTranslations } from 'next-intl'
 import { PhotoView } from 'react-photo-view'
-
-type GalleryPhoto = {
-  src: string
-  alt: string
-}
+import type { GalleryPhoto } from '@/lib/googleDriveGallery'
 
 type GalleryPhotoGridProps = {
   photos: GalleryPhoto[]
@@ -19,7 +14,7 @@ export default function GalleryPhotoGrid({ photos, year }: GalleryPhotoGridProps
   const t = useTranslations('gallery')
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-3">
       {photos.map((photo, idx) => (
         <PhotoView
           key={photo.src}
@@ -27,20 +22,20 @@ export default function GalleryPhotoGrid({ photos, year }: GalleryPhotoGridProps
         >
           <button
             type="button"
-            className="group relative overflow-hidden rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+            className="group relative block w-full overflow-hidden rounded-lg border border-black/10 bg-black/5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/10 dark:bg-white/5"
             style={{
               animation: `fade-in-up 0.5s ease-out ${idx * 50}ms both`
             }}
             aria-label={t('openPreview', { year, index: idx + 1 })}
           >
-            <div className="relative aspect-square w-full">
-              <Image
+            <div className="relative aspect-square w-full overflow-hidden">
+              <img
                 src={photo.src}
                 alt={photo.alt}
-                fill
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 360px"
-                unoptimized={true}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
+                loading="lazy"
+                decoding="async"
+                referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300" />
               <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">

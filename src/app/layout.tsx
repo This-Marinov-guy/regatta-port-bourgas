@@ -98,10 +98,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} bg-white dark:bg-black antialiased`} suppressHydrationWarning>
+      <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} site-page-bg antialiased`} suppressHydrationWarning>
         {children}
       </body>
     </html>
   )
 }
-

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
-  CLUB_EMAIL,
   CLUB_PHONE,
   MANAGER_EMAIL,
   ADDRESS,
@@ -73,7 +72,7 @@ export default function ContactUs() {
   }, [submitted]);
 
   return (
-    <section className="py-16 md:py-24 bg-white dark:bg-black">
+    <section className="site-page-bg py-16 md:py-24">
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0">
         <div className="mb-12 md:mb-16">
           <div className="text-center">
@@ -114,14 +113,14 @@ export default function ContactUs() {
                     </p>
                   </div>
                 </Link>
-                <Link href={`mailto:${CLUB_EMAIL}`} className="w-full sm:w-fit">
+                {/* <Link href={`mailto:${CLUB_EMAIL}`} className="w-full sm:w-fit">
                   <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
                     <Icon icon={"ph:envelope-simple"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
                     <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary break-all leading-relaxed">
                       {CLUB_EMAIL}
                     </p>
                   </div>
-                </Link>
+                </Link> */}
                 <Link href={`mailto:${MANAGER_EMAIL}`} className="w-full sm:w-fit">
                   <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
                     <Icon icon={"ph:envelope-simple"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />

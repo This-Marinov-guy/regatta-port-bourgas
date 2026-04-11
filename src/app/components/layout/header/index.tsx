@@ -9,7 +9,7 @@ import Image from 'next/image'
 import NavLink from './navigation/NavLink'
 import { signOut, useSession } from 'next-auth/react'
 import LanguageSwitcher from '../language-switcher'
-import { CLUB_EMAIL, CLUB_PHONE } from '@/utils/defines/CONTACTS'
+import { CLUB_PHONE } from '@/utils/defines/CONTACTS'
 
 const Header: React.FC = () => {
   const { data: session } = useSession();
@@ -24,6 +24,7 @@ const Header: React.FC = () => {
   // Create fallback links using translations
   const fallbackLinks = useMemo(() => [
     { label: t('navigation.home'), href: `/${locale}` },
+    { label: t('navigation.aboutUs'), href: `/${locale}/about-us` },
     { label: t('navigation.events'), href: `/${locale}/events` },
     { label: t('navigation.news'), href: `/${locale}/news` },
     { label: t('navigation.gallery'), href: `/${locale}/gallery` },
@@ -100,17 +101,17 @@ const Header: React.FC = () => {
   return (
     <header
       className={`fixed h-24 py-1 z-50 w-full bg-transparent transition-all duration-300 lg:px-0 px-4 ${
-        sticky ? "top-3" : "top-0"
+        sticky ? "top-3" : "top-0 rounded-b-3xl"
       }`}
     >
       <nav
         className={`container mx-auto max-w-8xl flex items-center justify-between py-4 duration-300 ${
           sticky
-            ? "shadow-lg bg-white dark:bg-dark rounded-full top-5 px-4 "
-            : "shadow-none top-0"
+            ? "shadow-lg bg-white dark:bg-dark rounded-full top-5 px-4"
+            : "shadow-none top-0 rounded-b-3xl"
         }`}
       >
-        <div className="flex justify-between items-center gap-2 w-full">
+        <div className="flex justify-between items-center gap-2 w-[98%] m-auto">
           <div>
             <Link href={`/${locale}`}>
               <Image
@@ -155,7 +156,7 @@ const Header: React.FC = () => {
               isSticky={sticky}
             />
 
-            <button
+            {/* <button
               className="hover:cursor-pointer"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
@@ -177,7 +178,7 @@ const Header: React.FC = () => {
                 height={32}
                 className="dark:block hidden text-white"
               />
-            </button>
+            </button> */}
 
             {(user?.user || session?.user) && (
               <div className="relative group flex items-center justify-center">
@@ -299,12 +300,12 @@ const Header: React.FC = () => {
             <p className="text-base sm:text-xm font-normal text-white/40">
               {t('contactPanel.contact')}
             </p>
-            <Link
+            {/* <Link
               href={`mailto:${CLUB_EMAIL}`}
               className="text-base sm:text-xm font-medium text-inherit hover:text-primary"
             >
               {CLUB_EMAIL}
-            </Link>
+            </Link> */}
             <Link
               href={`tel:${CLUB_PHONE.replace(/\s/g, '')}`}
               className="text-base sm:text-xm font-medium text-inherit hover:text-primary"

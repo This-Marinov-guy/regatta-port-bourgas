@@ -1,47 +1,52 @@
-export type NewsItem = {
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { extractNewsAttachmentUrls } from '@/lib/newsAttachments'
+
+export type DbNews = {
+  id: string
   slug: string
-  // ISO date string
-  date: string
-  // Translation keys
-  titleKey: string
-  descriptionKey: string
-  bodyKey: string
+  name_en: string
+  name_bg: string
+  description_en: string | null
+  description_bg: string | null
+  body_en: string
+  body_bg: string
+  attachments: string[]
+  created_at: string
+  updated_at: string
 }
 
-export const NEWS: NewsItem[] = [
-  {
-    slug: 'regatta-2025-announcement',
-    date: '2025-01-15',
-    titleKey: 'news.items.regatta-2025-announcement.title',
-    descriptionKey: 'news.items.regatta-2025-announcement.description',
-    bodyKey: 'news.items.regatta-2025-announcement.body'
-  },
-  {
-    slug: 'new-training-program',
-    date: '2025-01-10',
-    titleKey: 'news.items.new-training-program.title',
-    descriptionKey: 'news.items.new-training-program.description',
-    bodyKey: 'news.items.new-training-program.body'
-  },
-  {
-    slug: 'winter-season-update',
-    date: '2024-12-20',
-    titleKey: 'news.items.winter-season-update.title',
-    descriptionKey: 'news.items.winter-season-update.description',
-    bodyKey: 'news.items.winter-season-update.body'
-  },
-  {
-    slug: 'championship-results-2024',
-    date: '2024-11-15',
-    titleKey: 'news.items.championship-results-2024.title',
-    descriptionKey: 'news.items.championship-results-2024.description',
-    bodyKey: 'news.items.championship-results-2024.body'
-  },
-  {
-    slug: 'safety-guidelines-update',
-    date: '2024-10-05',
-    titleKey: 'news.items.safety-guidelines-update.title',
-    descriptionKey: 'news.items.safety-guidelines-update.description',
-    bodyKey: 'news.items.safety-guidelines-update.body'
+export async function getNews(): Promise<DbNews[]> {
+  const supabase = await createSupabaseServerClient()
+  const { data, error } = await supabase
+    .from('news')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Failed to fetch news:', error)
+    return []
   }
-]
+
+  return (data ?? []).map((item) => ({
+    ...item,
+    attachments: extractNewsAttachmentUrls(item.body_en, item.body_bg)
+  }))
+}
+
+export async function getNewsItem(slug: string): Promise<DbNews | null> {
+  const supabase = await createSupabaseServerClient()
+  const { data, error } = await supabase
+    .from('news')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+
+  if (error) {
+    return null
+  }
+
+  return {
+    ...data,
+    attachments: extractNewsAttachmentUrls(data.body_en, data.body_bg)
+  }
+}

@@ -1,19 +1,18 @@
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import NewsCard from '@/app/components/news/NewsCard'
-import { NEWS } from '@/lib/news'
+import { getNews } from '@/lib/news'
 import Image from 'next/image'
 
 export default async function LatestNews() {
   const t = await getTranslations()
+  const locale = await getLocale()
 
-  // Get 3 latest news items, sorted by date (newest first)
-  const latestNews = [...NEWS]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 3)
+  const news = await getNews()
+  const latestNews = news.slice(0, 3)
 
   return (
-    <section className="py-16 md:py-24 bg-white dark:bg-black">
+    <section className="py-16 md:py-24 bg-transparent">
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10 md:mb-14">
           <div>
@@ -41,13 +40,15 @@ export default async function LatestNews() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {latestNews.map((news) => (
+          {latestNews.map((item) => (
             <NewsCard
-              key={news.slug}
-              href={`/news/${news.slug}`}
-              title={t(news.titleKey)}
-              description={t(news.descriptionKey)}
-              date={news.date}
+              key={item.id}
+              href={`/news/${item.slug}`}
+              title={locale === 'bg' ? item.name_bg : item.name_en}
+              description={
+                (locale === 'bg' ? item.description_bg : item.description_en) ?? ''
+              }
+              date={item.created_at}
             />
           ))}
         </div>

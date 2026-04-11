@@ -6,6 +6,7 @@ import { routing } from "@/i18n/routing";
 // Link structure with translation keys
 const navLinksStructure = [
   { labelKey: "navigation.home", href: "/" },
+  { labelKey: "navigation.aboutUs", href: "/about-us" },
   { labelKey: "navigation.events", href: "/events" },
   { labelKey: "navigation.news", href: "/news" },
   { labelKey: "navigation.gallery", href: "/gallery" },
@@ -14,6 +15,7 @@ const navLinksStructure = [
 ];
 
 const footerLinksStructure = [
+  { labelKey: "navigation.aboutUs", href: "/about-us" },
   { labelKey: "navigation.events", href: "/events" },
   { labelKey: "navigation.news", href: "/news" },
   { labelKey: "navigation.gallery", href: "/gallery" },

@@ -8,7 +8,7 @@ export default async function NotFoundPage() {
   const locale = await getLocale();
 
   return (
-    <main className="min-h-screen bg-white dark:bg-black">
+    <main className="site-page-bg min-h-screen">
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28">
         <section className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="flex justify-center mb-8">

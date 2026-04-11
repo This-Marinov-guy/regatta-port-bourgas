@@ -11,11 +11,7 @@ import {
   AccordionTrigger
 } from '@/app/components/ui/accordion'
 import GalleryPhotoGrid from './GalleryPhotoGrid'
-
-type GalleryPhoto = {
-  src: string
-  alt: string
-}
+import type { GalleryPhoto } from '@/lib/googleDriveGallery'
 
 type GalleryAccordionClientProps = {
   years: string[]
@@ -50,7 +46,9 @@ export default function GalleryAccordionClient({
             
             // Extract filename from URL or use default
             const urlPath = new URL(image.src, window.location.origin).pathname
-            const filename = urlPath.split('/').pop() || `image-${index + 1}.jpg`
+            const filename = decodeURIComponent(
+              urlPath.split('/').pop() || `image-${index + 1}.jpg`
+            )
             link.download = filename
             
             document.body.appendChild(link)

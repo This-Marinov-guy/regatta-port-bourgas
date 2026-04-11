@@ -1,20 +1,24 @@
 import GalleryAccordion from '@/app/components/gallery/GalleryAccordion'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
+import Breadcrumb from '@/app/components/breadcrumb'
+
+export const dynamic = 'force-dynamic'
 
 export default async function GalleryPage() {
   const t = await getTranslations('gallery')
+  const tCommon = await getTranslations()
+  const locale = await getLocale()
 
   return (
-    <main className="bg-white dark:bg-black">
+    <main className="site-page-bg">
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28">
-        <div className="mb-10 md:mb-14">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-dark dark:text-white mb-3">
-            {t('title')}
-          </h1>
-          <p className="text-dark/60 dark:text-white/60 text-sm sm:text-base max-w-3xl">
-            {t('subtitle')}
-          </p>
-        </div>
+        <Breadcrumb
+          image="/images/breadcrumbs/3.jpg"
+          links={[
+            { href: `/${locale}`, text: tCommon('navigation.home') },
+            { href: `/${locale}/gallery`, text: t('title') }
+          ]}
+        />
 
         <GalleryAccordion />
       </div>

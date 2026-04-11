@@ -12,6 +12,7 @@ const Footer = () => {
   
   // Create fallback links using translations
   const fallbackLinks = useMemo(() => [
+    { label: t('navigation.aboutUs'), href: `/${locale}/about-us` },
     { label: t('navigation.events'), href: `/${locale}/events` },
     { label: t('navigation.news'), href: `/${locale}/news` },
     { label: t('navigation.gallery'), href: `/${locale}/gallery` },
