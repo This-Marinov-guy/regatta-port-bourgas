@@ -6,7 +6,8 @@ import Link from 'next/link';
 import Header from "./components/layout/header";
 
 export const metadata: Metadata = {
-  title: "404 Page | Property ",
+  title: "Page Not Found | International Regatta Port Bourgas",
+  robots: { index: false, follow: false },
 };
 
 export default async function NotFoundPage() {

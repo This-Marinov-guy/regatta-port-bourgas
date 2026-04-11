@@ -1,7 +1,31 @@
+import type { Metadata } from 'next'
 import { getTranslations, getLocale } from 'next-intl/server'
 import EventCard from '@/app/components/events/EventCard'
 import { getEvents } from '@/lib/events'
 import Breadcrumb from '@/app/components/breadcrumb'
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+
+type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'events' })
+  return {
+    title: t('title'),
+    description: t('subtitle'),
+    openGraph: {
+      title: t('title'),
+      description: t('subtitle'),
+      images: [{ url: `${siteUrl}/images/banner.jpg`, width: 1200, height: 630, alt: t('title') }],
+    },
+    twitter: { card: 'summary_large_image', title: t('title'), description: t('subtitle'), images: [`${siteUrl}/images/banner.jpg`] },
+    alternates: {
+      canonical: `${siteUrl}/${locale}/events`,
+      languages: { en: `${siteUrl}/en/events`, bg: `${siteUrl}/bg/events` },
+    },
+  }
+}
 
 export default async function EventsPage() {
   const t = await getTranslations()

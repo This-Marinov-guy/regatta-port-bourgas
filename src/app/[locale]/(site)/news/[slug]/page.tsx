@@ -11,17 +11,33 @@ type Props = {
   params: Promise<{ slug: string; locale: string }>
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+
 export async function generateMetadata({ params }: Props) {
   const { slug, locale } = await params
   const news = await getNewsItem(slug)
 
-  if (!news) {
-    return {}
-  }
+  if (!news) return {}
+
+  const title = locale === 'bg' ? news.name_bg : news.name_en
+  const description = (locale === 'bg' ? news.description_bg : news.description_en) ?? ''
 
   return {
-    title: locale === 'bg' ? news.name_bg : news.name_en,
-    description: (locale === 'bg' ? news.description_bg : news.description_en) ?? '',
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      publishedTime: news.created_at,
+      modifiedTime: news.updated_at,
+      images: [{ url: `${siteUrl}/images/banner.jpg`, width: 1200, height: 630, alt: title }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [`${siteUrl}/images/banner.jpg`] },
+    alternates: {
+      canonical: `${siteUrl}/${locale}/news/${slug}`,
+      languages: { en: `${siteUrl}/en/news/${slug}`, bg: `${siteUrl}/bg/news/${slug}` },
+    },
   }
 }
 
@@ -45,8 +61,27 @@ export default async function NewsDetailPage({ params }: Props) {
     : await markdownToHtml(body)
   const attachments = extractNewsAttachmentLinks(body)
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: title,
+    description,
+    datePublished: news.created_at,
+    dateModified: news.updated_at,
+    image: `${siteUrl}/images/banner.jpg`,
+    url: `${siteUrl}/${locale}/news/${news.slug}`,
+    publisher: {
+      '@type': 'SportsOrganization',
+      name: 'Yacht Club Port Bourgas',
+      logo: { '@type': 'ImageObject', url: `${siteUrl}/images/logos/logo.jpg` },
+    },
+    author: { '@type': 'Organization', name: 'Yacht Club Port Bourgas' },
+    inLanguage: locale === 'bg' ? 'bg-BG' : 'en-US',
+  }
+
   return (
     <main className="site-page-bg">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28">
         <Link
           href="/news"

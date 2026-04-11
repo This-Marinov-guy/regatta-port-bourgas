@@ -50,7 +50,7 @@ export async function generateMetadata({
   const alternateLocale = locale === 'en' ? 'bg_BG' : 'en_US';
   const localeUrl = `${siteUrl}/${locale}`;
   const alternateUrl = locale === 'en' ? `${siteUrl}/bg` : `${siteUrl}/en`;
-  const ogImageUrl = `${siteUrl}/images/logos/logo.jpg`;
+  const ogImageUrl = `${siteUrl}/images/banner.jpg`;
 
   return {
     metadataBase: new URL(siteUrl),
@@ -80,7 +80,7 @@ export async function generateMetadata({
         {
           url: ogImageUrl,
           width: 1200,
-          height: 1200,
+          height: 630,
           alt: t('ogImageAlt'),
         },
       ],
@@ -160,9 +160,48 @@ export default async function LocaleLayout({
   // side is the easiest way to get started
   const messages = await getMessages();
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'SportsOrganization',
+        '@id': `${siteUrl}/#organization`,
+        name: 'Yacht Club Port Bourgas',
+        url: siteUrl,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${siteUrl}/images/logos/logo.jpg`,
+        },
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Bourgas',
+          addressCountry: 'BG',
+        },
+        sport: 'Sailing',
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${siteUrl}/#website`,
+        url: siteUrl,
+        name: 'International Regatta Port Bourgas',
+        publisher: { '@id': `${siteUrl}/#organization` },
+        inLanguage: [locale === 'bg' ? 'bg-BG' : 'en-US'],
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${siteUrl}/${locale}/events?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    ],
+  }
+
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} site-page-bg antialiased`} suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <NextTopLoader color="#3435AA" />
         <NextIntlClientProvider messages={messages}>
           <SessionProviderComp session={session}>

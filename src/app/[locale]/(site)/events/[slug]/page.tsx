@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { notFound } from "next/navigation";
@@ -7,9 +8,37 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { getEvent } from "@/lib/events";
 import EventTabs from "@/app/components/events/EventTabs";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+
 type Props = {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug, locale } = await params
+  const event = await getEvent(slug)
+  if (!event) return {}
+
+  const title = locale === 'bg' ? event.name_bg : event.name_en
+  const description = (locale === 'bg' ? event.description_bg : event.description_en) ?? ''
+  const image = event.thumbnail_img || `${siteUrl}/images/banner.jpg`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      images: [{ url: image, width: 1200, height: 630, alt: title }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [image] },
+    alternates: {
+      canonical: `${siteUrl}/${locale}/events/${slug}`,
+      languages: { en: `${siteUrl}/en/events/${slug}`, bg: `${siteUrl}/bg/events/${slug}` },
+    },
+  }
+}
 
 export default async function EventDetailsPage({ params }: Props) {
   const { slug } = await params;
@@ -24,8 +53,32 @@ export default async function EventDetailsPage({ params }: Props) {
   const title = locale === 'bg' ? event.name_bg : event.name_en;
   const description = (locale === 'bg' ? event.description_bg : event.description_en) ?? '';
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: title,
+    description,
+    startDate: event.start_date,
+    endDate: event.end_date,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: {
+      '@type': 'Place',
+      name: 'Port of Bourgas',
+      address: { '@type': 'PostalAddress', addressLocality: 'Bourgas', addressCountry: 'BG' },
+    },
+    organizer: {
+      '@type': 'SportsOrganization',
+      name: 'Yacht Club Port Bourgas',
+      url: siteUrl,
+    },
+    ...(event.thumbnail_img && { image: event.thumbnail_img }),
+    url: `${siteUrl}/${locale}/events/${event.slug}`,
+  }
+
   return (
     <main className="site-page-bg">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28">
         <Link
           href={`/events`}
