@@ -29,10 +29,11 @@ const Hero: React.FC = () => {
               {/* {romanYears + " " + t("title")} */}
               {t("title")}
             </h1>
-            <div className="flex flex-col xs:flex-row justify-center md:justify-start gap-4 mb-10">
+            {/* Desktop buttons — visible inside the video on md+ */}
+            <div className="hidden md:flex md:flex-row md:justify-start gap-4 mb-10">
               <Link
                 href={`/contact-us`}
-                className="px-4 py-2 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md  hover:cursor-pointer flex items-center justify-center"
+                className="px-4 py-2 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
               >
                 {tCommon("getInTouch")}
               </Link>
@@ -48,7 +49,7 @@ const Hero: React.FC = () => {
               >
                 <Image
                   src="/images/brands/bulstrad.png"
-                  alt="PDF"
+                  alt="Bulstrad"
                   width={150}
                   height={150}
                 />
@@ -85,6 +86,34 @@ const Hero: React.FC = () => {
             </div>
           </div>
         </div> */}
+      </div>
+
+      {/* Mobile buttons — rendered below the video on small screens */}
+      <div className="flex md:hidden flex-col xs:flex-row justify-center gap-3 px-5 py-6">
+        <Link
+          href={`/contact-us`}
+          className="px-4 py-3 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
+        >
+          {tCommon("getInTouch")}
+        </Link>
+        <Link
+          href={`/events`}
+          className="px-4 py-3 border border-dark bg-white text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
+        >
+          {tCommon("viewDetails")}
+        </Link>
+        <a
+          href={`https://www.bulstrad.bg/`}
+          className="px-4 py-3 border border-dark/10 bg-white text-dark duration-300 hover:bg-white/90 rounded-md hover:cursor-pointer flex items-center justify-center"
+        >
+          <Image
+            src="/images/brands/bulstrad.png"
+            alt="Bulstrad"
+            width={150}
+            height={40}
+            className="object-contain"
+          />
+        </a>
       </div>
     </section>
   );

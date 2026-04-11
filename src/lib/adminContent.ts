@@ -8,7 +8,8 @@ import type {
   AdminEventRecord,
   AdminNewsPayload,
   AdminNewsRecord,
-  EventStatus
+  EventStatus,
+  RegistrationRecord
 } from '@/types/admin'
 
 function normalizeRequiredText(value: unknown, fieldName: string) {
@@ -90,7 +91,7 @@ export function parseEventPayload(input: Record<string, unknown>): AdminEventPay
   return {
     slug: normalizeSlug(input.slug, input.name_en, 'event'),
     name_en: normalizeRequiredText(input.name_en, 'English name'),
-    name_bg: normalizeRequiredText(input.name_bg, 'Bulgarian name'),
+    name_bg: normalizeOptionalText(input.name_bg),
     description_en: normalizeOptionalText(input.description_en),
     description_bg: normalizeOptionalText(input.description_bg),
     thumbnail_img: normalizeOptionalText(input.thumbnail_img),
@@ -106,17 +107,17 @@ export function parseEventPayload(input: Record<string, unknown>): AdminEventPay
 
 export function parseNewsPayload(input: Record<string, unknown>): AdminNewsPayload {
   const bodyEn = normalizeRequiredText(input.body_en, 'English body')
-  const bodyBg = normalizeRequiredText(input.body_bg, 'Bulgarian body')
+  const bodyBg = normalizeOptionalText(input.body_bg)
 
   return {
     slug: normalizeSlug(input.slug, input.name_en, 'news'),
     name_en: normalizeRequiredText(input.name_en, 'English name'),
-    name_bg: normalizeRequiredText(input.name_bg, 'Bulgarian name'),
+    name_bg: normalizeOptionalText(input.name_bg),
     description_en: normalizeOptionalText(input.description_en),
     description_bg: normalizeOptionalText(input.description_bg),
     body_en: bodyEn,
     body_bg: bodyBg,
-    attachments: extractNewsAttachmentUrls(bodyEn, bodyBg)
+    attachments: extractNewsAttachmentUrls(bodyEn, bodyBg ?? bodyEn)
   }
 }
 
@@ -125,7 +126,7 @@ export function parseDocumentPayload(
 ): AdminDocumentPayload {
   return {
     name_en: normalizeRequiredText(input.name_en, 'English name'),
-    name_bg: normalizeRequiredText(input.name_bg, 'Bulgarian name'),
+    name_bg: normalizeOptionalText(input.name_bg),
     source: normalizeRequiredText(input.source, 'Source')
   }
 }
@@ -205,7 +206,7 @@ export async function listNews() {
 
   return ((data ?? []) as AdminNewsRecord[]).map((item) => ({
     ...item,
-    attachments: extractNewsAttachmentUrls(item.body_en, item.body_bg)
+    attachments: extractNewsAttachmentUrls(item.body_en, item.body_bg ?? item.body_en)
   }))
 }
 
@@ -221,4 +222,43 @@ export async function listDocuments() {
   }
 
   return (data ?? []) as AdminDocumentRecord[]
+}
+
+export async function listRegistrations(eventId?: string) {
+  const supabase = createSupabaseServiceClient()
+  let query = supabase
+    .from('registrations')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (eventId) {
+    query = query.eq('event_id', eventId)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (data ?? []) as RegistrationRecord[]
+}
+
+export async function updateRegistrationStatus(
+  id: string,
+  status: RegistrationRecord['status']
+) {
+  const supabase = createSupabaseServiceClient()
+  const { data, error } = await supabase
+    .from('registrations')
+    .update({ status })
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data as RegistrationRecord
 }

@@ -1,22 +1,41 @@
 "use client"
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs"
+import { Button } from "@/app/components/ui/button"
+import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
 
 type Props = {
+  registerHref: string
   documents: string[]
   noticeBoard: string[]
   results: string[]
   registerForm: string[]
 }
 
+function normalizeUrls(urls: unknown): string[] {
+  if (Array.isArray(urls)) {
+    return urls.filter(
+      (url): url is string => typeof url === "string" && url.trim().length > 0
+    )
+  }
+
+  if (typeof urls === "string" && urls.trim().length > 0) {
+    return [urls]
+  }
+
+  return []
+}
+
 function FileList({ urls }: { urls: string[] }) {
-  if (urls.length === 0) {
+  const safeUrls = normalizeUrls(urls)
+
+  if (safeUrls.length === 0) {
     return <p className="text-dark/50 dark:text-white/50 text-sm italic">—</p>
   }
   return (
     <ul className="space-y-2">
-      {urls.map((url, i) => (
+      {safeUrls.map((url, i) => (
         <li key={i}>
           <a
             href={url}
@@ -32,8 +51,15 @@ function FileList({ urls }: { urls: string[] }) {
   )
 }
 
-export default function EventTabs({ documents, noticeBoard, results, registerForm }: Props) {
+export default function EventTabs({
+  registerHref,
+  documents,
+  noticeBoard,
+  results,
+  registerForm
+}: Props) {
   const t = useTranslations("events")
+  const safeRegisterForm = normalizeUrls(registerForm)
 
   return (
     <div className="mt-8 sm:mt-12 lg:mt-16 w-full px-4 sm:px-0">
@@ -82,7 +108,24 @@ export default function EventTabs({ documents, noticeBoard, results, registerFor
 
           <TabsContent value="applications" className="mt-0">
             <div className="rounded-lg sm:rounded-xl border border-dark/10 dark:border-white/10 sm:border-2 bg-white dark:bg-black shadow-md sm:shadow-lg dark:shadow-white/5 p-4 sm:p-6 md:p-8 lg:p-12 min-h-[250px] sm:min-h-[300px] md:min-h-[400px]">
-              <FileList urls={registerForm} />
+              <div className="mx-auto flex min-h-[180px] max-w-3xl flex-col items-center justify-center text-center">
+                <h3 className="text-2xl font-semibold text-dark dark:text-white">
+                  {t("register")}
+                </h3>
+                <p className="mt-4 text-sm leading-7 text-dark/65 dark:text-white/65">
+                  {t("tabsContent.applications")}
+                </p>
+                <p className="mt-3 text-sm leading-7 text-dark/55 dark:text-white/55">
+                  {safeRegisterForm.length > 0
+                    ? t("tabsContent.applicationsFiles")
+                    : t("tabsContent.applicationsEmpty")}
+                </p>
+                <Button asChild className="mt-6 rounded-xl px-6 text-white">
+                  <Link href={registerHref} scroll={false}>
+                    {t("openRegistration")}
+                  </Link>
+                </Button>
+              </div>
             </div>
           </TabsContent>
 

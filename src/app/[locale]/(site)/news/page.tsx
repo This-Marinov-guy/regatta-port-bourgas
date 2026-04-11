@@ -3,6 +3,7 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import NewsCard from '@/app/components/news/NewsCard'
 import { getNews } from '@/lib/news'
 import Breadcrumb from '@/app/components/breadcrumb'
+import { localizeText } from '@/lib/localizedContent'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
 
@@ -49,10 +50,8 @@ export default async function NewsPage() {
             <NewsCard
               key={item.id}
               href={`/news/${item.slug}`}
-              title={locale === 'bg' ? item.name_bg : item.name_en}
-              description={
-                (locale === 'bg' ? item.description_bg : item.description_en) ?? ''
-              }
+              title={localizeText(locale, item.name_en, item.name_bg)}
+              description={localizeText(locale, item.description_en, item.description_bg)}
               date={item.created_at}
             />
           ))}

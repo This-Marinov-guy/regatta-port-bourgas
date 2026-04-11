@@ -2,6 +2,7 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import EventCard from '@/app/components/events/EventCard'
 import { getEvents } from '@/lib/events'
+import { localizeText } from '@/lib/localizedContent'
 import Image from 'next/image'
 
 export default async function EventsPreview() {
@@ -42,7 +43,7 @@ export default async function EventsPreview() {
               key={event.id}
               href={`/events/${event.slug}`}
               imageSrc={event.thumbnail_img ?? ''}
-              title={locale === 'bg' ? event.name_bg : event.name_en}
+              title={localizeText(locale, event.name_en, event.name_bg)}
               dateFrom={event.start_date}
               dateTo={event.end_date}
               detailsLabel={t("events.details")}

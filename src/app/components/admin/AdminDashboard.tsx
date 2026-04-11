@@ -3,17 +3,26 @@
 import type { ClipboardEvent as ReactClipboardEvent, FormEvent, ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Icon } from '@iconify/react'
 import toast, { Toaster } from 'react-hot-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { Button } from '@/app/components/ui/button'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from '@/app/components/ui/accordion'
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
+import { localizeText } from '@/lib/localizedContent'
 import { slugify } from '@/lib/slug'
 import type {
   AdminDocumentRecord,
   AdminEventRecord,
   AdminNewsRecord
 } from '@/types/admin'
+import type { RegistrationRecord, RegistrationStatus } from '@/types/admin'
 
 type AdminDashboardProps = {
   userEmail: string
@@ -191,7 +200,7 @@ function eventToForm(event: AdminEventRecord): EventFormState {
     id: event.id,
     slug: event.slug,
     name_en: event.name_en,
-    name_bg: event.name_bg,
+    name_bg: event.name_bg ?? '',
     description_en: event.description_en ?? '',
     description_bg: event.description_bg ?? '',
     thumbnail_img: event.thumbnail_img ?? '',
@@ -210,11 +219,11 @@ function newsToForm(item: AdminNewsRecord): NewsFormState {
     id: item.id,
     slug: item.slug,
     name_en: item.name_en,
-    name_bg: item.name_bg,
+    name_bg: item.name_bg ?? '',
     description_en: item.description_en ?? '',
     description_bg: item.description_bg ?? '',
     body_en: item.body_en,
-    body_bg: item.body_bg,
+    body_bg: item.body_bg ?? '',
     attachments: item.attachments
   }
 }
@@ -223,7 +232,7 @@ function documentToForm(item: AdminDocumentRecord): DocumentFormState {
   return {
     id: item.id,
     name_en: item.name_en,
-    name_bg: item.name_bg,
+    name_bg: item.name_bg ?? '',
     source: item.source
   }
 }
@@ -578,6 +587,69 @@ function AdminTextarea({
 
 function AdminHelpText({ children }: { children: ReactNode }) {
   return <p className="mt-2 text-xs leading-5 text-dark/55">{children}</p>
+}
+
+function formatOptionalValue(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === '') {
+    return 'Not provided'
+  }
+
+  return String(value)
+}
+
+function formatBooleanValue(value: boolean) {
+  return value ? 'Yes' : 'No'
+}
+
+function getRegistrationStatusBadgeClasses(status: RegistrationStatus) {
+  switch (status) {
+    case 'approved':
+      return 'bg-emerald-100 text-emerald-800'
+    case 'rejected':
+      return 'bg-red-100 text-red-700'
+    default:
+      return 'bg-amber-100 text-amber-800'
+  }
+}
+
+function getRegistrationStatusButtonClasses(
+  buttonValue: RegistrationStatus,
+  activeValue: RegistrationStatus
+) {
+  const isActive = buttonValue === activeValue
+
+  if (buttonValue === 'approved') {
+    return isActive
+      ? 'border-emerald-600 bg-emerald-600 text-white'
+      : 'border-emerald-200 bg-white/70 text-emerald-700 hover:bg-emerald-50'
+  }
+
+  if (buttonValue === 'rejected') {
+    return isActive
+      ? 'border-red-600 bg-red-600 text-white'
+      : 'border-red-200 bg-white/70 text-red-700 hover:bg-red-50'
+  }
+
+  return isActive
+    ? 'border-amber-500 bg-amber-500 text-white'
+    : 'border-amber-200 bg-white/70 text-amber-700 hover:bg-amber-50'
+}
+
+function RegistrationDetailRow({
+  label,
+  value
+}: {
+  label: string
+  value: ReactNode
+}) {
+  return (
+    <div className="rounded-2xl border border-black/10 bg-white/70 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+        {label}
+      </p>
+      <div className="mt-2 text-sm leading-6 text-dark/75">{value}</div>
+    </div>
+  )
 }
 
 function AddCardButton({
@@ -1173,6 +1245,11 @@ function FileDropPanel({
     <div>
       <span className="mb-2 block text-sm font-medium text-dark">{label}</span>
       <div
+        onClick={() => {
+          if (!uploading) {
+            inputRef.current?.click()
+          }
+        }}
         onDragOver={(event) => {
           event.preventDefault()
           setDragging(true)
@@ -1187,38 +1264,28 @@ function FileDropPanel({
           dragging
             ? 'border-primary bg-primary/5 shadow-lg'
             : 'border-black/10 bg-white/80'
-        }`}
+        } ${uploading ? 'cursor-progress' : 'cursor-pointer'}`}
       >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Icon icon="ph:upload-simple-bold" width={22} height={22} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-dark">
-                {uploading ? 'Uploading files...' : 'Drag and drop files here'}
-              </p>
-              <p className="mt-1 text-sm text-dark/60">
-                {helperText ??
-                  'Or choose files from your computer. Images are stored in images, other files in documents.'}
-              </p>
-            </div>
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Icon icon="ph:upload-simple-bold" width={22} height={22} />
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={uploading}
-              onClick={() => inputRef.current?.click()}
-              className={`rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-dark ${interactiveButtonClass}`}
-            >
-              Choose {multiple ? 'files' : 'file'}
-            </button>
+          <div>
+            <p className="text-sm font-semibold text-dark">
+              {uploading ? 'Uploading files...' : 'Drag and drop files here'}
+            </p>
+            <p className="mt-1 text-sm text-dark/60">
+              {helperText ??
+                'Or click anywhere in this area to browse files. Images are stored in images, other files in documents.'}
+            </p>
             {onOpenLibrary ? (
               <button
                 type="button"
-                onClick={onOpenLibrary}
-                className={`rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-dark ${interactiveButtonClass}`}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenLibrary()
+                }}
+                className="mt-3 text-sm font-semibold text-primary hover:underline"
               >
                 {libraryLabel ?? 'Reuse uploaded'}
               </button>
@@ -1478,6 +1545,11 @@ export default function AdminDashboard({
   const [authBusy, setAuthBusy] = useState(false)
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [newsModalOpen, setNewsModalOpen] = useState(false)
+  const [entriesModalOpen, setEntriesModalOpen] = useState(false)
+  const [activeEntriesEvent, setActiveEntriesEvent] = useState<AdminEventRecord | null>(null)
+  const [registrations, setRegistrations] = useState<RegistrationRecord[]>([])
+  const [registrationsLoading, setRegistrationsLoading] = useState(false)
+  const [registrationStatusBusyId, setRegistrationStatusBusyId] = useState<string | null>(null)
 
   function openEventEditor(form = emptyEventForm()) {
     setEventForm(form)
@@ -1499,6 +1571,14 @@ export default function AdminDashboard({
     setNewsForm(emptyNewsForm())
   }
 
+  function closeEntriesModal() {
+    setEntriesModalOpen(false)
+    setActiveEntriesEvent(null)
+    setRegistrations([])
+    setRegistrationsLoading(false)
+    setRegistrationStatusBusyId(null)
+  }
+
   async function refreshEvents() {
     const payload = await readJson<{ data: AdminEventRecord[] }>('/api/admin/events')
     setEvents(payload.data)
@@ -1514,6 +1594,30 @@ export default function AdminDashboard({
       '/api/admin/documents'
     )
     setDocuments(payload.data)
+  }
+
+  async function loadRegistrations(eventId: string) {
+    setRegistrationsLoading(true)
+
+    try {
+      const payload = await readJson<{ data: RegistrationRecord[] }>(
+        `/api/admin/registrations?event_id=${encodeURIComponent(eventId)}`
+      )
+      setRegistrations(payload.data)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to load registrations.'
+      )
+      setRegistrations([])
+    } finally {
+      setRegistrationsLoading(false)
+    }
+  }
+
+  async function openEventEntries(item: AdminEventRecord) {
+    setActiveEntriesEvent(item)
+    setEntriesModalOpen(true)
+    await loadRegistrations(item.id)
   }
 
   async function handleSignOut() {
@@ -1671,6 +1775,35 @@ export default function AdminDashboard({
     }
   }
 
+  async function handleRegistrationStatusChange(
+    registrationId: string,
+    status: RegistrationStatus
+  ) {
+    setRegistrationStatusBusyId(registrationId)
+
+    try {
+      const payload = await readJson<{ data: RegistrationRecord }>(
+        `/api/admin/registrations/${registrationId}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status })
+        }
+      )
+
+      setRegistrations((current) =>
+        current.map((item) => (item.id === registrationId ? payload.data : item))
+      )
+      toast.success('Registration status updated.')
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to update registration status.'
+      )
+    } finally {
+      setRegistrationStatusBusyId(null)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_46%,#ffffff_100%)] px-5 py-6 text-dark md:px-8 md:py-8">
       <Toaster position="top-right" />
@@ -1697,10 +1830,9 @@ export default function AdminDashboard({
               disabled={authBusy}
               className="h-11 rounded-xl border-black/10 px-5 text-dark"
             >
-              {authBusy ? 'Signing out...' : 'Sign out'}
+              {authBusy ? "Signing out..." : "Sign out"}
             </Button>
           </div>
-
         </div>
 
         <Tabs defaultValue="events">
@@ -1708,6 +1840,7 @@ export default function AdminDashboard({
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="news">News</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="gallery">Gallery</TabsTrigger>
           </TabsList>
 
           {/* ── EVENTS ──────────────────────────────────────────────── */}
@@ -1737,7 +1870,9 @@ export default function AdminDashboard({
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h3 className="text-2xl font-semibold">{item.name_en}</h3>
-                      <p className="mt-1 text-sm text-dark/60">{item.name_bg}</p>
+                      <p className="mt-1 text-sm text-dark/60">
+                        {localizeText("bg", item.name_en, item.name_bg)}
+                      </p>
                       <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-dark/45">
                         /events/{item.slug}
                       </p>
@@ -1745,7 +1880,9 @@ export default function AdminDashboard({
                         <span className="rounded-full bg-white/70 px-3 py-1">
                           {item.start_date} to {item.end_date}
                         </span>
-                        <span className={`rounded-full px-3 py-1 font-semibold ${getEventStatusBadgeClasses(item.status)}`}>
+                        <span
+                          className={`rounded-full px-3 py-1 font-semibold ${getEventStatusBadgeClasses(item.status)}`}
+                        >
                           {getStatusLabel(item.status)}
                         </span>
                         <span className="rounded-full bg-white/70 px-3 py-1">
@@ -1755,6 +1892,13 @@ export default function AdminDashboard({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => void openEventEntries(item)}
+                        className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+                      >
+                        Entries
+                      </Button>
                       <Button
                         variant="outline"
                         onClick={() => openEventEditor(eventToForm(item))}
@@ -1771,10 +1915,12 @@ export default function AdminDashboard({
                         key={option.value}
                         type="button"
                         disabled={eventsBusy}
-                        onClick={() => handleEventStatusChange(item, option.value)}
+                        onClick={() =>
+                          handleEventStatusChange(item, option.value)
+                        }
                         className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getEventStatusButtonClasses(
                           option.value,
-                          item.status
+                          item.status,
                         )}`}
                       >
                         {option.label}
@@ -1817,7 +1963,9 @@ export default function AdminDashboard({
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h3 className="text-2xl font-semibold">{item.name_en}</h3>
-                      <p className="mt-1 text-sm text-dark/60">{item.name_bg}</p>
+                      <p className="mt-1 text-sm text-dark/60">
+                        {localizeText("bg", item.name_en, item.name_bg)}
+                      </p>
                       <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-dark/45">
                         /news/{item.slug}
                       </p>
@@ -1872,15 +2020,19 @@ export default function AdminDashboard({
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <h3 className="text-2xl font-semibold">{item.name_en}</h3>
-                        <p className="mt-1 text-sm text-dark/60">{item.name_bg}</p>
+                        <h3 className="text-2xl font-semibold">
+                          {item.name_en}
+                        </h3>
+                        <p className="mt-1 text-sm text-dark/60">
+                          {localizeText("bg", item.name_en, item.name_bg)}
+                        </p>
                         <a
                           href={item.source}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="mt-3 block break-all text-sm text-primary hover:underline"
                         >
-                          {item.source.split('/').pop() || item.source}
+                          {item.source.split("/").pop() || item.source}
                         </a>
                       </div>
 
@@ -1917,7 +2069,7 @@ export default function AdminDashboard({
                 <div className="mb-6 flex items-center justify-between">
                   <div>
                     <h3 className="text-2xl font-semibold">
-                      {documentForm.id ? 'Edit document' : 'Create document'}
+                      {documentForm.id ? "Edit document" : "Create document"}
                     </h3>
                     <p className="mt-1 text-sm text-dark/60">
                       Use this for PDFs, notices, or any linked resource.
@@ -1940,23 +2092,31 @@ export default function AdminDashboard({
                     label="Name (EN)"
                     value={documentForm.name_en}
                     onChange={(value) =>
-                      setDocumentForm((current) => ({ ...current, name_en: value }))
+                      setDocumentForm((current) => ({
+                        ...current,
+                        name_en: value,
+                      }))
                     }
                     required
                   />
                   <AdminField
-                    label="Name (BG)"
+                    label="Name (BG, optional)"
                     value={documentForm.name_bg}
                     onChange={(value) =>
-                      setDocumentForm((current) => ({ ...current, name_bg: value }))
+                      setDocumentForm((current) => ({
+                        ...current,
+                        name_bg: value,
+                      }))
                     }
-                    required
                   />
                   <SingleFileUploadField
                     label="File"
                     value={documentForm.source}
                     onChange={(url) =>
-                      setDocumentForm((current) => ({ ...current, source: url }))
+                      setDocumentForm((current) => ({
+                        ...current,
+                        source: url,
+                      }))
                     }
                     onError={(msg) => toast.error(msg)}
                     required
@@ -1970,21 +2130,81 @@ export default function AdminDashboard({
                     className="rounded-xl px-5 text-white"
                   >
                     {documentsBusy
-                      ? 'Saving...'
+                      ? "Saving..."
                       : documentForm.id
-                        ? 'Update document'
-                        : 'Create document'}
-
+                        ? "Update document"
+                        : "Create document"}
                   </Button>
                 </div>
               </form>
+            </div>
+          </TabsContent>
+
+          {/* ── GALLERY ─────────────────────────────────────────────── */}
+          <TabsContent value="gallery">
+            <SectionHeading
+              title="Gallery"
+              description="Photos are pulled from Google Drive. Organise them into year folders (e.g. 2025) inside the gallery folder."
+            />
+            <div className="rounded-[1.5rem] border border-black/10 bg-white/90 p-6 shadow-sm space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                  <Image
+                    src="/images/SVGs/google-drive.png"
+                    width={100}
+                    height={100}
+                    className="w-8 h-8"
+                    alt="google drive"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-dark">
+                    Google Drive folder
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-dark/60">
+                    Add or remove photos directly in the Drive folder. Create
+                    sub-folders named by year (e.g.{" "}
+                    <span className="font-mono font-semibold">2025</span>) —
+                    each becomes an accordion section in the gallery. Photos
+                    inside are sorted alphabetically by filename.
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={`https://drive.google.com/drive/folders/${process.env.NEXT_PUBLIC_GALLERY_FOLDER_ID || "1L7iALLBsMHbBftZl41NAyr4wwujnxM87"}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary px-5 py-4 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+              >
+                <span className="flex items-center gap-2">
+                  <Icon icon="ph:folder-open-bold" width={20} height={20} />
+                  Open gallery folder in Google Drive
+                </span>
+                <Icon icon="ph:arrow-up-right-bold" width={18} height={18} />
+              </a>
+
+              <div className="rounded-2xl border border-black/10 bg-black/[0.02] px-5 py-4 text-sm text-dark/70 space-y-2">
+                <p className="font-semibold text-dark">How it works</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>
+                    Each <strong>year folder</strong> (2024, 2025 …) becomes a
+                    tab in the gallery.
+                  </li>
+                  <li>Folders are shown newest-first.</li>
+                  <li>Supported formats: JPEG, PNG, WebP, GIF.</li>
+                  <li>
+                    Photos refresh every <strong>15 minutes</strong> (cached).
+                  </li>
+                </ul>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
 
         <AdminModal
           open={eventModalOpen}
-          title={eventForm.id ? 'Edit event' : 'Create event'}
+          title={eventForm.id ? "Edit event" : "Create event"}
           description="Save bilingual copy and resource files for this event."
           onClose={closeEventEditor}
         >
@@ -1996,26 +2216,27 @@ export default function AdminDashboard({
                 onChange={(value) =>
                   setEventForm((current) => {
                     const nextSlug =
-                      current.id === null && (!current.slug || current.slug === slugify(current.name_en))
+                      current.id === null &&
+                      (!current.slug ||
+                        current.slug === slugify(current.name_en))
                         ? slugify(value)
-                        : current.slug
+                        : current.slug;
 
                     return {
                       ...current,
                       name_en: value,
-                      slug: nextSlug
-                    }
+                      slug: nextSlug,
+                    };
                   })
                 }
                 required
               />
               <AdminField
-                label="Name (BG)"
+                label="Name (BG, optional)"
                 value={eventForm.name_bg}
                 onChange={(value) =>
                   setEventForm((current) => ({ ...current, name_bg: value }))
                 }
-                required
               />
               <div className="md:col-span-2">
                 <AdminField
@@ -2024,7 +2245,7 @@ export default function AdminDashboard({
                   onChange={(value) =>
                     setEventForm((current) => ({
                       ...current,
-                      slug: slugify(value)
+                      slug: slugify(value),
                     }))
                   }
                   placeholder="regatta-port-bourgas-2026"
@@ -2033,15 +2254,18 @@ export default function AdminDashboard({
                 />
                 <AdminHelpText>
                   {eventForm.id
-                    ? 'Slug is locked after creation so the public event URL stays stable.'
-                    : 'Used in the event URL. Keep it short, unique, and stable.'}
+                    ? "Slug is locked after creation so the public event URL stays stable."
+                    : "Used in the event URL. Keep it short, unique, and stable."}
                 </AdminHelpText>
               </div>
               <ImageUploadField
                 label="Thumbnail image"
                 value={eventForm.thumbnail_img}
                 onChange={(url) =>
-                  setEventForm((current) => ({ ...current, thumbnail_img: url }))
+                  setEventForm((current) => ({
+                    ...current,
+                    thumbnail_img: url,
+                  }))
                 }
                 onError={(msg) => toast.error(msg)}
               />
@@ -2054,7 +2278,7 @@ export default function AdminDashboard({
                   onChange={(event) =>
                     setEventForm((current) => ({
                       ...current,
-                      status: event.target.value as EventFormState['status']
+                      status: event.target.value as EventFormState["status"],
                     }))
                   }
                   className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary"
@@ -2093,17 +2317,17 @@ export default function AdminDashboard({
                 onChange={(value) =>
                   setEventForm((current) => ({
                     ...current,
-                    description_en: value
+                    description_en: value,
                   }))
                 }
               />
               <AdminTextarea
-                label="Description (BG)"
+                label="Description (BG, optional)"
                 value={eventForm.description_bg}
                 onChange={(value) =>
                   setEventForm((current) => ({
                     ...current,
-                    description_bg: value
+                    description_bg: value,
                   }))
                 }
               />
@@ -2120,7 +2344,10 @@ export default function AdminDashboard({
                   label="Notice board"
                   values={eventForm.notice_board}
                   onChange={(urls) =>
-                    setEventForm((current) => ({ ...current, notice_board: urls }))
+                    setEventForm((current) => ({
+                      ...current,
+                      notice_board: urls,
+                    }))
                   }
                   onError={(msg) => toast.error(msg)}
                 />
@@ -2136,7 +2363,10 @@ export default function AdminDashboard({
                   label="Register form"
                   values={eventForm.register_form}
                   onChange={(urls) =>
-                    setEventForm((current) => ({ ...current, register_form: urls }))
+                    setEventForm((current) => ({
+                      ...current,
+                      register_form: urls,
+                    }))
                   }
                   onError={(msg) => toast.error(msg)}
                 />
@@ -2144,12 +2374,16 @@ export default function AdminDashboard({
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-              <Button type="submit" disabled={eventsBusy} className="rounded-xl px-5 text-white">
+              <Button
+                type="submit"
+                disabled={eventsBusy}
+                className="rounded-xl px-5 text-white"
+              >
                 {eventsBusy
-                  ? 'Saving...'
+                  ? "Saving..."
                   : eventForm.id
-                    ? 'Update event'
-                    : 'Create event'}
+                    ? "Update event"
+                    : "Create event"}
               </Button>
               <Button
                 type="button"
@@ -2165,7 +2399,7 @@ export default function AdminDashboard({
 
         <AdminModal
           open={newsModalOpen}
-          title={newsForm.id ? 'Edit news item' : 'Create news item'}
+          title={newsForm.id ? "Edit news item" : "Create news item"}
           description="Save a bilingual excerpt and full blog body. Linked files and links are collected automatically as attachments."
           onClose={closeNewsEditor}
         >
@@ -2179,24 +2413,23 @@ export default function AdminDashboard({
                     const nextSlug =
                       !current.slug || current.slug === slugify(current.name_en)
                         ? slugify(value)
-                        : current.slug
+                        : current.slug;
 
                     return {
                       ...current,
                       name_en: value,
-                      slug: nextSlug
-                    }
+                      slug: nextSlug,
+                    };
                   })
                 }
                 required
               />
               <AdminField
-                label="Name (BG)"
+                label="Name (BG, optional)"
                 value={newsForm.name_bg}
                 onChange={(value) =>
                   setNewsForm((current) => ({ ...current, name_bg: value }))
                 }
-                required
               />
               <div className="md:col-span-2">
                 <AdminField
@@ -2205,7 +2438,7 @@ export default function AdminDashboard({
                   onChange={(value) =>
                     setNewsForm((current) => ({
                       ...current,
-                      slug: slugify(value)
+                      slug: slugify(value),
                     }))
                   }
                   placeholder="regatta-port-bourgas-2026-announcement"
@@ -2214,8 +2447,8 @@ export default function AdminDashboard({
                 />
                 <AdminHelpText>
                   {newsForm.id
-                    ? 'Slug is locked after creation so the public blog URL stays stable.'
-                    : 'Used in the blog post URL and should stay unique for SEO.'}
+                    ? "Slug is locked after creation so the public blog URL stays stable."
+                    : "Used in the blog post URL and should stay unique for SEO."}
                 </AdminHelpText>
               </div>
             </div>
@@ -2227,17 +2460,17 @@ export default function AdminDashboard({
                 onChange={(value) =>
                   setNewsForm((current) => ({
                     ...current,
-                    description_en: value
+                    description_en: value,
                   }))
                 }
               />
               <AdminTextarea
-                label="Excerpt (BG)"
+                label="Excerpt (BG, optional)"
                 value={newsForm.description_bg}
                 onChange={(value) =>
                   setNewsForm((current) => ({
                     ...current,
-                    description_bg: value
+                    description_bg: value,
                   }))
                 }
               />
@@ -2249,41 +2482,47 @@ export default function AdminDashboard({
                     onChange={(value) =>
                       setNewsForm((current) => ({
                         ...current,
-                        body_en: value
+                        body_en: value,
                       }))
                     }
                     onError={(msg) => toast.error(msg)}
                   />
                   <AdminHelpText>
-                    Content is saved as HTML and stays visually styled when you edit it later.
+                    Content is saved as HTML and stays visually styled when you
+                    edit it later.
                   </AdminHelpText>
                 </div>
                 <div>
                   <HtmlEditor
-                    label="Body (BG)"
+                    label="Body (BG, optional)"
                     value={newsForm.body_bg}
                     onChange={(value) =>
                       setNewsForm((current) => ({
                         ...current,
-                        body_bg: value
+                        body_bg: value,
                       }))
                     }
                     onError={(msg) => toast.error(msg)}
                   />
                   <AdminHelpText>
-                    Links and uploaded documents inside the article are listed automatically at the end of the post.
+                    Leave this empty to show the English body by default on the
+                    Bulgarian site.
                   </AdminHelpText>
                 </div>
               </div>
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-              <Button type="submit" disabled={newsBusy} className="rounded-xl px-5 text-white">
+              <Button
+                type="submit"
+                disabled={newsBusy}
+                className="rounded-xl px-5 text-white"
+              >
                 {newsBusy
-                  ? 'Saving...'
+                  ? "Saving..."
                   : newsForm.id
-                    ? 'Update news item'
-                    : 'Create news item'}
+                    ? "Update news item"
+                    : "Create news item"}
               </Button>
               <Button
                 type="button"
@@ -2296,7 +2535,308 @@ export default function AdminDashboard({
             </div>
           </form>
         </AdminModal>
+
+        <AdminModal
+          open={entriesModalOpen}
+          title={
+            activeEntriesEvent
+              ? `Entries for ${activeEntriesEvent.name_en}`
+              : "Event entries"
+          }
+          description={
+            activeEntriesEvent
+              ? "Review submitted registrations, expand an entry to see all boat and contact information, and update its status."
+              : "Review submitted registrations for this event."
+          }
+          onClose={closeEntriesModal}
+        >
+          {registrationsLoading ? (
+            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10 text-sm text-dark/60">
+              Loading registrations...
+            </div>
+          ) : registrations.length === 0 ? (
+            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10 text-sm text-dark/60">
+              No registrations have been submitted for this event yet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 text-xs text-dark/60">
+                <span className="rounded-full bg-black/5 px-3 py-1">
+                  {registrations.length} total entries
+                </span>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">
+                  {
+                    registrations.filter((item) => item.status === "pending")
+                      .length
+                  }{" "}
+                  pending
+                </span>
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">
+                  {
+                    registrations.filter((item) => item.status === "approved")
+                      .length
+                  }{" "}
+                  approved
+                </span>
+                <span className="rounded-full bg-red-100 px-3 py-1 text-red-700">
+                  {
+                    registrations.filter((item) => item.status === "rejected")
+                      .length
+                  }{" "}
+                  rejected
+                </span>
+              </div>
+
+              <Accordion type="single" collapsible className="space-y-3">
+                {registrations.map((registration) => (
+                  <AccordionItem
+                    key={registration.id}
+                    value={registration.id}
+                    className="overflow-hidden rounded-[1.5rem] border border-black/10 bg-white/90 shadow-sm"
+                  >
+                    <AccordionTrigger className="items-center bg-white px-5 py-4 hover:no-underline">
+                      <div className="flex flex-1 flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-lg font-semibold text-dark">
+                            {registration.boat_name}
+                          </p>
+                          <p className="mt-1 text-sm text-dark/60">
+                            {registration.skipper_name} • {registration.country}
+                          </p>
+                          <p className="mt-1 text-xs text-dark/45">
+                            {registration.contact_email} • Submitted{" "}
+                            {formatTimestamp(registration.created_at)}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${getRegistrationStatusBadgeClasses(
+                              registration.status,
+                            )}`}
+                          >
+                            {registration.status}
+                          </span>
+                          <span className="rounded-full bg-black/5 px-3 py-1 text-xs text-dark/60">
+                            {registration.crew_list.length} crew
+                          </span>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+
+                    <AccordionContent className="px-5 pb-5 text-dark">
+                      <div className="space-y-5">
+                        <div className="flex flex-wrap gap-2">
+                          {(
+                            [
+                              "pending",
+                              "approved",
+                              "rejected",
+                            ] as RegistrationStatus[]
+                          ).map((status) => (
+                            <button
+                              key={status}
+                              type="button"
+                              disabled={
+                                registrationStatusBusyId === registration.id
+                              }
+                              onClick={() =>
+                                void handleRegistrationStatusChange(
+                                  registration.id,
+                                  status,
+                                )
+                              }
+                              className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
+                                status,
+                                registration.status,
+                              )}`}
+                            >
+                              {status}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          <RegistrationDetailRow
+                            label="Boat name"
+                            value={registration.boat_name}
+                          />
+                          <RegistrationDetailRow
+                            label="Boat email"
+                            value={registration.email}
+                          />
+                          <RegistrationDetailRow
+                            label="Border number"
+                            value={formatOptionalValue(
+                              registration.border_number,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Country"
+                            value={registration.country}
+                          />
+                          <RegistrationDetailRow
+                            label="Model / design"
+                            value={registration.model_design}
+                          />
+                          <RegistrationDetailRow
+                            label="Sail number"
+                            value={registration.sail_number}
+                          />
+                          <RegistrationDetailRow
+                            label="Boat age"
+                            value={registration.boat_age}
+                          />
+                          <RegistrationDetailRow
+                            label="LOA"
+                            value={`${registration.loa} m`}
+                          />
+                          <RegistrationDetailRow
+                            label="GPH / IRC"
+                            value={registration.gph_irc}
+                          />
+                          <RegistrationDetailRow
+                            label="Boat color"
+                            value={formatOptionalValue(registration.boat_color)}
+                          />
+                          <RegistrationDetailRow
+                            label="Port of registry"
+                            value={formatOptionalValue(
+                              registration.port_of_registry,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Yacht club"
+                            value={formatOptionalValue(registration.yacht_club)}
+                          />
+                          <RegistrationDetailRow
+                            label="Certificate of navigation"
+                            value={formatOptionalValue(
+                              registration.certificate_of_navigation,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Certificate of navigation expiry"
+                            value={formatOptionalValue(
+                              registration.certificate_of_navigation_expiry,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Skipper name"
+                            value={registration.skipper_name}
+                          />
+                          <RegistrationDetailRow
+                            label="Skipper yacht club"
+                            value={registration.skipper_yacht_club}
+                          />
+                          <RegistrationDetailRow
+                            label="Charterer name"
+                            value={formatOptionalValue(
+                              registration.charterer_name,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Certificate of competency"
+                            value={registration.certificate_of_competency}
+                          />
+                          <RegistrationDetailRow
+                            label="Competency expiry"
+                            value={formatOptionalValue(
+                              registration.certificate_of_competency_expiry,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Contact name"
+                            value={registration.contact_name}
+                          />
+                          <RegistrationDetailRow
+                            label="Contact phone"
+                            value={registration.contact_phone}
+                          />
+                          <RegistrationDetailRow
+                            label="Contact email"
+                            value={registration.contact_email}
+                          />
+                          <RegistrationDetailRow
+                            label="Receive documents by email"
+                            value={formatBooleanValue(
+                              registration.receive_documents_by_email,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Crew insurance"
+                            value={formatBooleanValue(
+                              registration.crew_insurance,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Third-party insurance"
+                            value={formatBooleanValue(
+                              registration.third_party_insurance,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Disclaimer accepted"
+                            value={formatBooleanValue(
+                              registration.disclaimer_accepted,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="GDPR accepted"
+                            value={formatBooleanValue(
+                              registration.gdpr_accepted,
+                            )}
+                          />
+                        </div>
+
+                        <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                            Crew list
+                          </p>
+                          {registration.crew_list.length === 0 ? (
+                            <p className="mt-3 text-sm text-dark/60">
+                              No crew members were added.
+                            </p>
+                          ) : (
+                            <div className="mt-3 space-y-3">
+                              {registration.crew_list.map(
+                                (crewMember, index) => (
+                                  <div
+                                    key={`${registration.id}-crew-${index}`}
+                                    className="rounded-2xl border border-black/10 bg-white p-4"
+                                  >
+                                    <p className="text-sm font-semibold text-dark">
+                                      {crewMember.name}
+                                    </p>
+                                    <div className="mt-2 grid gap-2 text-sm text-dark/65 sm:grid-cols-2">
+                                      <p>
+                                        Role:{" "}
+                                        {formatOptionalValue(
+                                          crewMember.role ?? null,
+                                        )}
+                                      </p>
+                                      <p>
+                                        Email:{" "}
+                                        {formatOptionalValue(
+                                          crewMember.email ?? null,
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          )}
+        </AdminModal>
       </div>
     </main>
-  )
+  );
 }

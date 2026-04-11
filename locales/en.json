@@ -85,11 +85,18 @@
     "subtitle": "Discover upcoming events and revisit past moments. Click “Details” for full information.",
     "future": "Future events",
     "past": "Past events",
+    "futureEmpty": "There are no upcoming events at the moment.",
+    "pastEmpty": "There are no past events to show yet.",
     "details": "Details",
     "current": "Current",
     "seeMore": "See more",
     "previewSubtitle": "Here are the next upcoming events. Visit the events page for the full list.",
     "back": "Back to events",
+    "register": "Register",
+    "openRegistration": "Open registration form",
+    "closeRegistration": "Close registration",
+    "registerModalEyebrow": "Event registration",
+    "registerModalDescription": "Complete the full registration form in this page overlay. The URL updates as you open or close it, so it can also be shared directly.",
     "tabs": {
       "documents": "Competition Documents",
       "noticeBoard": "Notice Board",
@@ -99,7 +106,9 @@
     "tabsContent": {
       "documents": "Competition documents and regulations will be available here.",
       "noticeBoard": "Important notices and updates will be posted here.",
-      "applications": "Submit your participation application here.",
+      "applications": "Open the full registration form for this event.",
+      "applicationsFiles": "Supporting participation files are included inside the registration overlay.",
+      "applicationsEmpty": "This event does not currently include supporting registration files.",
       "results": "Competition results will be displayed here."
     },
     "items": {

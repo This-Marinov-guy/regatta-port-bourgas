@@ -2,6 +2,7 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import NewsCard from '@/app/components/news/NewsCard'
 import { getNews } from '@/lib/news'
+import { localizeText } from '@/lib/localizedContent'
 import Image from 'next/image'
 
 export default async function LatestNews() {
@@ -44,10 +45,8 @@ export default async function LatestNews() {
             <NewsCard
               key={item.id}
               href={`/news/${item.slug}`}
-              title={locale === 'bg' ? item.name_bg : item.name_en}
-              description={
-                (locale === 'bg' ? item.description_bg : item.description_en) ?? ''
-              }
+              title={localizeText(locale, item.name_en, item.name_bg)}
+              description={localizeText(locale, item.description_en, item.description_bg)}
               date={item.created_at}
             />
           ))}

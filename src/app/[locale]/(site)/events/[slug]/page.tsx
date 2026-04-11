@@ -7,6 +7,8 @@ import { getTranslations, getLocale } from "next-intl/server";
 
 import { getEvent } from "@/lib/events";
 import EventTabs from "@/app/components/events/EventTabs";
+import EventRegistrationModal from "@/app/components/events/EventRegistrationModal";
+import { localizeText } from "@/lib/localizedContent";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
 
@@ -19,8 +21,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const event = await getEvent(slug)
   if (!event) return {}
 
-  const title = locale === 'bg' ? event.name_bg : event.name_en
-  const description = (locale === 'bg' ? event.description_bg : event.description_en) ?? ''
+  const title = localizeText(locale, event.name_en, event.name_bg)
+  const description = localizeText(
+    locale,
+    event.description_en,
+    event.description_bg
+  )
   const image = event.thumbnail_img || `${siteUrl}/images/banner.png`
 
   return {
@@ -50,8 +56,12 @@ export default async function EventDetailsPage({ params }: Props) {
   const from = format(new Date(event.start_date), "MMM dd, yyyy");
   const to = format(new Date(event.end_date), "MMM dd, yyyy");
 
-  const title = locale === 'bg' ? event.name_bg : event.name_en;
-  const description = (locale === 'bg' ? event.description_bg : event.description_en) ?? '';
+  const title = localizeText(locale, event.name_en, event.name_bg);
+  const description = localizeText(
+    locale,
+    event.description_en,
+    event.description_bg
+  );
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -104,9 +114,18 @@ export default async function EventDetailsPage({ params }: Props) {
           )}
 
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-dark dark:text-white mb-3 leading-tight">
-              {title}
-            </h1>
+            <div className="mb-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-dark dark:text-white leading-tight">
+                {title}
+              </h1>
+              <Link
+                href={`/events/${event.slug}?register=1`}
+                scroll={false}
+                className="inline-flex shrink-0 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+              >
+                {t("events.register")}
+              </Link>
+            </div>
             <p className="text-dark/60 dark:text-white/60 text-sm sm:text-base mb-6">
               {from} — {to}
             </p>
@@ -118,10 +137,17 @@ export default async function EventDetailsPage({ params }: Props) {
         </div>
 
         <EventTabs
+          registerHref={`/events/${event.slug}?register=1`}
           documents={event.documents}
           noticeBoard={event.notice_board}
           results={event.results}
           registerForm={event.register_form}
+        />
+        <EventRegistrationModal
+          eventId={event.id}
+          eventTitle={title}
+          eventDate={`${from} — ${to}`}
+          supportFiles={event.register_form}
         />
       </div>
     </main>

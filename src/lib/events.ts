@@ -4,7 +4,7 @@ export type DbEvent = {
   id: string
   slug: string
   name_en: string
-  name_bg: string
+  name_bg: string | null
   description_en: string | null
   description_bg: string | null
   thumbnail_img: string | null
@@ -19,6 +19,28 @@ export type DbEvent = {
   updated_at: string
 }
 
+function normalizeUrlArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return [value]
+  }
+
+  return []
+}
+
+function normalizeEvent(data: Record<string, unknown>): DbEvent {
+  return {
+    ...(data as unknown as DbEvent),
+    documents: normalizeUrlArray(data.documents),
+    notice_board: normalizeUrlArray(data.notice_board),
+    results: normalizeUrlArray(data.results),
+    register_form: normalizeUrlArray(data.register_form),
+  }
+}
+
 export async function getEvents(): Promise<DbEvent[]> {
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
@@ -31,7 +53,7 @@ export async function getEvents(): Promise<DbEvent[]> {
     return []
   }
 
-  return data ?? []
+  return (data ?? []).map((item) => normalizeEvent(item as Record<string, unknown>))
 }
 
 export async function getEvent(slug: string): Promise<DbEvent | null> {
@@ -46,5 +68,5 @@ export async function getEvent(slug: string): Promise<DbEvent | null> {
     return null
   }
 
-  return data
+  return normalizeEvent(data as Record<string, unknown>)
 }

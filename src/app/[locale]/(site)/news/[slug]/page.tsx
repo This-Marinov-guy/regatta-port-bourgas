@@ -4,6 +4,7 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { Icon } from '@iconify/react'
 import { getNewsItem } from '@/lib/news'
+import { localizeText } from '@/lib/localizedContent'
 import { extractNewsAttachmentLinks } from '@/lib/newsAttachments'
 import markdownToHtml from '@/lib/markdownToHtml'
 
@@ -19,8 +20,8 @@ export async function generateMetadata({ params }: Props) {
 
   if (!news) return {}
 
-  const title = locale === 'bg' ? news.name_bg : news.name_en
-  const description = (locale === 'bg' ? news.description_bg : news.description_en) ?? ''
+  const title = localizeText(locale, news.name_en, news.name_bg)
+  const description = localizeText(locale, news.description_en, news.description_bg)
 
   return {
     title,
@@ -52,9 +53,9 @@ export default async function NewsDetailPage({ params }: Props) {
     notFound()
   }
 
-  const title = locale === 'bg' ? news.name_bg : news.name_en
-  const description = (locale === 'bg' ? news.description_bg : news.description_en) ?? ''
-  const body = locale === 'bg' ? news.body_bg : news.body_en
+  const title = localizeText(locale, news.name_en, news.name_bg)
+  const description = localizeText(locale, news.description_en, news.description_bg)
+  const body = localizeText(locale, news.body_en, news.body_bg)
   const formattedDate = format(new Date(news.created_at), 'MMMM dd, yyyy')
   const bodyHtml = /<([a-z][^/\s>]*)\b[^>]*>/i.test(body)
     ? body
