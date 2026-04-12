@@ -63,12 +63,12 @@ Globals:
         AWS_REGISTRATION_TEMPLATE_KEY: !Ref RegistrationTemplateKey
         AWS_REGISTRATION_PDF_FONT_BUCKET: !Ref RegistrationArtifactsBucket
         AWS_REGISTRATION_PDF_FONT_KEY: !Ref RegistrationPdfFontKey
-        REGISTRATION_SMTP_HOST: !Ref RegistrationSmtpHost
-        REGISTRATION_SMTP_PORT: !Sub '${RegistrationSmtpPort}'
-        REGISTRATION_SMTP_SECURE: !Ref RegistrationSmtpSecure
-        REGISTRATION_SMTP_USER: !Ref RegistrationSmtpUser
-        REGISTRATION_SMTP_PASSWORD: !Ref RegistrationSmtpPassword
-        REGISTRATION_SMTP_FROM: !Ref RegistrationSmtpFrom
+        SMTP_HOST: !Ref RegistrationSmtpHost
+        SMTP_PORT: !Sub '${RegistrationSmtpPort}'
+        SMTP_SECURE: !Ref RegistrationSmtpSecure
+        SMTP_USER: !Ref RegistrationSmtpUser
+        SMTP_PASSWORD: !Ref RegistrationSmtpPassword
+        SMTP_FROM: !Ref RegistrationSmtpFrom
         REGISTRATION_NOTIFICATION_EMAILS: !Ref RegistrationNotificationEmails
         AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL: !If
           - HasOutputPublicBaseUrl

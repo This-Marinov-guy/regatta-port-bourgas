@@ -8,9 +8,9 @@ source "$SCRIPT_DIR/common.sh"
 
 require_var NEXT_PUBLIC_SUPABASE_URL
 require_var SUPABASE_SERVICE_KEY
-require_var REGISTRATION_SMTP_USER
-require_var REGISTRATION_SMTP_PASSWORD
-require_var REGISTRATION_SMTP_FROM
+require_var SMTP_USER
+require_var SMTP_PASSWORD
+require_var SMTP_FROM
 
 cd "$ROOT_DIR"
 
@@ -26,12 +26,12 @@ sam deploy \
   --parameter-overrides \
     SupabaseUrl="$NEXT_PUBLIC_SUPABASE_URL" \
     SupabaseServiceKey="$SUPABASE_SERVICE_KEY" \
-    RegistrationSmtpUser="$REGISTRATION_SMTP_USER" \
-    RegistrationSmtpPassword="$REGISTRATION_SMTP_PASSWORD" \
-    RegistrationSmtpFrom="$REGISTRATION_SMTP_FROM" \
-    RegistrationSmtpHost="${REGISTRATION_SMTP_HOST:-smtp.gmail.com}" \
-    RegistrationSmtpPort="${REGISTRATION_SMTP_PORT:-465}" \
-    RegistrationSmtpSecure="${REGISTRATION_SMTP_SECURE:-true}" \
+    RegistrationSmtpUser="$SMTP_USER" \
+    RegistrationSmtpPassword="$SMTP_PASSWORD" \
+    RegistrationSmtpFrom="$SMTP_FROM" \
+    RegistrationSmtpHost="${SMTP_HOST:-smtp.gmail.com}" \
+    RegistrationSmtpPort="${SMTP_PORT:-465}" \
+    RegistrationSmtpSecure="${SMTP_SECURE:-true}" \
     RegistrationNotificationEmails="${REGISTRATION_NOTIFICATION_EMAILS:-}" \
     RegistrationOutputPublicBaseUrl="${AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL:-}" \
     RegistrationArtifactsBucketName="${AWS_REGISTRATION_OUTPUT_BUCKET:-}" \

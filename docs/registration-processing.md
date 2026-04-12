@@ -30,12 +30,12 @@ Lambda workers:
 - `AWS_REGISTRATION_TEMPLATE_BUCKET` and `AWS_REGISTRATION_TEMPLATE_KEY` (optional S3 template source)
 - `AWS_REGISTRATION_PDF_FONT_BUCKET` and `AWS_REGISTRATION_PDF_FONT_KEY` (optional S3 font source)
 - `REGISTRATION_PDF_FONT_PATH` (optional, defaults to bundled Manrope font)
-- `REGISTRATION_SMTP_HOST` (defaults to `smtp.gmail.com`)
-- `REGISTRATION_SMTP_PORT` (defaults to `465`)
-- `REGISTRATION_SMTP_SECURE` (defaults to `true`)
-- `REGISTRATION_SMTP_USER`
-- `REGISTRATION_SMTP_PASSWORD`
-- `REGISTRATION_SMTP_FROM`
+- `SMTP_HOST` (defaults to `smtp.gmail.com`)
+- `SMTP_PORT` (defaults to `465`)
+- `SMTP_SECURE` (defaults to `true`)
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `SMTP_FROM`
 - `REGISTRATION_NOTIFICATION_EMAILS` (comma-separated)
 
 ## Deployment notes

@@ -75,14 +75,14 @@ export function getRegistrationNotificationEmails() {
 
 export function getRegistrationSmtpConfig() {
   return {
-    host: process.env.REGISTRATION_SMTP_HOST || 'smtp.gmail.com',
-    port: optionalNumber(process.env.REGISTRATION_SMTP_PORT, 465),
-    secure: optionalBoolean(process.env.REGISTRATION_SMTP_SECURE, true),
-    user: requireEnv('REGISTRATION_SMTP_USER', process.env.REGISTRATION_SMTP_USER),
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: optionalNumber(process.env.SMTP_PORT, 465),
+    secure: optionalBoolean(process.env.SMTP_SECURE, true),
+    user: requireEnv('SMTP_USER', process.env.SMTP_USER),
     pass: requireEnv(
-      'REGISTRATION_SMTP_PASSWORD',
-      process.env.REGISTRATION_SMTP_PASSWORD
+      'SMTP_PASSWORD',
+      process.env.SMTP_PASSWORD
     ),
-    from: requireEnv('REGISTRATION_SMTP_FROM', process.env.REGISTRATION_SMTP_FROM),
+    from: requireEnv('SMTP_FROM', process.env.SMTP_FROM),
   }
 }
