@@ -21,8 +21,14 @@ import type { RegistrationWithEvent } from './data'
 const s3Client = new S3Client({ region: getAwsRegion() })
 const PREVIEW_WIDTH = 1755
 const PREVIEW_HEIGHT = 1240
+const PAGE_2_CREW_ROWS = Array.from({ length: 14 }, (_, index) => ({
+  previewLeft: 150,
+  previewTop: 610 + index * 35,
+  dobPreviewLeft: 1191.6,
+  dobPreviewTop: 610 + index * 35,
+}))
 const PAGE_1_POSITIONS = {
-  eventName: { previewLeft: 364.1, previewTop: 62.2 },
+  eventName: { previewLeft: 364.1, previewTop: 52.2 },
   eventDates: { previewLeft: 1215.6, previewTop: 130.8 },
   boatName: { previewLeft: 234.3, previewTop: 302.6 },
   yachtClub: { previewLeft: 846.3, previewTop: 304.3 },
@@ -54,22 +60,7 @@ const PAGE_2_POSITIONS = {
   boatName: { previewLeft: 223.8, previewTop: 306.5 },
   country: { previewLeft: 941.5, previewTop: 311.1 },
   portOfRegistry: { previewLeft: 1366.3, previewTop: 306.7 },
-  crewRows: [
-    { previewLeft: 159.7, previewTop: 626.7, dobPreviewLeft: 1191.6, dobPreviewTop: 623.8 },
-    { previewLeft: 158.9, previewTop: 660.2, dobPreviewLeft: 1193.2, dobPreviewTop: 662.0 },
-    { previewLeft: 158.8, previewTop: 693.4, dobPreviewLeft: 1191.8, dobPreviewTop: 694.5 },
-    { previewLeft: 158.5, previewTop: 727.8, dobPreviewLeft: 1191.4, dobPreviewTop: 730.7 },
-    { previewLeft: 158.7, previewTop: 761.3, dobPreviewLeft: 1192.0, dobPreviewTop: 761.1 },
-    { previewLeft: 158.2, previewTop: 798.0, dobPreviewLeft: 1191.7, dobPreviewTop: 793.7 },
-    { previewLeft: 157.7, previewTop: 828.7, dobPreviewLeft: 1190.0, dobPreviewTop: 830.4 },
-    { previewLeft: 158.0, previewTop: 862.9, dobPreviewLeft: 1189.9, dobPreviewTop: 864.2 },
-    { previewLeft: 156.8, previewTop: 895.9, dobPreviewLeft: 1190.5, dobPreviewTop: 894.8 },
-    { previewLeft: 155.5, previewTop: 931.9, dobPreviewLeft: 1190.5, dobPreviewTop: 928.9 },
-    { previewLeft: 155.5, previewTop: 964.9, dobPreviewLeft: 1190.0, dobPreviewTop: 961.0 },
-    { previewLeft: 154.8, previewTop: 997.3, dobPreviewLeft: 1189.8, dobPreviewTop: 995.0 },
-    { previewLeft: 156.3, previewTop: 1027.6, dobPreviewLeft: 1189.8, dobPreviewTop: 1026.3 },
-    { previewLeft: 154.9, previewTop: 1061.1, dobPreviewLeft: 1187.7, dobPreviewTop: 1065.6 },
-  ],
+  crewRows: PAGE_2_CREW_ROWS,
   entryDate: { previewLeft: 176.2, previewTop: 1122.7 },
   skipperSignature: { previewLeft: 489.8, previewTop: 1130.5 },
 } as const
