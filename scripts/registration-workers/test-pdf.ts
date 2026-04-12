@@ -1,24 +1,61 @@
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
 import { Readable } from 'node:stream'
+import { createClient } from '@supabase/supabase-js'
 import fontkit from '@pdf-lib/fontkit'
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
-import { PDFDocument, PDFPage, rgb } from 'pdf-lib'
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { PDFDocument, type PDFPage, rgb } from 'pdf-lib'
 import { format } from 'date-fns'
-import {
-  getAwsRegion,
-  getRegistrationOutputBucket,
-  getRegistrationOutputPublicBaseUrl,
-  getRegistrationPdfFontBucket,
-  getRegistrationPdfFontKey,
-  getRegistrationPdfFontPath,
-  getRegistrationTemplateBucket,
-  getRegistrationTemplateKey,
-  getRegistrationTemplatePath,
-} from './config'
-import type { RegistrationWithEvent } from './data'
 
-const s3Client = new S3Client({ region: getAwsRegion() })
+type CrewMember = {
+  name: string
+  date_of_birth?: string
+}
+
+type RegistrationWithEvent = {
+  id: string
+  event_id: string
+  boat_name: string
+  border_number: number | null
+  country: string
+  certificate_of_navigation: number | null
+  certificate_of_navigation_expiry: string | null
+  model_design: string
+  sail_number: string
+  boat_age: number
+  port_of_registry: string | null
+  gph_irc: string
+  loa: number
+  boat_color: string | null
+  yacht_club: string | null
+  skipper_name: string
+  skipper_yacht_club: string
+  charterer_name: string | null
+  certificate_of_competency: string
+  certificate_of_competency_expiry: string | null
+  contact_name: string
+  contact_phone: string
+  contact_email: string
+  receive_documents_by_email: boolean
+  crew_insurance: boolean
+  third_party_insurance: boolean
+  disclaimer_accepted: boolean
+  gdpr_accepted: boolean
+  crew_list: CrewMember[]
+  generated_form_url: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  updated_at: string
+  event: {
+    id: string
+    slug: string
+    name_en: string
+    name_bg: string | null
+    start_date: string
+    end_date: string
+  } | null
+}
+
 const PREVIEW_WIDTH = 1755
 const PREVIEW_HEIGHT = 1240
 const PAGE_1_POSITIONS = {
@@ -73,9 +110,80 @@ const PAGE_2_POSITIONS = {
   entryDate: { previewLeft: 176.2, previewTop: 1122.7 },
   skipperSignature: { previewLeft: 489.8, previewTop: 1130.5 },
 } as const
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-central-1',
+})
+
+async function loadEnvFile(relativePath: string) {
+  const filePath = path.join(process.cwd(), relativePath)
+
+  try {
+    const raw = await fs.readFile(filePath, 'utf8')
+    const lines = raw.split(/\r?\n/)
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+
+      if (!trimmed || trimmed.startsWith('#')) {
+        continue
+      }
+
+      const separatorIndex = trimmed.indexOf('=')
+      if (separatorIndex === -1) {
+        continue
+      }
+
+      const key = trimmed.slice(0, separatorIndex).trim()
+      const value = trimmed.slice(separatorIndex + 1).trim()
+
+      if (!key || process.env[key] != null) {
+        continue
+      }
+
+      process.env[key] = value.replace(/^['"]|['"]$/g, '')
+    }
+  } catch {
+    // Ignore missing local env files and rely on the current environment.
+  }
+}
+
+function requireEnv(name: string) {
+  const value = process.env[name]
+
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`)
+  }
+
+  return value
+}
+
+function getTemplatePath() {
+  return process.env.REGISTRATION_TEMPLATE_PATH || 'public/documents/register-form-empty.pdf'
+}
+
+function getTemplateBucket() {
+  return process.env.AWS_REGISTRATION_TEMPLATE_BUCKET || null
+}
+
+function getTemplateKey() {
+  return process.env.AWS_REGISTRATION_TEMPLATE_KEY || null
+}
+
+function getFontPath() {
+  return process.env.REGISTRATION_PDF_FONT_PATH || 'public/fonts/Manrope/Manrope-ExtraBold.ttf'
+}
+
+function getFontBucket() {
+  return process.env.AWS_REGISTRATION_PDF_FONT_BUCKET || null
+}
+
+function getFontKey() {
+  return process.env.AWS_REGISTRATION_PDF_FONT_KEY || null
+}
 
 async function streamToBuffer(stream: Readable) {
   const chunks: Buffer[] = []
+
   for await (const chunk of stream) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
   }
@@ -84,14 +192,14 @@ async function streamToBuffer(stream: Readable) {
 }
 
 async function loadTemplateBytes() {
-  const templateBucket = getRegistrationTemplateBucket()
-  const templateKey = getRegistrationTemplateKey()
+  const bucket = getTemplateBucket()
+  const key = getTemplateKey()
 
-  if (templateBucket && templateKey) {
+  if (bucket && key) {
     const response = await s3Client.send(
       new GetObjectCommand({
-        Bucket: templateBucket,
-        Key: templateKey,
+        Bucket: bucket,
+        Key: key,
       })
     )
 
@@ -102,18 +210,18 @@ async function loadTemplateBytes() {
     return streamToBuffer(response.Body)
   }
 
-  return fs.readFile(path.join(process.cwd(), getRegistrationTemplatePath()))
+  return fs.readFile(path.join(process.cwd(), getTemplatePath()))
 }
 
 async function loadFontBytes() {
-  const fontBucket = getRegistrationPdfFontBucket()
-  const fontKey = getRegistrationPdfFontKey()
+  const bucket = getFontBucket()
+  const key = getFontKey()
 
-  if (fontBucket && fontKey) {
+  if (bucket && key) {
     const response = await s3Client.send(
       new GetObjectCommand({
-        Bucket: fontBucket,
-        Key: fontKey,
+        Bucket: bucket,
+        Key: key,
       })
     )
 
@@ -124,7 +232,7 @@ async function loadFontBytes() {
     return streamToBuffer(response.Body)
   }
 
-  return fs.readFile(path.join(process.cwd(), getRegistrationPdfFontPath()))
+  return fs.readFile(path.join(process.cwd(), getFontPath()))
 }
 
 function topToPdfY(pageHeight: number, previewTop: number, fontSize: number) {
@@ -149,6 +257,7 @@ function wrapLines(
 
   for (const word of words) {
     const next = currentLine ? `${currentLine} ${word}` : word
+
     if (font.widthOfTextAtSize(next, size) <= maxWidth || !currentLine) {
       currentLine = next
       continue
@@ -188,7 +297,6 @@ function drawPreviewText(args: {
   const x = previewToPdfX(page.getWidth(), previewLeft)
   const baseY = topToPdfY(page.getHeight(), previewTop, size)
   const lineHeight = args.lineHeight ?? size + 2
-
   const lines = maxWidth ? wrapLines(text, font, size, maxWidth) : [text]
 
   lines.forEach((line, index) => {
@@ -214,16 +322,7 @@ function formatDateValue(value: string | null | undefined) {
   }
 }
 
-function buildGeneratedFormUrl(bucket: string, key: string) {
-  const publicBaseUrl = getRegistrationOutputPublicBaseUrl()
-  if (publicBaseUrl) {
-    return `${publicBaseUrl.replace(/\/$/, '')}/${key}`
-  }
-
-  return `https://${bucket}.s3.${getAwsRegion()}.amazonaws.com/${key}`
-}
-
-export async function generateRegistrationPdf(registration: RegistrationWithEvent) {
+async function generateRegistrationPdf(registration: RegistrationWithEvent) {
   const [templateBytes, fontBytes] = await Promise.all([
     loadTemplateBytes(),
     loadFontBytes(),
@@ -234,14 +333,16 @@ export async function generateRegistrationPdf(registration: RegistrationWithEven
   const font = await pdf.embedFont(fontBytes, { subset: true })
   const [page1, page2] = pdf.getPages()
 
-  const eventName = registration.event?.name_en || registration.event?.name_bg || 'International Regatta Port Bourgas'
-  const eventDates =
-    registration.event
-      ? `${format(new Date(registration.event.start_date), 'dd.MM.yyyy')} - ${format(
-          new Date(registration.event.end_date),
-          'dd.MM.yyyy'
-        )}`
-      : ''
+  const eventName =
+    registration.event?.name_en ||
+    registration.event?.name_bg ||
+    'International Regatta Port Bourgas'
+  const eventDates = registration.event
+    ? `${format(new Date(registration.event.start_date), 'dd.MM.yyyy')} - ${format(
+        new Date(registration.event.end_date),
+        'dd.MM.yyyy'
+      )}`
+    : ''
   const countryAndHarbour = [registration.country, registration.port_of_registry]
     .filter(Boolean)
     .join(' / ')
@@ -534,26 +635,64 @@ export async function generateRegistrationPdf(registration: RegistrationWithEven
   }
 }
 
-export async function uploadRegistrationPdf(args: {
-  registration: RegistrationWithEvent
-  fileName: string
-  pdfBuffer: Buffer
-}) {
-  const bucket = getRegistrationOutputBucket()
-  const key = `registrations/${args.registration.event_id}/${args.registration.id}/${args.fileName}`
+async function main() {
+  await loadEnvFile('.env.local')
+  await loadEnvFile('.env')
 
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: args.pdfBuffer,
-      ContentType: 'application/pdf',
-    })
+  const supabase = createClient(
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('SUPABASE_SERVICE_KEY'),
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
   )
 
-  return {
-    bucket,
-    key,
-    url: buildGeneratedFormUrl(bucket, key),
+  const { data, error } = await supabase
+    .from('registrations')
+    .select(
+      `
+        *,
+        event:events(
+          id,
+          slug,
+          name_en,
+          name_bg,
+          start_date,
+          end_date
+        )
+      `
+    )
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
   }
+
+  if (!data) {
+    throw new Error('No registrations found in the database.')
+  }
+
+  const registration = data as RegistrationWithEvent
+  const generated = await generateRegistrationPdf(registration)
+  const outputDir = path.join(process.cwd(), 'tmp', 'registration-pdf-preview')
+  const outputPath = path.join(outputDir, generated.fileName)
+
+  await fs.mkdir(outputDir, { recursive: true })
+  await fs.writeFile(outputPath, generated.pdfBuffer)
+
+  console.log(`Generated PDF for registration ${registration.id}`)
+  console.log(`Boat: ${registration.boat_name}`)
+  console.log(`Output: ${outputPath}`)
 }
+
+main().catch((error) => {
+  console.error(
+    error instanceof Error ? error.message : 'Failed to generate registration PDF.'
+  )
+  process.exit(1)
+})

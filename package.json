@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "registration:test-pdf": "node --env-file=.env.local --experimental-strip-types scripts/registration-workers/generate-first-registration-pdf.ts",
     "registration:deploy": "bash scripts/registration-workers/deploy.sh",
     "registration:stop": "bash scripts/registration-workers/stop.sh",
     "registration:restart": "bash scripts/registration-workers/restart.sh",

@@ -2,7 +2,6 @@
 import { Icon } from '@iconify/react'
 import Link from 'next/link'
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
-import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Image from 'next/image'
@@ -10,19 +9,19 @@ import NavLink from './navigation/NavLink'
 import { signOut, useSession } from 'next-auth/react'
 import LanguageSwitcher from '../language-switcher'
 import { CLUB_PHONE } from '@/utils/defines/CONTACTS'
+import type { NavLinks } from '@/app/types/navlink'
 
 const Header: React.FC = () => {
-  const { data: session } = useSession();
-  const [user, setUser] = useState<{ user: any } | null>(null);
+  const { data: session } = useSession()
+  const [user, setUser] = useState<{ user: string } | null>(null)
   const [sticky, setSticky] = useState(false)
   const [navbarOpen, setNavbarOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations()
 
   // Create fallback links using translations
-  const fallbackLinks = useMemo(() => [
+  const fallbackLinks = useMemo<NavLinks[]>(() => [
     { label: t('navigation.home'), href: `/${locale}` },
     { label: t('navigation.aboutUs'), href: `/${locale}/about-us` },
     { label: t('navigation.events'), href: `/${locale}/events` },
@@ -32,9 +31,11 @@ const Header: React.FC = () => {
     { label: t('navigation.documents'), href: `/${locale}/documents` },
   ], [locale, t])
 
-  const [navLinks, setNavLinks] = useState<any>(fallbackLinks);
+  const [navLinks, setNavLinks] = useState<NavLinks[]>(fallbackLinks)
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
+  const authDisplayName =
+    user?.user || session?.user?.name || session?.user?.email || null
 
   const handleClickOutside = (event: MouseEvent) => {
     if (sideMenuRef.current && !sideMenuRef.current.contains(event.target as Node)) {
@@ -54,11 +55,11 @@ const Header: React.FC = () => {
         const data = await res.json()
         // Check if links have proper translations (not raw keys)
         if (data?.navLinks && Array.isArray(data.navLinks) && data.navLinks.length > 0) {
-          const hasValidTranslations = data.navLinks.every((link: any) => 
-            link.label && !link.label.startsWith('navigation.')
+          const hasValidTranslations = data.navLinks.every(
+            (link: NavLinks) => link.label && !link.label.startsWith('navigation.')
           )
           if (hasValidTranslations) {
-            setNavLinks(data.navLinks)
+            setNavLinks(data.navLinks as NavLinks[])
           } else {
             // API returned keys instead of translations, use fallback
             setNavLinks(fallbackLinks)
@@ -79,24 +80,35 @@ const Header: React.FC = () => {
   useEffect(() => {
     window.addEventListener('scroll', handleScroll)
     document.addEventListener('mousedown', handleClickOutside)
-    const storedUser = localStorage.getItem("user");
+
+    const storedUser = localStorage.getItem('user')
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsed = JSON.parse(storedUser) as { user?: unknown }
+        setUser(
+          typeof parsed?.user === 'string' && parsed.user.trim()
+            ? { user: parsed.user.trim() }
+            : null
+        )
+      } catch {
+        localStorage.removeItem('user')
+      }
     }
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [pathname,handleScroll])
+  }, [pathname, handleScroll])
 
   const isHomepage = pathname === '/'
 
   const handleSignOut = () => {
-    localStorage.removeItem("user");
-    signOut();
-    setUser(null);
-  };
+    localStorage.removeItem('user')
+    setNavbarOpen(false)
+    signOut()
+    setUser(null)
+  }
 
   return (
     <header
@@ -162,20 +174,26 @@ const Header: React.FC = () => {
               />
             </button> */}
 
-            {(user?.user || session?.user) && (
+            {authDisplayName ? (
               <div className="relative group flex items-center justify-center">
-                <Image
-                  src={"/images/avatar/avatar_1.jpg"}
-                  alt="avatar"
-                  width={35}
-                  height={35}
-                  className="rounded-full"
-                />
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
+                    isHomepage
+                      ? sticky
+                        ? 'border-dark/10 bg-dark text-white dark:border-white/10 dark:bg-white dark:text-dark'
+                        : 'border-white/20 bg-white text-dark'
+                      : 'border-dark/10 bg-dark text-white dark:border-white/10 dark:bg-white dark:text-dark'
+                  }`}
+                  aria-label={authDisplayName}
+                  title={authDisplayName}
+                >
+                  <Icon icon="ph:user-circle-bold" width={24} height={24} />
+                </div>
                 <p className="absolute w-fit text-sm font-medium text-center z-10 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-200 bg-primary dark:bg-middlegreen text-creamwhite py-1 px-2 min-w-28 rounded-xl shadow-2xl top-full left-1/2 transform -translate-x-1/2 mt-3">
-                  {user?.user || session?.user?.name}
+                  {authDisplayName}
                 </p>
               </div>
-            )}
+            ) : null}
             <div>
               <button
                 onClick={() => setNavbarOpen(!navbarOpen)}
@@ -234,41 +252,40 @@ const Header: React.FC = () => {
             </div>
             <nav className="flex flex-col items-start gap-4">
               <ul className="w-full">
+                {authDisplayName ? (
+                  <li className="mb-6 flex items-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 px-5 py-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-dark">
+                      <Icon icon="ph:user-circle-bold" width={28} height={28} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
+                        Account
+                      </p>
+                      <p className="mt-1 text-base font-medium text-white">
+                        {authDisplayName}
+                      </p>
+                    </div>
+                  </li>
+                ) : null}
                 {navLinks &&
-                  navLinks?.map((item: any, index: any) => (
+                  navLinks?.map((item, index) => (
                     <NavLink
                       key={index}
                       item={item}
                       onClick={() => setNavbarOpen(false)}
                     />
                   ))}
-                {/* {user?.user || session?.user ? (
-                  <>
+                {authDisplayName ? (
+                  <li className="mt-6">
                     <button
                       onClick={() => handleSignOut()}
-                      className="py-4 px-8 bg-primary text-base leading-4 block w-fit text-white rounded-full border border-primary font-semibold mt-3 hover:bg-transparent hover:text-primary duration-300 cursor-pointer"
+                      className="inline-flex items-center gap-3 rounded-full border border-primary bg-primary px-6 py-3 text-base font-semibold leading-4 text-white transition duration-300 hover:bg-transparent hover:text-primary"
                     >
+                      <Icon icon="ph:sign-out-bold" width={18} height={18} />
                       Sign Out
                     </button>
-                  </>
-                ) : (
-                  <li className="flex items-center gap-4">
-                    <Link
-                      onClick={() => setNavbarOpen(false)}
-                      href="/signin"
-                      className="py-4 px-8 bg-primary text-base leading-4 block w-fit text-white rounded-full border border-primary font-semibold mt-3 hover:bg-transparent hover:text-primary duration-300"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      onClick={() => setNavbarOpen(false)}
-                      href="/signup"
-                      className="py-4 px-8 bg-transparent border border-primary text-base leading-4 block w-fit text-primary rounded-full font-semibold mt-3 hover:bg-primary hover:text-white duration-300"
-                    >
-                      Sign up
-                    </Link>
                   </li>
-                )} */}
+                ) : null}
               </ul>
             </nav>
 

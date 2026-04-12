@@ -40,6 +40,7 @@ export default async function NotFoundPage() {
               width={200}
               height={200}
               unoptimized={true}
+              className="rounded-full"
             />
           </div>
           

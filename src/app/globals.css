@@ -127,6 +127,10 @@ a[class*="rounded-full"][href] {
   border-radius: 0.375rem !important; /* rounded-md - override to make buttons rectangular */
 }
 
+button {
+  cursor: pointer;
+}
+
 .blog-details p, .blog-details hr {
   @apply mb-8;
 }
@@ -198,8 +202,13 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+.event-registration-datepicker-portal {
+  position: relative;
+  z-index: 2147483647;
+}
+
 .event-registration-datepicker-popper {
-  z-index: 120;
+  z-index: 2147483647 !important;
 }
 
 .event-registration-datepicker {

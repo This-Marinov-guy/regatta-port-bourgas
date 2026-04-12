@@ -5,8 +5,10 @@ import { Icon } from '@iconify/react'
 import { format } from 'date-fns'
 import { bg, enUS } from 'date-fns/locale'
 import DatePicker from 'react-datepicker'
+import toast, { Toaster } from 'react-hot-toast'
 import { useLocale } from 'next-intl'
 import { Button } from '@/app/components/ui/button'
+import EventSubmissionStatusModal from '@/app/components/events/EventSubmissionStatusModal'
 
 type CrewMemberDraft = {
   name: string
@@ -45,9 +47,12 @@ type RegistrationDraft = {
 
 type Props = {
   eventId: string
+  onCancel?: () => void
+  onSuccess?: () => void
 }
 
 type LegalModalKey = 'disclaimer' | 'gdpr'
+type SubmissionState = 'idle' | 'loading' | 'success' | 'error'
 
 function syncSkipperIntoCrew(
   crewList: CrewMemberDraft[] | undefined,
@@ -153,13 +158,20 @@ const content = {
     addCrew: 'Add crew member',
     removeCrew: 'Remove',
     datePlaceholder: 'Select a date',
-    clearDraft: 'Clear saved draft',
+    cancel: 'Cancel',
     submit: 'Submit registration',
     submitting: 'Submitting...',
-    savedNote: 'Draft saved locally on this device.',
+    fixForm: 'Please fix the highlighted fields before submitting.',
     success:
       'Registration submitted successfully. Your local draft has been cleared.',
     error: 'We could not submit your registration. Please try again.',
+    submissionStatus: {
+      loadingTitle: 'Submitting registration',
+      loadingBody: 'Please wait while we send your registration.',
+      successTitle: 'Registration sent',
+      errorTitle: 'Submission failed',
+      close: 'Close',
+    },
     crewEmpty:
       'The first row is the skipper and is filled from the skipper information above. Add more rows only for the rest of the crew.',
     legal: {
@@ -230,13 +242,20 @@ const content = {
     addCrew: 'Добави член на екипажа',
     removeCrew: 'Премахни',
     datePlaceholder: 'Изберете дата',
-    clearDraft: 'Изчисти запазената чернова',
+    cancel: 'Отказ',
     submit: 'Изпрати регистрация',
     submitting: 'Изпращане...',
-    savedNote: 'Черновата е запазена локално на това устройство.',
+    fixForm: 'Моля, коригирайте маркираните полета преди изпращане.',
     success:
       'Регистрацията е изпратена успешно. Локалната чернова беше изчистена.',
     error: 'Неуспешно изпращане на регистрацията. Моля, опитайте отново.',
+    submissionStatus: {
+      loadingTitle: 'Изпращане на регистрацията',
+      loadingBody: 'Моля, изчакайте, докато изпратим регистрацията ви.',
+      successTitle: 'Регистрацията е изпратена',
+      errorTitle: 'Грешка при изпращане',
+      close: 'Затвори',
+    },
     crewEmpty:
       'Първият ред е за шкипера и се попълва автоматично от секцията за шкипер по-горе. Добавяйте следващи редове само за останалите членове на екипажа.',
     legal: {
@@ -277,8 +296,12 @@ function DraftField({
   )
 }
 
-function inputClassName() {
-  return 'w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:border-white/10 dark:bg-black/30 dark:text-white'
+function inputClassName(invalid = false) {
+  return `w-full rounded-2xl border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:bg-black/30 dark:text-white ${
+    invalid
+      ? 'border-red-500 focus:border-red-500 dark:border-red-500'
+      : 'border-black/10 dark:border-white/10'
+  }`
 }
 
 function parseDateValue(value: string) {
@@ -303,27 +326,38 @@ function formatDateValue(value: Date | null) {
 }
 
 function DateInput({
+  name,
   locale,
   value,
   onChange,
   placeholder,
+  invalid = false,
+  required = false,
 }: {
+  name: string
   locale: 'en' | 'bg'
   value: string
   onChange: (value: string) => void
   placeholder: string
+  invalid?: boolean
+  required?: boolean
 }) {
   return (
     <div className="relative">
       <DatePicker
+        name={name}
+        required={required}
         selected={parseDateValue(value)}
         onChange={(date) => onChange(formatDateValue(date))}
+        shouldCloseOnSelect
+        portalId="event-registration-datepicker-portal"
         dateFormat="dd.MM.yyyy"
         placeholderText={placeholder}
         locale={locale === 'bg' ? bg : enUS}
-        className={`${inputClassName()} pr-12`}
+        className={`${inputClassName(invalid)} pr-12`}
         calendarClassName="event-registration-datepicker"
         popperClassName="event-registration-datepicker-popper"
+        popperProps={{ strategy: 'fixed' }}
         wrapperClassName="w-full"
         showMonthDropdown
         showYearDropdown
@@ -398,14 +432,35 @@ function LegalInfoModal({
   )
 }
 
-export default function EventRegistrationForm({ eventId }: Props) {
+function scrollToElement(element: HTMLElement | null) {
+  if (!element) {
+    return
+  }
+
+  element.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+    inline: 'nearest',
+  })
+
+  window.setTimeout(() => {
+    element.focus({ preventScroll: true })
+  }, 180)
+}
+
+export default function EventRegistrationForm({
+  eventId,
+  onCancel,
+  onSuccess,
+}: Props) {
   const locale = useLocale() === 'bg' ? 'bg' : 'en'
   const t = content[locale]
   const storageKey = useMemo(() => getStorageKey(eventId), [eventId])
   const [form, setForm] = useState<RegistrationDraft>(() => defaultDraft())
   const [submitting, setSubmitting] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState<string | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [invalidFields, setInvalidFields] = useState<string[]>([])
+  const [submissionState, setSubmissionState] = useState<SubmissionState>('idle')
+  const [submissionMessage, setSubmissionMessage] = useState<string>('')
   const [activeLegalModal, setActiveLegalModal] = useState<LegalModalKey | null>(null)
   const hydratedRef = useRef(false)
 
@@ -440,10 +495,25 @@ export default function EventRegistrationForm({ eventId }: Props) {
     window.localStorage.setItem(storageKey, JSON.stringify(form))
   }, [form, storageKey])
 
+  useEffect(() => {
+    if (submissionState !== 'success' || !onSuccess) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      onSuccess()
+    }, 1200)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [onSuccess, submissionState])
+
   function updateField<K extends keyof RegistrationDraft>(
     field: K,
     value: RegistrationDraft[K]
   ) {
+    setInvalidFields((current) => current.filter((item) => item !== field))
     setForm((current) => {
       if (field === 'skipper_name') {
         const crewList =
@@ -474,6 +544,8 @@ export default function EventRegistrationForm({ eventId }: Props) {
     field: keyof CrewMemberDraft,
     value: string
   ) {
+    const fieldKey = `crew_list.${index}.${field}`
+    setInvalidFields((current) => current.filter((item) => item !== fieldKey))
     setForm((current) => ({
       ...current,
       crew_list: current.crew_list.map((member, memberIndex) =>
@@ -483,6 +555,9 @@ export default function EventRegistrationForm({ eventId }: Props) {
   }
 
   function addCrewMember() {
+    setInvalidFields((current) =>
+      current.filter((item) => !item.startsWith('crew_list.'))
+    )
     setForm((current) => ({
       ...current,
       crew_list: [...current.crew_list, { name: '', date_of_birth: '' }],
@@ -494,6 +569,9 @@ export default function EventRegistrationForm({ eventId }: Props) {
       return
     }
 
+    setInvalidFields((current) =>
+      current.filter((item) => !item.startsWith(`crew_list.${index}.`))
+    )
     setForm((current) => ({
       ...current,
       crew_list:
@@ -506,8 +584,7 @@ export default function EventRegistrationForm({ eventId }: Props) {
   function clearDraft() {
     const next = defaultDraft()
     setForm(next)
-    setSubmitMessage(null)
-    setSubmitError(null)
+    setInvalidFields([])
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(storageKey)
     }
@@ -515,9 +592,29 @@ export default function EventRegistrationForm({ eventId }: Props) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setSubmissionState('idle')
+    setSubmissionMessage('')
+    const formElement = event.currentTarget
+    const nativeInvalidFields = Array.from(
+      formElement.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        ':invalid'
+      )
+    )
+    const nextInvalidFields = nativeInvalidFields
+      .map((field) => field.name || field.id)
+      .filter(Boolean)
+
+    if (nextInvalidFields.length > 0 || !formElement.checkValidity()) {
+      setInvalidFields(nextInvalidFields)
+      toast.error(t.fixForm)
+      scrollToElement(nativeInvalidFields[0] ?? null)
+      return
+    }
+
     setSubmitting(true)
-    setSubmitMessage(null)
-    setSubmitError(null)
+    setInvalidFields([])
+    setSubmissionState('loading')
+    setSubmissionMessage(t.submissionStatus.loadingBody)
 
     try {
       const response = await fetch('/api/registrations', {
@@ -540,9 +637,13 @@ export default function EventRegistrationForm({ eventId }: Props) {
       }
 
       clearDraft()
-      setSubmitMessage(t.success)
+      setSubmissionState('success')
+      setSubmissionMessage(t.success)
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : t.error)
+      const message = error instanceof Error ? error.message : t.error
+      setSubmissionState('error')
+      setSubmissionMessage(message)
+      toast.error(message)
     } finally {
       setSubmitting(false)
     }
@@ -550,6 +651,15 @@ export default function EventRegistrationForm({ eventId }: Props) {
 
   return (
     <div className="space-y-6">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            borderRadius: '16px',
+          },
+        }}
+      />
+
       {activeLegalModal ? (
         <LegalInfoModal
           title={
@@ -567,99 +677,139 @@ export default function EventRegistrationForm({ eventId }: Props) {
         />
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {submissionState !== 'idle' ? (
+        <EventSubmissionStatusModal
+          status={submissionState}
+          title={
+            submissionState === 'loading'
+              ? t.submissionStatus.loadingTitle
+              : submissionState === 'success'
+                ? t.submissionStatus.successTitle
+                : t.submissionStatus.errorTitle
+          }
+          message={submissionMessage}
+          closeLabel={t.submissionStatus.close}
+          onClose={() => setSubmissionState('idle')}
+        />
+      ) : null}
+
+      <form noValidate onSubmit={handleSubmit} className="space-y-6">
         <SectionCard title={t.boatSection}>
           <div className="grid gap-4 md:grid-cols-2">
             <DraftField label={t.labels.boat_name} required>
               <input
+                name="boat_name"
                 value={form.boat_name}
                 onChange={(event) => updateField('boat_name', event.target.value)}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('boat_name'))}
               />
             </DraftField>
             <DraftField label={t.labels.border_number}>
               <input
+                name="border_number"
+                type="number"
+                inputMode="numeric"
+                step="1"
                 value={form.border_number}
                 onChange={(event) => updateField('border_number', event.target.value)}
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('border_number'))}
               />
             </DraftField>
             <DraftField label={t.labels.country} required>
               <input
+                name="country"
                 value={form.country}
                 onChange={(event) => updateField('country', event.target.value)}
                 placeholder={t.placeholders.country}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('country'))}
               />
             </DraftField>
             <DraftField label={t.labels.certificate_of_navigation}>
               <input
+                name="certificate_of_navigation"
+                type="number"
+                inputMode="numeric"
+                step="1"
                 value={form.certificate_of_navigation}
                 onChange={(event) =>
                   updateField('certificate_of_navigation', event.target.value)
                 }
-                className={inputClassName()}
+                className={inputClassName(
+                  invalidFields.includes('certificate_of_navigation')
+                )}
               />
             </DraftField>
             <DraftField label={t.labels.certificate_of_navigation_expiry}>
               <DateInput
+                name="certificate_of_navigation_expiry"
                 locale={locale}
                 value={form.certificate_of_navigation_expiry}
                 onChange={(value) =>
                   updateField('certificate_of_navigation_expiry', value)
                 }
                 placeholder={t.datePlaceholder}
+                invalid={invalidFields.includes(
+                  'certificate_of_navigation_expiry'
+                )}
               />
             </DraftField>
             <DraftField label={t.labels.model_design} required>
               <input
+                name="model_design"
                 value={form.model_design}
                 onChange={(event) => updateField('model_design', event.target.value)}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('model_design'))}
               />
             </DraftField>
             <DraftField label={t.labels.sail_number} required>
               <input
+                name="sail_number"
                 value={form.sail_number}
                 onChange={(event) => updateField('sail_number', event.target.value)}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('sail_number'))}
               />
             </DraftField>
             <DraftField label={t.labels.boat_age} required>
               <input
+                name="boat_age"
                 type="number"
                 inputMode="numeric"
                 value={form.boat_age}
                 onChange={(event) => updateField('boat_age', event.target.value)}
                 placeholder={t.placeholders.boat_age}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('boat_age'))}
               />
             </DraftField>
             <DraftField label={t.labels.port_of_registry}>
               <input
+                name="port_of_registry"
                 value={form.port_of_registry}
                 onChange={(event) =>
                   updateField('port_of_registry', event.target.value)
                 }
-                className={inputClassName()}
+                className={inputClassName(
+                  invalidFields.includes('port_of_registry')
+                )}
               />
             </DraftField>
             <DraftField label={t.labels.gph_irc} required>
               <input
+                name="gph_irc"
                 value={form.gph_irc}
                 onChange={(event) => updateField('gph_irc', event.target.value)}
                 placeholder={t.placeholders.gph_irc}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('gph_irc'))}
               />
             </DraftField>
             <DraftField label={t.labels.loa} required>
               <input
+                name="loa"
                 type="number"
                 inputMode="decimal"
                 step="0.01"
@@ -668,21 +818,23 @@ export default function EventRegistrationForm({ eventId }: Props) {
                 onChange={(event) => updateField('loa', event.target.value)}
                 placeholder={t.placeholders.loa}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('loa'))}
               />
             </DraftField>
             <DraftField label={t.labels.boat_color}>
               <input
+                name="boat_color"
                 value={form.boat_color}
                 onChange={(event) => updateField('boat_color', event.target.value)}
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('boat_color'))}
               />
             </DraftField>
             <DraftField label={t.labels.yacht_club}>
               <input
+                name="yacht_club"
                 value={form.yacht_club}
                 onChange={(event) => updateField('yacht_club', event.target.value)}
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('yacht_club'))}
               />
             </DraftField>
           </div>
@@ -692,47 +844,59 @@ export default function EventRegistrationForm({ eventId }: Props) {
           <div className="grid gap-4 md:grid-cols-2">
             <DraftField label={t.labels.skipper_name} required>
               <input
+                name="skipper_name"
                 value={form.skipper_name}
                 onChange={(event) => updateField('skipper_name', event.target.value)}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('skipper_name'))}
               />
             </DraftField>
             <DraftField label={t.labels.skipper_yacht_club} required>
               <input
+                name="skipper_yacht_club"
                 value={form.skipper_yacht_club}
                 onChange={(event) =>
                   updateField('skipper_yacht_club', event.target.value)
                 }
                 required
-                className={inputClassName()}
+                className={inputClassName(
+                  invalidFields.includes('skipper_yacht_club')
+                )}
               />
             </DraftField>
             <DraftField label={t.labels.charterer_name}>
               <input
+                name="charterer_name"
                 value={form.charterer_name}
                 onChange={(event) => updateField('charterer_name', event.target.value)}
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('charterer_name'))}
               />
             </DraftField>
             <DraftField label={t.labels.certificate_of_competency} required>
               <input
+                name="certificate_of_competency"
                 value={form.certificate_of_competency}
                 onChange={(event) =>
                   updateField('certificate_of_competency', event.target.value)
                 }
                 required
-                className={inputClassName()}
+                className={inputClassName(
+                  invalidFields.includes('certificate_of_competency')
+                )}
               />
             </DraftField>
             <DraftField label={t.labels.certificate_of_competency_expiry}>
               <DateInput
+                name="certificate_of_competency_expiry"
                 locale={locale}
                 value={form.certificate_of_competency_expiry}
                 onChange={(value) =>
                   updateField('certificate_of_competency_expiry', value)
                 }
                 placeholder={t.datePlaceholder}
+                invalid={invalidFields.includes(
+                  'certificate_of_competency_expiry'
+                )}
               />
             </DraftField>
           </div>
@@ -742,31 +906,36 @@ export default function EventRegistrationForm({ eventId }: Props) {
           <div className="grid gap-4 md:grid-cols-2">
             <DraftField label={t.labels.contact_name} required>
               <input
+                name="contact_name"
                 value={form.contact_name}
                 onChange={(event) => updateField('contact_name', event.target.value)}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('contact_name'))}
               />
             </DraftField>
             <DraftField label={t.labels.contact_phone} required>
               <input
+                name="contact_phone"
                 type="tel"
                 value={form.contact_phone}
                 onChange={(event) => updateField('contact_phone', event.target.value)}
                 required
-                className={inputClassName()}
+                className={inputClassName(invalidFields.includes('contact_phone'))}
               />
             </DraftField>
             <div className="md:col-span-2">
               <DraftField label={t.labels.contact_email} required>
                 <input
+                  name="contact_email"
                   type="email"
                   value={form.contact_email}
                   onChange={(event) =>
                     updateField('contact_email', event.target.value)
                   }
                   required
-                  className={inputClassName()}
+                  className={inputClassName(
+                    invalidFields.includes('contact_email')
+                  )}
                 />
               </DraftField>
             </div>
@@ -806,28 +975,37 @@ export default function EventRegistrationForm({ eventId }: Props) {
                     index === 0 ? 'md:grid-cols-2' : 'md:grid-cols-2'
                   }`}
                 >
-                  <DraftField label={t.labels.crew_name}>
+                  <DraftField label={t.labels.crew_name} required>
                     <input
+                      name={`crew_list.${index}.name`}
                       value={member.name}
                       onChange={(event) =>
                         updateCrewMember(index, 'name', event.target.value)
                       }
+                      required
                       readOnly={index === 0}
-                      className={`${inputClassName()} ${
+                      className={`${inputClassName(
+                        invalidFields.includes(`crew_list.${index}.name`)
+                      )} ${
                         index === 0
                           ? 'cursor-not-allowed bg-black/[0.03] dark:bg-white/[0.03]'
                           : ''
                       }`}
                     />
                   </DraftField>
-                  <DraftField label={t.labels.crew_date_of_birth}>
+                  <DraftField label={t.labels.crew_date_of_birth} required>
                     <DateInput
+                      name={`crew_list.${index}.date_of_birth`}
                       locale={locale}
                       value={member.date_of_birth}
                       onChange={(value) =>
                         updateCrewMember(index, 'date_of_birth', value)
                       }
                       placeholder={t.datePlaceholder}
+                      required
+                      invalid={invalidFields.includes(
+                        `crew_list.${index}.date_of_birth`
+                      )}
                     />
                   </DraftField>
                 </div>
@@ -859,7 +1037,11 @@ export default function EventRegistrationForm({ eventId }: Props) {
             ).map((field) => (
               <div
                 key={field}
-                className="flex items-start gap-3 rounded-2xl border border-black/10 bg-white/70 px-4 py-4 text-sm text-dark dark:border-white/10 dark:bg-black/20 dark:text-white"
+                className={`flex items-start gap-3 rounded-2xl border bg-white/70 px-4 py-4 text-sm text-dark dark:bg-black/20 dark:text-white ${
+                  invalidFields.includes(field)
+                    ? 'border-red-500 dark:border-red-500'
+                    : 'border-black/10 dark:border-white/10'
+                }`}
               >
                 <input
                   type="checkbox"
@@ -897,27 +1079,21 @@ export default function EventRegistrationForm({ eventId }: Props) {
           </div>
         </SectionCard>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <Button type="submit" disabled={submitting} className="rounded-xl px-6 text-white">
             {submitting ? t.submitting : t.submit}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={clearDraft}
-            className="rounded-xl border-black/10 bg-white text-dark"
-          >
-            {t.clearDraft}
-          </Button>
+          {onCancel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="rounded-xl border-black/10 bg-white text-dark"
+            >
+              {t.cancel}
+            </Button>
+          ) : null}
         </div>
-
-        {submitMessage ? (
-          <p className="text-sm font-medium text-emerald-700">{submitMessage}</p>
-        ) : null}
-
-        {submitError ? (
-          <p className="text-sm font-medium text-red-600">{submitError}</p>
-        ) : null}
       </form>
     </div>
   )

@@ -70,9 +70,9 @@ export type RegistrationRecord = {
 
   // Boat
   boat_name: string
-  border_number: string | null
+  border_number: number | null
   country: string
-  certificate_of_navigation: string | null
+  certificate_of_navigation: number | null
   certificate_of_navigation_expiry: string | null
   model_design: string
   sail_number: string

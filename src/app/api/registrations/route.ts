@@ -90,6 +90,25 @@ function requireInteger(value: unknown, label: string) {
   return normalized
 }
 
+function optionalInteger(value: unknown, label: string) {
+  if (value === null || value === undefined) {
+    return null
+  }
+
+  if (typeof value === 'string' && !value.trim()) {
+    return null
+  }
+
+  const normalized =
+    typeof value === 'number' ? value : Number(typeof value === 'string' ? value.trim() : value)
+
+  if (!Number.isInteger(normalized) || normalized <= 0) {
+    throw new Error(`${label} must be a whole number.`)
+  }
+
+  return normalized
+}
+
 function requireDecimal(value: unknown, label: string) {
   const normalized =
     typeof value === 'number' ? value : Number(typeof value === 'string' ? value.trim() : value)
@@ -135,6 +154,13 @@ function normalizeCrewList(value: unknown) {
     .filter(Boolean)
 }
 
+function requiresLegacyEmailColumn(errorMessage: string) {
+  return (
+    errorMessage.includes('null value in column "email"') &&
+    errorMessage.includes('relation "registrations"')
+  )
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as RegistrationPayload
@@ -142,9 +168,12 @@ export async function POST(request: Request) {
     const payload = {
       event_id: requireText(body.event_id, 'Event'),
       boat_name: requireText(body.boat_name, 'Boat name'),
-      border_number: optionalText(body.border_number),
+      border_number: optionalInteger(body.border_number, 'Border number'),
       country: requireText(body.country, 'Country'),
-      certificate_of_navigation: optionalText(body.certificate_of_navigation),
+      certificate_of_navigation: optionalInteger(
+        body.certificate_of_navigation,
+        'Certificate of navigation'
+      ),
       certificate_of_navigation_expiry: optionalDate(
         body.certificate_of_navigation_expiry,
         'Navigation certificate expiry'
@@ -187,14 +216,32 @@ export async function POST(request: Request) {
     }
 
     const supabase = createSupabaseServiceClient()
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('registrations')
       .insert(payload)
       .select('id')
       .single()
 
+    if (error && requiresLegacyEmailColumn(error.message)) {
+      const legacyInsert = await supabase
+        .from('registrations')
+        .insert({
+          ...payload,
+          email: payload.contact_email,
+        })
+        .select('id')
+        .single()
+
+      data = legacyInsert.data
+      error = legacyInsert.error
+    }
+
     if (error) {
       throw new Error(error.message)
+    }
+
+    if (!data) {
+      throw new Error('Unable to create registration.')
     }
 
     try {

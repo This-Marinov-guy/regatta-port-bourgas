@@ -18,7 +18,7 @@ export default async function NotFoundPage() {
               width={490}
               height={450}
               unoptimized={true}
-              className="w-full max-w-[490px] h-auto"
+              className="w-full max-w-[490px] h-auto rounded-full"
             />
           </div>
           

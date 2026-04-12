@@ -155,7 +155,11 @@ export default function EventRegistrationModal({
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6">
-              <EventRegistrationForm eventId={eventId} />
+              <EventRegistrationForm
+                eventId={eventId}
+                onCancel={closeModal}
+                onSuccess={closeModal}
+              />
             </div>
           </div>
         </div>

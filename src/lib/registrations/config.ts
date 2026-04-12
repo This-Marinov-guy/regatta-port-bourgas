@@ -63,7 +63,7 @@ export function getRegistrationPdfFontKey() {
 }
 
 export function getRegistrationPdfFontPath() {
-  return process.env.REGISTRATION_PDF_FONT_PATH || 'public/fonts/Manrope/Manrope-Regular.ttf'
+  return process.env.REGISTRATION_PDF_FONT_PATH || 'public/fonts/Manrope/Manrope-ExtraBold.ttf'
 }
 
 export function getRegistrationNotificationEmails() {
