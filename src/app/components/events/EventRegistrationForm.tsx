@@ -139,7 +139,6 @@ const content = {
       contact_name: 'Contact name',
       contact_phone: 'Contact phone',
       contact_email: 'Contact email',
-      receive_documents_by_email: 'Send event documents to my email',
       crew_insurance:
         "The boat crew is insured - min. 1'000 euro per person",
       third_party_insurance:
@@ -162,6 +161,9 @@ const content = {
     submit: 'Submit registration',
     submitting: 'Submitting...',
     fixForm: 'Please fix the highlighted fields before submitting.',
+    insuranceRequired: 'The crew must have minimum insurance',
+    insuranceBanner:
+      'Please provide the insurance policies at the regatta email',
     success:
       'Registration submitted successfully. Your local draft has been cleared.',
     error: 'We could not submit your registration. Please try again.',
@@ -223,7 +225,6 @@ const content = {
       contact_name: 'Име за контакт',
       contact_phone: 'Телефон за контакт',
       contact_email: 'Имейл за контакт',
-      receive_documents_by_email: 'Да получавам документите по имейл',
       crew_insurance:
         "Имам застраховка на Екипажа за минимум 2'000 лв.",
       third_party_insurance:
@@ -246,6 +247,9 @@ const content = {
     submit: 'Изпрати регистрация',
     submitting: 'Изпращане...',
     fixForm: 'Моля, коригирайте маркираните полета преди изпращане.',
+    insuranceRequired: 'The crew must have minimum insurance',
+    insuranceBanner:
+      'Моля изпратете застраховките и екипажния списък на емейла на регатата',
     success:
       'Регистрацията е изпратена успешно. Локалната чернова беше изчистена.',
     error: 'Неуспешно изпращане на регистрацията. Моля, опитайте отново.',
@@ -513,7 +517,25 @@ export default function EventRegistrationForm({
     field: K,
     value: RegistrationDraft[K]
   ) {
-    setInvalidFields((current) => current.filter((item) => item !== field))
+    setInvalidFields((current) => {
+      if (field === 'crew_insurance' || field === 'third_party_insurance') {
+        const nextCrewInsurance =
+          field === 'crew_insurance' ? Boolean(value) : form.crew_insurance
+        const nextThirdPartyInsurance =
+          field === 'third_party_insurance'
+            ? Boolean(value)
+            : form.third_party_insurance
+
+        if (nextCrewInsurance || nextThirdPartyInsurance) {
+          return current.filter(
+            (item) =>
+              item !== 'crew_insurance' && item !== 'third_party_insurance'
+          )
+        }
+      }
+
+      return current.filter((item) => item !== field)
+    })
     setForm((current) => {
       if (field === 'skipper_name') {
         const crewList =
@@ -595,6 +617,8 @@ export default function EventRegistrationForm({
     setSubmissionState('idle')
     setSubmissionMessage('')
     const formElement = event.currentTarget
+    const hasMinimumInsurance =
+      form.crew_insurance || form.third_party_insurance
     const nativeInvalidFields = Array.from(
       formElement.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
         ':invalid'
@@ -604,10 +628,18 @@ export default function EventRegistrationForm({
       .map((field) => field.name || field.id)
       .filter(Boolean)
 
-    if (nextInvalidFields.length > 0 || !formElement.checkValidity()) {
-      setInvalidFields(nextInvalidFields)
-      toast.error(t.fixForm)
-      scrollToElement(nativeInvalidFields[0] ?? null)
+    if (!hasMinimumInsurance) {
+      nextInvalidFields.push('crew_insurance', 'third_party_insurance')
+    }
+
+    if (nextInvalidFields.length > 0 || !formElement.checkValidity() || !hasMinimumInsurance) {
+      setInvalidFields(Array.from(new Set(nextInvalidFields)))
+      toast.error(hasMinimumInsurance ? t.fixForm : t.insuranceRequired)
+      scrollToElement(
+        hasMinimumInsurance
+          ? (nativeInvalidFields[0] ?? null)
+          : document.getElementById('crew_insurance')
+      )
       return
     }
 
@@ -1032,7 +1064,6 @@ export default function EventRegistrationForm({
                 'disclaimer_accepted',
                 'crew_insurance',
                 'third_party_insurance',
-                'receive_documents_by_email',
               ] as const
             ).map((field) => (
               <div
@@ -1077,6 +1108,18 @@ export default function EventRegistrationForm({
               </div>
             ))}
           </div>
+
+          {form.crew_insurance || form.third_party_insurance ? (
+            <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-100 px-4 py-4 text-sm leading-7 text-amber-950">
+              {t.insuranceBanner}{' '}
+              <a
+                href="mailto:events@yachtclubportbourgas.org"
+                className="font-semibold underline decoration-amber-700 underline-offset-2 hover:text-amber-700"
+              >
+                events@yachtclubportbourgas.org
+              </a>
+            </div>
+          ) : null}
         </SectionCard>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
