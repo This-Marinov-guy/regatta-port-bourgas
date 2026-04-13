@@ -11,6 +11,9 @@ type Props = {
   message: string
   closeLabel: string
   onClose: () => void
+  actionLabel?: string
+  onAction?: () => void
+  actionDisabled?: boolean
 }
 
 export default function EventSubmissionStatusModal({
@@ -19,6 +22,9 @@ export default function EventSubmissionStatusModal({
   message,
   closeLabel,
   onClose,
+  actionLabel,
+  onAction,
+  actionDisabled = false,
 }: Props) {
   const [mounted, setMounted] = useState(false)
   const isLoading = status === 'loading'
@@ -74,19 +80,31 @@ export default function EventSubmissionStatusModal({
             <h3 className="mt-5 text-2xl font-semibold text-dark dark:text-white">
               {title}
             </h3>
-            <p className="mt-3 text-sm leading-7 text-dark/75 dark:text-white/75">
+            <p className="mt-3  leading-7 text-dark/75 dark:text-white/75">
               {message}
             </p>
 
             {!isLoading ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="mt-6 rounded-xl border-black/10 bg-white text-dark dark:border-white/10 dark:bg-black/20 dark:text-white"
-              >
-                {closeLabel}
-              </Button>
+              <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row">
+                {actionLabel && onAction ? (
+                  <Button
+                    type="button"
+                    onClick={onAction}
+                    disabled={actionDisabled}
+                    className="rounded-xl px-5 text-white"
+                  >
+                    {actionLabel}
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="rounded-xl border-black/10 bg-white text-dark dark:border-white/10 dark:bg-black/20 dark:text-white"
+                >
+                  {closeLabel}
+                </Button>
+              </div>
             ) : null}
           </div>
         </div>

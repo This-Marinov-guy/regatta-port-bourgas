@@ -39,7 +39,7 @@ export default function GalleryPhotoGrid({ photos, year }: GalleryPhotoGridProps
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300" />
               <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                <span className="inline-flex items-center gap-1 rounded-md bg-white/90 text-dark px-2 py-1 text-xs font-semibold shadow-lg">
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/90 text-dark px-2 py-1  font-semibold shadow-lg">
                   <Icon icon="ph:magnifying-glass-plus-bold" width={14} height={14} />
                   {t('preview')}
                 </span>

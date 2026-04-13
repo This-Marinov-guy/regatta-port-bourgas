@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { getTranslations, getLocale } from "next-intl/server";
 
-import { getEvent } from "@/lib/events";
+import { getEvent, isEventRegistrationOpen } from "@/lib/events";
 import EventTabs from "@/app/components/events/EventTabs";
 import EventRegistrationModal from "@/app/components/events/EventRegistrationModal";
 import { localizeText } from "@/lib/localizedContent";
@@ -62,6 +62,7 @@ export default async function EventDetailsPage({ params }: Props) {
     event.description_en,
     event.description_bg
   );
+  const registrationOpen = isEventRegistrationOpen(event.start_date)
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -119,7 +120,7 @@ export default async function EventDetailsPage({ params }: Props) {
                 {title}
               </h1>
             </div>
-            <p className="text-dark/60 dark:text-white/60 text-sm sm:text-base mb-6">
+            <p className="text-dark/60 dark:text-white/60  sm:text-base mb-6">
               {from} — {to}
             </p>
 
@@ -131,29 +132,34 @@ export default async function EventDetailsPage({ params }: Props) {
 
         <EventTabs
           registerHref={`/events/${event.slug}?register=1`}
+          registerOpen={registrationOpen}
           documents={event.documents}
           noticeBoard={event.notice_board}
           results={event.results}
           registerForm={event.register_form}
         />
-        <EventRegistrationModal
-          eventId={event.id}
-          eventTitle={title}
-          eventDate={`${from} — ${to}`}
-        />
+        {registrationOpen ? (
+          <EventRegistrationModal
+            eventId={event.id}
+            eventTitle={title}
+            eventDate={`${from} — ${to}`}
+          />
+        ) : null}
 
-        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 sm:bottom-6">
-          <div className="relative">
-            <div className="absolute inset-x-[-2.5rem] inset-y-[-1.25rem] rounded-[999px] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0.18)_72%,rgba(255,255,255,0)_100%)] blur-xl dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.10)_42%,rgba(255,255,255,0.04)_72%,rgba(255,255,255,0)_100%)]" />
-            <Link
-              href={`/events/${event.slug}?register=1`}
-              scroll={false}
-              className="pointer-events-auto relative inline-flex min-h-14 items-center justify-center rounded-2xl bg-primary px-7 py-4 text-base font-medium text-white shadow-[0_18px_40px_rgba(0,87,184,0.32)] transition hover:bg-primary/90 sm:text-lg"
-            >
-              {t("events.register")}
-            </Link>
+        {registrationOpen ? (
+          <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 sm:bottom-6">
+            <div className="relative">
+              <div className="absolute inset-x-[-2.5rem] inset-y-[-1.25rem] rounded-[999px] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0.18)_72%,rgba(255,255,255,0)_100%)] blur-xl dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.10)_42%,rgba(255,255,255,0.04)_72%,rgba(255,255,255,0)_100%)]" />
+              <Link
+                href={`/events/${event.slug}?register=1`}
+                scroll={false}
+                className="pointer-events-auto relative inline-flex min-h-14 items-center justify-center rounded-2xl bg-primary px-7 py-4 text-base font-medium text-white shadow-[0_18px_40px_rgba(0,87,184,0.32)] transition hover:bg-primary/90 sm:text-lg"
+              >
+                {t("events.register")}
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </main>
   );

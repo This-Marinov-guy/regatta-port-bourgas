@@ -218,7 +218,7 @@ export default async function AboutUsPage() {
               <div className="mb-2 text-3xl font-semibold text-primary sm:text-4xl">
                 {stat.value}
               </div>
-              <p className="text-sm font-medium uppercase tracking-[0.22em] text-dark/50 dark:text-white/50">
+              <p className=" font-medium uppercase tracking-[0.22em] text-dark/50 dark:text-white/50">
                 {stat.label}
               </p>
             </div>
@@ -276,7 +276,7 @@ export default async function AboutUsPage() {
                   {content.panelTitle}
                 </h2>
 
-                <p className="mb-6 text-sm leading-7 text-white/75">
+                <p className="mb-6  leading-7 text-white/75">
                   {content.panelDescription}
                 </p>
 
@@ -287,7 +287,7 @@ export default async function AboutUsPage() {
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-4 text-sm font-semibold text-white transition-colors hover:bg-white/15"
+                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-4  font-semibold text-white transition-colors hover:bg-white/15"
                     >
                       <span className="max-w-[18rem]">{link.label}</span>
                       <Icon icon="ph:arrow-up-right-bold" width={18} height={18} />
@@ -295,7 +295,7 @@ export default async function AboutUsPage() {
                   ))}
                 </div>
 
-                <p className="mt-4 text-xs leading-6 text-white/55">{content.panelNote}</p>
+                <p className="mt-4  leading-6 text-white/55">{content.panelNote}</p>
               </div>
             </section>
 
@@ -304,7 +304,7 @@ export default async function AboutUsPage() {
                 {locale === 'bg' ? 'Клубът накратко' : 'Club at a glance'}
               </h2>
 
-              <div className="space-y-4 text-sm leading-7 text-white/80">
+              <div className="space-y-4  leading-7 text-white/80">
                 <div className="flex items-start gap-3">
                   <Icon icon="ph:sailboat-bold" width={26} height={26} className="mt-0.5 shrink-0 text-white" />
                   <span>

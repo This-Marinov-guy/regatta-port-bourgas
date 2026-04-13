@@ -43,7 +43,7 @@ export default function EventCard({
       </div>
 
       <div className="p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-sm text-dark/60 dark:text-white/60 mb-2">
+        <div className="flex items-center gap-2  text-dark/60 dark:text-white/60 mb-2">
           <Icon icon="ph:calendar-blank-bold" width={18} height={18} className="text-primary" />
           <span>
             {from} — {to}
@@ -56,7 +56,7 @@ export default function EventCard({
 
         <Link
           href={href}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-md bg-primary text-white text-sm sm:text-base font-semibold hover:bg-primary/90 transition-colors duration-300"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-md bg-primary text-white  sm:text-base font-semibold hover:bg-primary/90 transition-colors duration-300"
           aria-label={detailsLabel}
         >
           {detailsLabel}

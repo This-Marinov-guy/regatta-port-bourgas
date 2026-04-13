@@ -53,13 +53,13 @@ export default function Details() {
                         <div className='flex'>
                             <div className='flex flex-col gap-2 border-e border-black/10 dark:border-white/20 pr-2 xs:pr-4 mobile:pr-8'>
                                 <Icon icon={'solar:bed-linear'} width={20} height={20} />
-                                <p className='text-sm mobile:text-base font-normal text-black dark:text-white'>
+                                <p className=' mobile:text-base font-normal text-black dark:text-white'>
                                     {item?.beds} Bedrooms
                                 </p>
                             </div>
                             <div className='flex flex-col gap-2 border-e border-black/10 dark:border-white/20 px-2 xs:px-4 mobile:px-8'>
                                 <Icon icon={'solar:bath-linear'} width={20} height={20} />
-                                <p className='text-sm mobile:text-base font-normal text-black dark:text-white'>
+                                <p className=' mobile:text-base font-normal text-black dark:text-white'>
                                     {item?.baths} Bathrooms
                                 </p>
                             </div>
@@ -69,7 +69,7 @@ export default function Details() {
                                     width={20}
                                     height={20}
                                 />
-                                <p className='text-sm mobile:text-base font-normal text-black dark:text-white'>
+                                <p className=' mobile:text-base font-normal text-black dark:text-white'>
                                     {item?.area}m<sup>2</sup>
                                 </p>
                             </div>
@@ -212,7 +212,7 @@ export default function Details() {
                             <h4 className='text-dark text-3xl font-medium dark:text-white'>
                                 {item?.rate}
                             </h4>
-                            <p className='text-sm text-dark/50 dark:text-white'>Discounted Price</p>
+                            <p className=' text-dark/50 dark:text-white'>Discounted Price</p>
                             <Link href="#" className='py-4 px-8 bg-primary text-white rounded-full w-full block text-center hover:bg-dark duration-300 text-base mt-8 hover:cursor-pointer'>
                                 Get in touch
                             </Link>

@@ -1,10 +1,17 @@
 'use client'
 
-import type { ClipboardEvent as ReactClipboardEvent, FormEvent, ReactNode } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Icon } from '@iconify/react'
+import { EditorContent, useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import LinkExtension from '@tiptap/extension-link'
+import ImageExtension from '@tiptap/extension-image'
+import Placeholder from '@tiptap/extension-placeholder'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
 import toast, { Toaster } from 'react-hot-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { Button } from '@/app/components/ui/button'
@@ -53,8 +60,6 @@ type NewsFormState = {
   slug: string
   name_en: string
   name_bg: string
-  description_en: string
-  description_bg: string
   body_en: string
   body_bg: string
   attachments: string[]
@@ -96,6 +101,32 @@ const editorImageSizes = {
 } as const
 
 type EditorImageSize = keyof typeof editorImageSizes
+
+const RichImageExtension = ImageExtension.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      size: {
+        default: 'full',
+        parseHTML: (element) => {
+          const size = element.getAttribute('data-size')
+          return size && size in editorImageSizes ? size : 'full'
+        },
+        renderHTML: (attributes) => {
+          const size =
+            typeof attributes.size === 'string' && attributes.size in editorImageSizes
+              ? (attributes.size as EditorImageSize)
+              : 'full'
+
+          return {
+            'data-size': size,
+            style: `width:${editorImageSizes[size]};max-width:100%;height:auto;display:block;margin:1rem auto;`
+          }
+        }
+      }
+    }
+  }
+})
 
 function getStatusLabel(status: AdminEventRecord['status']) {
   return (
@@ -178,8 +209,6 @@ function emptyNewsForm(): NewsFormState {
     slug: '',
     name_en: '',
     name_bg: '',
-    description_en: '',
-    description_bg: '',
     body_en: '',
     body_bg: '',
     attachments: []
@@ -220,8 +249,6 @@ function newsToForm(item: AdminNewsRecord): NewsFormState {
     slug: item.slug,
     name_en: item.name_en,
     name_bg: item.name_bg ?? '',
-    description_en: item.description_en ?? '',
-    description_bg: item.description_bg ?? '',
     body_en: item.body_en,
     body_bg: item.body_bg ?? '',
     attachments: item.attachments
@@ -457,6 +484,16 @@ function plainTextToHtml(text: string) {
     .join('')
 }
 
+function normalizeEditorHtml(value: string) {
+  const normalized = value.trim()
+
+  if (!normalized || normalized === '<p></p>') {
+    return ''
+  }
+
+  return normalized
+}
+
 async function readJson<T>(input: RequestInfo, init?: RequestInit) {
   const response = await fetch(input, init)
   const payload = await response.json().catch(() => null)
@@ -518,7 +555,7 @@ function SectionHeading({
   return (
     <div className="mb-6">
       <h2 className="text-2xl font-semibold text-dark">{title}</h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-dark/60">
+      <p className="mt-2 max-w-3xl  leading-6 text-dark/60">
         {description}
       </p>
     </div>
@@ -544,7 +581,7 @@ function AdminField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-dark">{label}</span>
+      <span className="mb-2 block  font-medium text-dark">{label}</span>
       <input
         type={type}
         value={value}
@@ -552,7 +589,7 @@ function AdminField({
         required={required}
         disabled={disabled}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-black/5 disabled:text-dark/55"
+        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-black/5 disabled:text-dark/55"
       />
     </label>
   )
@@ -573,20 +610,16 @@ function AdminTextarea({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-dark">{label}</span>
+      <span className="mb-2 block  font-medium text-dark">{label}</span>
       <textarea
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary"
+        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary"
       />
     </label>
   )
-}
-
-function AdminHelpText({ children }: { children: ReactNode }) {
-  return <p className="mt-2 text-xs leading-5 text-dark/55">{children}</p>
 }
 
 function formatOptionalValue(value: string | number | null | undefined) {
@@ -647,7 +680,7 @@ function RegistrationDetailRow({
       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
         {label}
       </p>
-      <div className="mt-2 text-sm leading-6 text-dark/75">{value}</div>
+      <div className="mt-2  leading-6 text-dark/75">{value}</div>
     </div>
   )
 }
@@ -673,7 +706,7 @@ function AddCardButton({
         </div>
         <div>
           <h3 className="text-lg font-semibold text-dark">{title}</h3>
-          <p className="mt-1 text-sm leading-6 text-dark/60">{description}</p>
+          <p className="mt-1  leading-6 text-dark/60">{description}</p>
         </div>
       </div>
     </button>
@@ -703,7 +736,7 @@ function AdminModal({
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-2xl font-semibold text-dark">{title}</h3>
-            <p className="mt-1 text-sm leading-6 text-dark/60">{description}</p>
+            <p className="mt-1  leading-6 text-dark/60">{description}</p>
           </div>
 
           <Button
@@ -733,74 +766,152 @@ function HtmlEditor({
   onChange: (value: string) => void
   onError: (message: string) => void
 }) {
-  const editorRef = useRef<HTMLDivElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const [filePickerOpen, setFilePickerOpen] = useState(false)
-  const selectedImageRef = useRef<HTMLImageElement | null>(null)
   const [selectedImageSize, setSelectedImageSize] = useState<EditorImageSize | null>(null)
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [2, 3]
+        }
+      }),
+      Underline,
+      LinkExtension.configure({
+        autolink: true,
+        openOnClick: false,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer'
+        }
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph']
+      }),
+      RichImageExtension,
+      Placeholder.configure({
+        placeholder: 'Start writing here...'
+      })
+    ],
+    content: normalizeEditorHtml(value) || '<p></p>',
+    editorProps: {
+      attributes: {
+        class: 'blog-details admin-rich-editor__content prose prose-lg prose-zinc max-w-none'
+      },
+      transformPastedHTML: (html) => sanitizePastedHtml(html),
+      handlePaste: (_view, event) => {
+        const clipboard = event.clipboardData
+        const imageItem = Array.from(clipboard?.items ?? []).find((item) =>
+          item.type.startsWith('image/')
+        )
+
+        if (imageItem) {
+          const file = imageItem.getAsFile()
+          if (!file) {
+            return false
+          }
+
+          event.preventDefault()
+          void handleImageUpload(file)
+          return true
+        }
+
+        const html = clipboard?.getData('text/html')
+        if (html) {
+          event.preventDefault()
+          const cleanHtml = sanitizePastedHtml(html)
+          if (cleanHtml.trim()) {
+            insertHtml(cleanHtml)
+          }
+          return true
+        }
+
+        const text = clipboard?.getData('text/plain')
+        if (text) {
+          event.preventDefault()
+          insertHtml(plainTextToHtml(text))
+          return true
+        }
+
+        return false
+      }
+    },
+    onUpdate: ({ editor: activeEditor }) => {
+      onChange(normalizeEditorHtml(activeEditor.getHTML()))
+    }
+  })
 
   useEffect(() => {
-    const editor = editorRef.current
-
     if (!editor) {
       return
     }
 
-    if (editor.innerHTML !== value) {
-      editor.innerHTML = value
+    const incomingHtml = normalizeEditorHtml(value)
+    const currentHtml = normalizeEditorHtml(editor.getHTML())
+
+    if (incomingHtml !== currentHtml) {
+      editor.commands.setContent(incomingHtml || '<p></p>', {
+        emitUpdate: false
+      })
     }
-  }, [value])
+  }, [editor, value])
 
-  function focusEditor() {
-    editorRef.current?.focus()
-  }
-
-  function syncValue() {
-    const html =
-      editorRef.current?.innerHTML.replace(/\sdata-editor-selected="true"/g, '') ?? ''
-    onChange(html)
-  }
-
-  function runCommand(command: string, commandValue?: string) {
-    focusEditor()
-    document.execCommand(command, false, commandValue)
-    syncValue()
-  }
-
-  function insertHtml(html: string) {
-    runCommand('insertHTML', html)
-  }
-
-  function selectImage(image: HTMLImageElement | null) {
-    if (selectedImageRef.current && selectedImageRef.current !== image) {
-      selectedImageRef.current.removeAttribute('data-editor-selected')
-    }
-
-    selectedImageRef.current = image
-
-    if (!image) {
-      setSelectedImageSize(null)
+  useEffect(() => {
+    if (!editor) {
       return
     }
 
-    image.setAttribute('data-editor-selected', 'true')
-    const size = image.dataset.size
-    setSelectedImageSize(size && size in editorImageSizes ? (size as EditorImageSize) : 'full')
+    const updateSelectedImageState = () => {
+      if (!editor.isActive('image')) {
+        setSelectedImageSize(null)
+        return
+      }
+
+      const size = editor.getAttributes('image').size
+      setSelectedImageSize(
+        typeof size === 'string' && size in editorImageSizes
+          ? (size as EditorImageSize)
+          : 'full'
+      )
+    }
+
+    updateSelectedImageState()
+    editor.on('selectionUpdate', updateSelectedImageState)
+    editor.on('update', updateSelectedImageState)
+
+    return () => {
+      editor.off('selectionUpdate', updateSelectedImageState)
+      editor.off('update', updateSelectedImageState)
+    }
+  }, [editor])
+
+  function insertHtml(html: string) {
+    editor?.chain().focus().insertContent(html).run()
   }
 
   function promptForLink() {
-    focusEditor()
-    const url = window.prompt('Enter a URL')
-
-    if (!url) {
+    if (!editor) {
       return
     }
 
-    runCommand('createLink', url)
+    const previousUrl = editor.getAttributes('link').href ?? ''
+    const url = window.prompt('Enter a URL', previousUrl)
+
+    if (url === null) {
+      return
+    }
+
+    if (!url.trim()) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
+    }
+
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run()
   }
 
   async function handleImageUpload(file: File) {
@@ -840,152 +951,196 @@ function HtmlEditor({
   }
 
   function resizeSelectedImage(size: EditorImageSize) {
-    const image = selectedImageRef.current
-
-    if (!image) {
+    if (!editor?.isActive('image')) {
       onError('Select an image in the editor first.')
       return
     }
 
-    applyImagePresentation(image, size)
+    editor.chain().focus().updateAttributes('image', { size }).run()
     setSelectedImageSize(size)
-    syncValue()
   }
 
-  async function handlePaste(event: ReactClipboardEvent<HTMLDivElement>) {
-    const clipboard = event.clipboardData
-    const imageItem = Array.from(clipboard.items).find((item) =>
-      item.type.startsWith('image/')
-    )
-
-    if (imageItem) {
-      const file = imageItem.getAsFile()
-      if (!file) {
-        return
-      }
-
-      event.preventDefault()
-      await handleImageUpload(file)
-      return
-    }
-
-    const html = clipboard.getData('text/html')
-    if (html) {
-      event.preventDefault()
-      const cleanHtml = sanitizePastedHtml(html)
-      if (cleanHtml.trim()) {
-        insertHtml(cleanHtml)
-      }
-      return
-    }
-
-    const text = clipboard.getData('text/plain')
-    if (text) {
-      event.preventDefault()
-      insertHtml(plainTextToHtml(text))
-    }
+  function getToolButtonClass(active = false) {
+    return `inline-flex w-auto items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-semibold leading-none transition-all duration-200 ${
+      active
+        ? 'border-primary bg-primary text-white shadow-md hover:bg-primary hover:text-white'
+        : 'border-black/10 bg-white text-dark hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md'
+    }`
   }
 
-  const toolButtonClass =
-    'rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-dark transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md'
+  function getIconToolButtonClass(active = false) {
+    return `${getToolButtonClass(active)} h-11 min-w-11 px-0`
+  }
 
   return (
-    <div>
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="mr-2 block text-sm font-medium text-dark">{label}</span>
+    <div className="overflow-hidden rounded-[1.75rem] border border-black/10 bg-[#fffdf8] shadow-[0_20px_60px_rgba(23,32,35,0.08)]">
+      <div className="border-b border-black/10 bg-gradient-to-r from-white via-[#f9f6ee] to-white px-5 py-4">
+        <div>
+          <div>
+            <span className="block text-sm font-semibold uppercase tracking-[0.18em] text-dark/50">
+              {label}
+            </span>
+            <p className="mt-1 text-sm leading-6 text-dark/60">
+              Write comfortably, paste from other sources, and use the toolbar to format content.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-b border-black/10 bg-white/90 px-4 py-3 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className={toolButtonClass}
-          onClick={() => runCommand('formatBlock', '<h2>')}
+          className={getToolButtonClass(editor?.isActive('heading', { level: 2 }) ?? false)}
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
         >
           H2
         </button>
         <button
           type="button"
-          className={toolButtonClass}
-          onClick={() => runCommand('formatBlock', '<h3>')}
+          className={getToolButtonClass(editor?.isActive('heading', { level: 3 }) ?? false)}
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
         >
           H3
         </button>
         <button
           type="button"
-          className={toolButtonClass}
-          onClick={() => runCommand('bold')}
+          className={getIconToolButtonClass(editor?.isActive('bold') ?? false)}
+          onClick={() => editor?.chain().focus().toggleBold().run()}
+          aria-label="Bold"
+          title="Bold"
         >
-          Bold
+          <Icon icon="mdi:format-bold" className="h-6 w-6" />
         </button>
         <button
           type="button"
-          className={toolButtonClass}
-          onClick={() => runCommand('italic')}
+          className={getIconToolButtonClass(editor?.isActive('italic') ?? false)}
+          onClick={() => editor?.chain().focus().toggleItalic().run()}
+          aria-label="Italic"
+          title="Italic"
         >
-          Italic
+          <Icon icon="mdi:format-italic" className="h-6 w-6" />
         </button>
         <button
           type="button"
-          className={toolButtonClass}
+          className={getIconToolButtonClass(editor?.isActive('underline') ?? false)}
+          onClick={() => editor?.chain().focus().toggleUnderline().run()}
+          aria-label="Underline"
+          title="Underline"
+        >
+          <Icon icon="mdi:format-underline" className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          className={getIconToolButtonClass(editor?.isActive('link') ?? false)}
           onClick={promptForLink}
+          aria-label="Link"
+          title="Link"
         >
-          Link
+          <Icon icon="mdi:link-variant" className="h-6 w-6" />
         </button>
         <button
           type="button"
-          className={toolButtonClass}
-          onClick={() => runCommand('insertUnorderedList')}
+          className={getIconToolButtonClass(editor?.isActive('bulletList') ?? false)}
+          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          aria-label="Bulleted list"
+          title="Bulleted list"
         >
-          List
+          <Icon icon="mdi:format-list-bulleted" className="h-6 w-6" />
         </button>
         <button
           type="button"
-          className={toolButtonClass}
-          onClick={() => runCommand('formatBlock', '<blockquote>')}
+          className={getIconToolButtonClass(editor?.isActive('blockquote') ?? false)}
+          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+          aria-label="Quote"
+          title="Quote"
         >
-          Quote
+          <Icon icon="mdi:format-quote-open" className="h-6 w-6" />
         </button>
         <button
           type="button"
-          className={toolButtonClass}
-          onClick={() => runCommand('removeFormat')}
+          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'left' }) ?? false)}
+          onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+          aria-label="Align left"
+          title="Align left"
         >
-          Clear
+          <Icon icon="mdi:format-align-left" className="h-6 w-6" />
         </button>
         <button
           type="button"
-          className={toolButtonClass}
+          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'center' }) ?? false)}
+          onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+          aria-label="Align center"
+          title="Align center"
+        >
+          <Icon icon="mdi:format-align-center" className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'right' }) ?? false)}
+          onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+          aria-label="Align right"
+          title="Align right"
+        >
+          <Icon icon="mdi:format-align-right" className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'justify' }) ?? false)}
+          onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+          aria-label="Justify"
+          title="Justify"
+        >
+          <Icon icon="mdi:format-align-justify" className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          className={getIconToolButtonClass(false)}
+          onClick={() => {
+            editor?.chain().focus().unsetAllMarks().clearNodes().run()
+          }}
+          aria-label="Clear formatting"
+          title="Clear formatting"
+        >
+          <Icon icon="mdi:format-clear" className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          className={getToolButtonClass(false)}
           onClick={() => imageInputRef.current?.click()}
         >
+          <Icon icon="mdi:image-plus" className="h-5 w-5" />
           {uploadingImage ? 'Uploading image...' : 'Add image'}
         </button>
         <button
           type="button"
-          className={toolButtonClass}
+          className={getToolButtonClass(false)}
           onClick={() => setImagePickerOpen(true)}
         >
+          <Icon icon="mdi:image-search-outline" className="h-5 w-5" />
           Reuse image
         </button>
         <button
           type="button"
-          className={toolButtonClass}
+          className={getToolButtonClass(false)}
           onClick={() => fileInputRef.current?.click()}
         >
+          <Icon icon="mdi:file-plus-outline" className="h-5 w-5" />
           {uploadingFile ? 'Uploading file...' : 'Add file'}
         </button>
         <button
           type="button"
-          className={toolButtonClass}
+          className={getToolButtonClass(false)}
           onClick={() => setFilePickerOpen(true)}
         >
+          <Icon icon="mdi:file-search-outline" className="h-5 w-5" />
           Reuse file
         </button>
         {(['small', 'medium', 'large', 'full'] as EditorImageSize[]).map((size) => (
           <button
             key={size}
             type="button"
-            className={`${toolButtonClass} ${
-              selectedImageSize === size
-                ? 'border-primary bg-primary text-white hover:text-white'
-                : ''
-            }`}
+            className={getToolButtonClass(selectedImageSize === size)}
             onClick={() => resizeSelectedImage(size)}
           >
             Img {size.charAt(0).toUpperCase()}
@@ -1015,30 +1170,11 @@ function HtmlEditor({
           }}
         />
       </div>
+      </div>
 
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={syncValue}
-        onClick={(event) => {
-          const target = event.target
-          if (target instanceof HTMLImageElement) {
-            selectImage(target)
-            return
-          }
-
-          selectImage(null)
-        }}
-        onPaste={(event) => {
-          void handlePaste(event)
-        }}
-        className="blog-details prose prose-lg prose-zinc min-h-[18rem] max-w-none rounded-[1.5rem] border border-black/10 bg-white px-5 py-4 text-dark outline-none transition focus-within:border-primary"
-      />
-      <AdminHelpText>
-        Paste formatted articles directly from websites or documents. Click an image inside the editor to resize it.
-      </AdminHelpText>
-
+      <div className="bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,243,232,0.72))] p-4 sm:p-5">
+        <EditorContent editor={editor} />
+      </div>
       <AssetPickerModal
         open={imagePickerOpen}
         title="Image library"
@@ -1083,7 +1219,7 @@ function AssetPreviewCard({
             alt={getFileLabelFromUrl(url)}
             className="mb-3 h-32 w-full rounded-xl object-cover"
           />
-          <p className="truncate text-xs font-medium text-dark/70">
+          <p className="truncate  font-medium text-dark/70">
             {getFileLabelFromUrl(url)}
           </p>
         </>
@@ -1093,10 +1229,10 @@ function AssetPreviewCard({
             <Icon icon="ph:file-text-bold" width={20} height={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-dark">
+            <p className="truncate  font-medium text-dark">
               {getFileLabelFromUrl(url)}
             </p>
-            <p className="truncate text-xs text-dark/55">{url}</p>
+            <p className="truncate  text-dark/55">{url}</p>
           </div>
         </div>
       )}
@@ -1107,7 +1243,7 @@ function AssetPreviewCard({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-semibold text-primary hover:underline"
+            className=" font-semibold text-primary hover:underline"
           >
             Preview
           </a>
@@ -1115,7 +1251,7 @@ function AssetPreviewCard({
             <button
               type="button"
               onClick={onRemove}
-              className="text-xs font-semibold text-red-500 hover:underline"
+              className=" font-semibold text-red-500 hover:underline"
             >
               Remove
             </button>
@@ -1183,11 +1319,11 @@ function AssetPickerModal({
       onClose={onClose}
     >
       {loading ? (
-        <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10 text-sm text-dark/60">
+        <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10  text-dark/60">
           Loading files...
         </div>
       ) : assets.length === 0 ? (
-        <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10 text-sm text-dark/60">
+        <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10  text-dark/60">
           No uploaded files found in this library yet.
         </div>
       ) : (
@@ -1243,7 +1379,7 @@ function FileDropPanel({
 
   return (
     <div>
-      <span className="mb-2 block text-sm font-medium text-dark">{label}</span>
+      <span className="mb-2 block  font-medium text-dark">{label}</span>
       <div
         onClick={() => {
           if (!uploading) {
@@ -1271,10 +1407,10 @@ function FileDropPanel({
             <Icon icon="ph:upload-simple-bold" width={22} height={22} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-dark">
+            <p className=" font-semibold text-dark">
               {uploading ? 'Uploading files...' : 'Drag and drop files here'}
             </p>
-            <p className="mt-1 text-sm text-dark/60">
+            <p className="mt-1  text-dark/60">
               {helperText ??
                 'Or click anywhere in this area to browse files. Images are stored in images, other files in documents.'}
             </p>
@@ -1285,7 +1421,7 @@ function FileDropPanel({
                   event.stopPropagation()
                   onOpenLibrary()
                 }}
-                className="mt-3 text-sm font-semibold text-primary hover:underline"
+                className="mt-3  font-semibold text-primary hover:underline"
               >
                 {libraryLabel ?? 'Reuse uploaded'}
               </button>
@@ -1811,13 +1947,13 @@ export default function AdminDashboard({
         <div className="mb-6 rounded-[2rem] border border-black/10 bg-white/90 p-6 shadow-[0_24px_80px_rgba(23,32,35,0.1)] backdrop-blur md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="mb-2 text-sm uppercase tracking-[0.32em] text-primary/70">
+              <p className="mb-2  uppercase tracking-[0.32em] text-primary/70">
                 Admin area
               </p>
               <h1 className="text-4xl font-semibold md:text-5xl">
                 Content management
               </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-dark/65 md:text-base">
+              <p className="mt-3 max-w-3xl  leading-6 text-dark/65 md:text-base">
                 Signed in as <span className="font-semibold">{userEmail}</span>.
                 Use the tabs below to manage events, news, and downloadable
                 documents stored in Supabase.
@@ -1857,7 +1993,7 @@ export default function AdminDashboard({
               />
 
               {events.length === 0 ? (
-                <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8 text-sm text-dark/60">
+                <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8  text-dark/60">
                   No events yet.
                 </div>
               ) : null}
@@ -1870,13 +2006,13 @@ export default function AdminDashboard({
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h3 className="text-2xl font-semibold">{item.name_en}</h3>
-                      <p className="mt-1 text-sm text-dark/60">
+                      <p className="mt-1  text-dark/60">
                         {localizeText("bg", item.name_en, item.name_bg)}
                       </p>
-                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-dark/45">
+                      <p className="mt-2  font-medium uppercase tracking-[0.18em] text-dark/45">
                         /events/{item.slug}
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-dark/60">
+                      <div className="mt-3 flex flex-wrap gap-2  text-dark/60">
                         <span className="rounded-full bg-white/70 px-3 py-1">
                           {item.start_date} to {item.end_date}
                         </span>
@@ -1918,7 +2054,7 @@ export default function AdminDashboard({
                         onClick={() =>
                           handleEventStatusChange(item, option.value)
                         }
-                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getEventStatusButtonClasses(
+                        className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getEventStatusButtonClasses(
                           option.value,
                           item.status,
                         )}`}
@@ -1928,7 +2064,7 @@ export default function AdminDashboard({
                     ))}
                   </div>
 
-                  <div className="mt-4 text-xs text-dark/50">
+                  <div className="mt-4  text-dark/50">
                     Updated {formatTimestamp(item.updated_at)}
                   </div>
                 </div>
@@ -1950,7 +2086,7 @@ export default function AdminDashboard({
               />
 
               {news.length === 0 ? (
-                <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8 text-sm text-dark/60">
+                <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8  text-dark/60">
                   No news items yet.
                 </div>
               ) : null}
@@ -1963,13 +2099,13 @@ export default function AdminDashboard({
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h3 className="text-2xl font-semibold">{item.name_en}</h3>
-                      <p className="mt-1 text-sm text-dark/60">
+                      <p className="mt-1  text-dark/60">
                         {localizeText("bg", item.name_en, item.name_bg)}
                       </p>
-                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-dark/45">
+                      <p className="mt-2  font-medium uppercase tracking-[0.18em] text-dark/45">
                         /news/{item.slug}
                       </p>
-                      <div className="mt-3 inline-flex rounded-full bg-black/5 px-3 py-1 text-xs text-dark/60">
+                      <div className="mt-3 inline-flex rounded-full bg-black/5 px-3 py-1  text-dark/60">
                         {item.attachments.length} attachments
                       </div>
                     </div>
@@ -1985,7 +2121,7 @@ export default function AdminDashboard({
                     </div>
                   </div>
 
-                  <div className="mt-4 text-xs text-dark/50">
+                  <div className="mt-4  text-dark/50">
                     Updated {formatTimestamp(item.updated_at)}
                   </div>
                 </div>
@@ -2008,7 +2144,7 @@ export default function AdminDashboard({
                 />
 
                 {documents.length === 0 ? (
-                  <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8 text-sm text-dark/60">
+                  <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8  text-dark/60">
                     No documents yet.
                   </div>
                 ) : null}
@@ -2023,14 +2159,14 @@ export default function AdminDashboard({
                         <h3 className="text-2xl font-semibold">
                           {item.name_en}
                         </h3>
-                        <p className="mt-1 text-sm text-dark/60">
+                        <p className="mt-1  text-dark/60">
                           {localizeText("bg", item.name_en, item.name_bg)}
                         </p>
                         <a
                           href={item.source}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-3 block break-all text-sm text-primary hover:underline"
+                          className="mt-3 block break-all  text-primary hover:underline"
                         >
                           {item.source.split("/").pop() || item.source}
                         </a>
@@ -2055,7 +2191,7 @@ export default function AdminDashboard({
                       </div>
                     </div>
 
-                    <div className="mt-4 text-xs text-dark/50">
+                    <div className="mt-4  text-dark/50">
                       Updated {formatTimestamp(item.updated_at)}
                     </div>
                   </div>
@@ -2071,7 +2207,7 @@ export default function AdminDashboard({
                     <h3 className="text-2xl font-semibold">
                       {documentForm.id ? "Edit document" : "Create document"}
                     </h3>
-                    <p className="mt-1 text-sm text-dark/60">
+                    <p className="mt-1  text-dark/60">
                       Use this for PDFs, notices, or any linked resource.
                     </p>
                   </div>
@@ -2161,7 +2297,7 @@ export default function AdminDashboard({
                   <h3 className="text-lg font-semibold text-dark">
                     Google Drive folder
                   </h3>
-                  <p className="mt-1 text-sm leading-6 text-dark/60">
+                  <p className="mt-1  leading-6 text-dark/60">
                     Add or remove photos directly in the Drive folder. Create
                     sub-folders named by year (e.g.{" "}
                     <span className="font-mono font-semibold">2025</span>) —
@@ -2175,7 +2311,7 @@ export default function AdminDashboard({
                 href={`https://drive.google.com/drive/folders/${process.env.NEXT_PUBLIC_GALLERY_FOLDER_ID || "1L7iALLBsMHbBftZl41NAyr4wwujnxM87"}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary px-5 py-4 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+                className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary px-5 py-4  font-semibold text-white transition-colors hover:bg-primary/90"
               >
                 <span className="flex items-center gap-2">
                   <Icon icon="ph:folder-open-bold" width={20} height={20} />
@@ -2184,7 +2320,7 @@ export default function AdminDashboard({
                 <Icon icon="ph:arrow-up-right-bold" width={18} height={18} />
               </a>
 
-              <div className="rounded-2xl border border-black/10 bg-black/[0.02] px-5 py-4 text-sm text-dark/70 space-y-2">
+              <div className="rounded-2xl border border-black/10 bg-black/[0.02] px-5 py-4  text-dark/70 space-y-2">
                 <p className="font-semibold text-dark">How it works</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>
@@ -2252,11 +2388,6 @@ export default function AdminDashboard({
                   required
                   disabled={Boolean(eventForm.id)}
                 />
-                <AdminHelpText>
-                  {eventForm.id
-                    ? "Slug is locked after creation so the public event URL stays stable."
-                    : "Used in the event URL. Keep it short, unique, and stable."}
-                </AdminHelpText>
               </div>
               <ImageUploadField
                 label="Thumbnail image"
@@ -2270,7 +2401,7 @@ export default function AdminDashboard({
                 onError={(msg) => toast.error(msg)}
               />
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-dark">
+                <span className="mb-2 block  font-medium text-dark">
                   Status
                 </span>
                 <select
@@ -2281,7 +2412,7 @@ export default function AdminDashboard({
                       status: event.target.value as EventFormState["status"],
                     }))
                   }
-                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary"
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary"
                 >
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -2400,7 +2531,7 @@ export default function AdminDashboard({
         <AdminModal
           open={newsModalOpen}
           title={newsForm.id ? "Edit news item" : "Create news item"}
-          description="Save a bilingual excerpt and full blog body. Linked files and links are collected automatically as attachments."
+          description="Write a bilingual news post in the rich text editor. Excerpts are generated automatically from the body."
           onClose={closeNewsEditor}
         >
           <form onSubmit={handleNewsSubmit}>
@@ -2445,35 +2576,10 @@ export default function AdminDashboard({
                   required
                   disabled={Boolean(newsForm.id)}
                 />
-                <AdminHelpText>
-                  {newsForm.id
-                    ? "Slug is locked after creation so the public blog URL stays stable."
-                    : "Used in the blog post URL and should stay unique for SEO."}
-                </AdminHelpText>
               </div>
             </div>
 
             <div className="mt-4 grid gap-4">
-              <AdminTextarea
-                label="Excerpt (EN)"
-                value={newsForm.description_en}
-                onChange={(value) =>
-                  setNewsForm((current) => ({
-                    ...current,
-                    description_en: value,
-                  }))
-                }
-              />
-              <AdminTextarea
-                label="Excerpt (BG, optional)"
-                value={newsForm.description_bg}
-                onChange={(value) =>
-                  setNewsForm((current) => ({
-                    ...current,
-                    description_bg: value,
-                  }))
-                }
-              />
               <div className="grid gap-6">
                 <div>
                   <HtmlEditor
@@ -2487,10 +2593,6 @@ export default function AdminDashboard({
                     }
                     onError={(msg) => toast.error(msg)}
                   />
-                  <AdminHelpText>
-                    Content is saved as HTML and stays visually styled when you
-                    edit it later.
-                  </AdminHelpText>
                 </div>
                 <div>
                   <HtmlEditor
@@ -2504,10 +2606,6 @@ export default function AdminDashboard({
                     }
                     onError={(msg) => toast.error(msg)}
                   />
-                  <AdminHelpText>
-                    Leave this empty to show the English body by default on the
-                    Bulgarian site.
-                  </AdminHelpText>
                 </div>
               </div>
             </div>
@@ -2551,16 +2649,16 @@ export default function AdminDashboard({
           onClose={closeEntriesModal}
         >
           {registrationsLoading ? (
-            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10 text-sm text-dark/60">
+            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10  text-dark/60">
               Loading registrations...
             </div>
           ) : registrations.length === 0 ? (
-            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10 text-sm text-dark/60">
+            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10  text-dark/60">
               No registrations have been submitted for this event yet.
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-2 text-xs text-dark/60">
+              <div className="flex flex-wrap gap-2  text-dark/60">
                 <span className="rounded-full bg-black/5 px-3 py-1">
                   {registrations.length} total entries
                 </span>
@@ -2588,11 +2686,20 @@ export default function AdminDashboard({
               </div>
 
               <Accordion type="single" collapsible className="space-y-3">
-                {registrations.map((registration) => (
+                {registrations.map((registration) => {
+                  const stripePaymentStatus =
+                    registration.payment_data?.stripe?.payment_status
+                  const isUnpaid = stripePaymentStatus !== "paid"
+
+                  return (
                   <AccordionItem
                     key={registration.id}
                     value={registration.id}
-                    className="overflow-hidden rounded-[1.5rem] border border-black/10 bg-white/90 shadow-sm"
+                    className={`overflow-hidden rounded-[1.5rem] border shadow-sm ${
+                      isUnpaid
+                        ? "border-red-200 bg-red-50/70"
+                        : "border-black/10 bg-white/90"
+                    }`}
                   >
                     <AccordionTrigger className="items-center bg-white px-5 py-4 hover:no-underline">
                       <div className="flex flex-1 flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between">
@@ -2600,10 +2707,10 @@ export default function AdminDashboard({
                           <p className="text-lg font-semibold text-dark">
                             {registration.boat_name}
                           </p>
-                          <p className="mt-1 text-sm text-dark/60">
+                          <p className="mt-1  text-dark/60">
                             {registration.skipper_name} • {registration.country}
                           </p>
-                          <p className="mt-1 text-xs text-dark/45">
+                          <p className="mt-1  text-dark/45">
                             {registration.contact_email} • Submitted{" "}
                             {formatTimestamp(registration.created_at)}
                           </p>
@@ -2611,21 +2718,31 @@ export default function AdminDashboard({
 
                         <div className="flex flex-wrap items-center gap-2">
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${getRegistrationStatusBadgeClasses(
+                            className={`rounded-full px-3 py-1  font-semibold ${getRegistrationStatusBadgeClasses(
                               registration.status,
                             )}`}
                           >
                             {registration.status}
                           </span>
-                          <span className="rounded-full bg-black/5 px-3 py-1 text-xs text-dark/60">
+                          <span className="rounded-full bg-black/5 px-3 py-1  text-dark/60">
                             {registration.crew_list.length} crew
                           </span>
+                          {isUnpaid ? (
+                            <span className="rounded-full bg-red-100 px-3 py-1  font-semibold text-red-700">
+                              Unpaid
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </AccordionTrigger>
 
                     <AccordionContent className="px-5 pb-5 text-dark">
                       <div className="space-y-5">
+                        {isUnpaid ? (
+                          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3  font-medium text-red-700">
+                            Payment has not been completed for this registration yet.
+                          </div>
+                        ) : null}
                         <div className="flex flex-wrap gap-2">
                           {(
                             [
@@ -2646,7 +2763,7 @@ export default function AdminDashboard({
                                   status,
                                 )
                               }
-                              className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
+                              className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
                                 status,
                                 registration.status,
                               )}`}
@@ -2760,6 +2877,30 @@ export default function AdminDashboard({
                             )}
                           />
                           <RegistrationDetailRow
+                            label="Blank link"
+                            value={formatOptionalValue(
+                              registration.blank_link,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Payment status"
+                            value={formatOptionalValue(
+                              registration.payment_data?.stripe?.payment_status,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Stripe checkout session"
+                            value={formatOptionalValue(
+                              registration.payment_data?.stripe?.checkout_session_id,
+                            )}
+                          />
+                          <RegistrationDetailRow
+                            label="Stripe checkout URL"
+                            value={formatOptionalValue(
+                              registration.payment_data?.stripe?.checkout_url,
+                            )}
+                          />
+                          <RegistrationDetailRow
                             label="Receive documents by email"
                             value={formatBooleanValue(
                               registration.receive_documents_by_email,
@@ -2796,7 +2937,7 @@ export default function AdminDashboard({
                             Crew list
                           </p>
                           {registration.crew_list.length === 0 ? (
-                            <p className="mt-3 text-sm text-dark/60">
+                            <p className="mt-3  text-dark/60">
                               No crew members were added.
                             </p>
                           ) : (
@@ -2807,10 +2948,10 @@ export default function AdminDashboard({
                                     key={`${registration.id}-crew-${index}`}
                                     className="rounded-2xl border border-black/10 bg-white p-4"
                                   >
-                                    <p className="text-sm font-semibold text-dark">
+                                    <p className=" font-semibold text-dark">
                                       {crewMember.name}
                                     </p>
-                                    <div className="mt-2 grid gap-2 text-sm text-dark/65 sm:grid-cols-1">
+                                    <div className="mt-2 grid gap-2  text-dark/65 sm:grid-cols-1">
                                       <p>
                                         Date of birth:{" "}
                                         {formatOptionalValue(
@@ -2824,10 +2965,35 @@ export default function AdminDashboard({
                             </div>
                           )}
                         </div>
+
+                        <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                            Insurance documents
+                          </p>
+                          {registration.insurance_documents.length === 0 ? (
+                            <p className="mt-3  text-dark/60">
+                              No insurance documents were uploaded.
+                            </p>
+                          ) : (
+                            <div className="mt-3 space-y-3">
+                              {registration.insurance_documents.map((url, index) => (
+                                <a
+                                  key={`${registration.id}-insurance-${index}`}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block rounded-2xl border border-black/10 bg-white p-4  font-medium text-primary hover:underline"
+                                >
+                                  {url.split('/').pop() || url}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-                ))}
+                )})}
               </Accordion>
             </div>
           )}

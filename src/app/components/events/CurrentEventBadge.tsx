@@ -29,7 +29,7 @@ export default function CurrentEventBadge({ dateFrom, dateTo, label }: Props) {
 
   return (
     <div className="absolute top-3 right-3 z-10">
-      <span className="inline-flex items-center rounded-md bg-primary text-white text-xs font-semibold px-2.5 py-1 shadow-lg">
+      <span className="inline-flex items-center rounded-md bg-primary text-white  font-semibold px-2.5 py-1 shadow-lg">
         {label}
       </span>
     </div>

@@ -19,7 +19,7 @@ const ContactPanel: React.FC = () => {
               height={20}
               className="text-primary"
             />
-            <p className="text-sm font-semibold text-dark dark:text-white">
+            <p className=" font-semibold text-dark dark:text-white">
               {t('contact')}
             </p>
           </div>
@@ -27,7 +27,7 @@ const ContactPanel: React.FC = () => {
           <div className="flex flex-col gap-3">
             <a
               href={`tel:${CLUB_PHONE.replace(/\s/g, '')}`}
-              className="flex items-center gap-2 text-sm text-dark dark:text-white hover:text-primary transition-colors"
+              className="flex items-center gap-2  text-dark dark:text-white hover:text-primary transition-colors"
             >
               <Icon
                 icon="ph:phone-fill"
@@ -40,7 +40,7 @@ const ContactPanel: React.FC = () => {
             
             {/* <a
               href={`mailto:${CLUB_EMAIL}`}
-              className="flex items-center gap-2 text-sm text-dark dark:text-white hover:text-primary transition-colors"
+              className="flex items-center gap-2  text-dark dark:text-white hover:text-primary transition-colors"
             >
               <Icon
                 icon="ph:envelope-fill"

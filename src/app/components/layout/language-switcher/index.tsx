@@ -72,7 +72,7 @@ export default function LanguageSwitcher({
         <button
           key={loc}
           onClick={() => switchLocale(loc)}
-          className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
+          className={`px-3 py-1.5 rounded-md  sm: font-medium transition-all duration-200 ${
             locale === loc
               ? 'bg-primary text-white shadow-sm'
               : isHomepage && !isSticky

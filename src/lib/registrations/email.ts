@@ -2,6 +2,11 @@ import nodemailer from 'nodemailer'
 import { format } from 'date-fns'
 import { getRegistrationNotificationEmails, getRegistrationSmtpConfig } from './config'
 import type { RegistrationWithEvent } from './data'
+import {
+  buildNewEventAnnouncementTemplate,
+  buildRegistrationConfirmationTemplate,
+  buildRegistrationPaymentConfirmationTemplate,
+} from './emailTemplates'
 
 let transport: nodemailer.Transporter | null = null
 
@@ -44,22 +49,17 @@ export async function sendRegistrationPdfToEntrant(args: {
   generatedFormUrl: string
 }) {
   const { registration, pdfBuffer, fileName, generatedFormUrl } = args
+  const template = buildRegistrationConfirmationTemplate({
+    registration,
+    generatedFormUrl,
+  })
 
   await getTransport().sendMail({
     from: getFromAddress(),
     to: registration.contact_email,
-    subject: `Registration documents for ${registration.boat_name}`,
-    text: [
-      `Hello ${registration.contact_name},`,
-      '',
-      `Your registration for ${registration.boat_name} has been processed.`,
-      `Event: ${registration.event?.name_en ?? 'International Regatta Port Bourgas'}`,
-      `Dates: ${formatEventDates(registration)}`,
-      '',
-      `Download link: ${generatedFormUrl}`,
-      '',
-      'The generated registration form is attached to this email as well.',
-    ].join('\n'),
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
     attachments: [
       {
         filename: fileName,
@@ -67,6 +67,45 @@ export async function sendRegistrationPdfToEntrant(args: {
         contentType: 'application/pdf',
       },
     ],
+  })
+}
+
+export async function sendRegistrationPaymentConfirmationToEntrant(
+  registration: RegistrationWithEvent
+) {
+  const template = buildRegistrationPaymentConfirmationTemplate(registration)
+
+  await getTransport().sendMail({
+    from: getFromAddress(),
+    to: registration.contact_email,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  })
+}
+
+export async function sendNewEventAnnouncementEmail(args: {
+  to: string
+  recipientName?: string | null
+  eventName: string
+  eventDates: string
+  eventUrl: string
+  prefillReferenceId?: string | null
+}) {
+  const template = buildNewEventAnnouncementTemplate({
+    recipientName: args.recipientName,
+    eventName: args.eventName,
+    eventDates: args.eventDates,
+    eventUrl: args.eventUrl,
+    prefillReferenceId: args.prefillReferenceId,
+  })
+
+  await getTransport().sendMail({
+    from: getFromAddress(),
+    to: args.to,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
   })
 }
 
@@ -99,4 +138,3 @@ export async function sendRegistrationNotificationToAdmins(
     ].join('\n'),
   })
 }
-

@@ -52,7 +52,7 @@ export default async function EventsPage() {
             {t("events.future")}
           </h2>
           {future.length === 0 ? (
-            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8 text-sm text-dark/60 dark:border-white/10 dark:bg-black/20 dark:text-white/60">
+            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8  text-dark/60 dark:border-white/10 dark:bg-black/20 dark:text-white/60">
               {t("events.futureEmpty")}
             </div>
           ) : (
@@ -80,7 +80,7 @@ export default async function EventsPage() {
             {t("events.past")}
           </h2>
           {past.length === 0 ? (
-            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8 text-sm text-dark/60 dark:border-white/10 dark:bg-black/20 dark:text-white/60">
+            <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8  text-dark/60 dark:border-white/10 dark:bg-black/20 dark:text-white/60">
               {t("events.pastEmpty")}
             </div>
           ) : (

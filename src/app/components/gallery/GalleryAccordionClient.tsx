@@ -118,7 +118,7 @@ export default function GalleryAccordionClient({
                 <span className="text-base sm:text-lg md:text-xl font-semibold transition-colors duration-200">
                   {year}
                 </span>
-                <span className="text-sm text-dark/60 dark:text-white/60">
+                <span className=" text-dark/60 dark:text-white/60">
                   {photosByYear[year].length} {t('photosLabel')}
                 </span>
               </div>

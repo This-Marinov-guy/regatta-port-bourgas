@@ -106,7 +106,7 @@ export default function ContactUs() {
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
                     <Icon icon={"ph:phone"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
-                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary break-words leading-relaxed">
+                    <p className=" sm: md:text-base font-normal group-hover:text-primary break-words leading-relaxed">
                       <span className="block sm:inline">{CLUB_PHONE}</span>
                       <span className="hidden sm:inline"> - </span>
                       <span className="block sm:inline">Krasimir Naumov</span>
@@ -116,7 +116,7 @@ export default function ContactUs() {
                 {/* <Link href={`mailto:${CLUB_EMAIL}`} className="w-full sm:w-fit">
                   <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
                     <Icon icon={"ph:envelope-simple"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
-                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary break-all leading-relaxed">
+                    <p className=" sm: md:text-base font-normal group-hover:text-primary break-all leading-relaxed">
                       {CLUB_EMAIL}
                     </p>
                   </div>
@@ -124,7 +124,7 @@ export default function ContactUs() {
                 <Link href={`mailto:${MANAGER_EMAIL}`} className="w-full sm:w-fit">
                   <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
                     <Icon icon={"ph:envelope-simple"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
-                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary break-all leading-relaxed">
+                    <p className=" sm: md:text-base font-normal group-hover:text-primary break-all leading-relaxed">
                       {MANAGER_EMAIL}
                     </p>
                   </div>
@@ -137,7 +137,7 @@ export default function ContactUs() {
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4 group">
                     <Icon icon={"ph:map-pin"} width={18} height={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 flex-shrink-0" />
-                    <p className="text-xs sm:text-sm md:text-base font-normal group-hover:text-primary leading-relaxed">
+                    <p className=" sm: md:text-base font-normal group-hover:text-primary leading-relaxed">
                       {t("address")}
                     </p>
                   </div>
@@ -157,7 +157,7 @@ export default function ContactUs() {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full text-sm sm:text-base"
+                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
                     />
                     <input
                       type="tel"
@@ -168,7 +168,7 @@ export default function ContactUs() {
                       value={formData.mobile}
                       onChange={handleChange}
                       required
-                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full text-sm sm:text-base"
+                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
                     />
                   </div>
                   <input
@@ -180,7 +180,7 @@ export default function ContactUs() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full text-sm sm:text-base"
+                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
                   />
                   <textarea
                     rows={6}
@@ -191,14 +191,14 @@ export default function ContactUs() {
                     value={formData.message}
                     onChange={handleChange}
                     required
-                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-2xl outline-primary focus:outline w-full text-sm sm:text-base resize-none"
+                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-2xl outline-primary focus:outline w-full  sm:text-base resize-none"
                   ></textarea>
-                  <button className="px-6 py-3 sm:px-7 sm:py-3.5 md:px-8 md:py-4 rounded-md bg-primary text-white text-sm sm:text-base font-semibold w-full sm:w-fit hover:cursor-pointer hover:bg-primary/90 duration-300">
+                  <button className="px-6 py-3 sm:px-7 sm:py-3.5 md:px-8 md:py-4 rounded-md bg-primary text-white  sm:text-base font-semibold w-full sm:w-fit hover:cursor-pointer hover:bg-primary/90 duration-300">
                     {t("sendButton")}
                   </button>
                 </div>
                 {submitted && (
-                  <h5 className="text-primary mt-3 sm:mt-4 text-sm sm:text-base">{t("successMessage")}</h5>
+                  <h5 className="text-primary mt-3 sm:mt-4  sm:text-base">{t("successMessage")}</h5>
                 )}
               </form>
             </div>

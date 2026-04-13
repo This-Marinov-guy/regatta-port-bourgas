@@ -6,7 +6,7 @@ export const LogoConfiguration = () => {
         <p className="text-base font-medium text-midnight_text dark:text-white dark:text-opacity-50 flex lg:flex-row flex-col" >1. Change Logo over here : <span className="font-semibold text-base overflow-x-auto"> src/components/Layout/Header/Logo/index.tsx</span>  </p>
         <div className="py-4 px-3 rounded-md bg-black mt-8">
 
-          <div className="text-sm text-gray-400">
+          <div className=" text-gray-400">
             <p className="ms-2">&#x3C;Image</p>
             <p className="ms-3">src=&#x22;/images/header/dark-logo.svg&#x22;</p>
             <p className="ms-3">alt=&#x22;logo&#x22;</p>

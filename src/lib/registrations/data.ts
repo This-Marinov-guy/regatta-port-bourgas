@@ -12,6 +12,7 @@ type RegistrationEventRecord = {
 
 export type RegistrationWithEvent = RegistrationRecord & {
   generated_form_url: string | null
+  blank_link: string | null
   event: RegistrationEventRecord | null
 }
 
@@ -49,11 +50,13 @@ export async function setGeneratedRegistrationFormUrl(
   const supabase = createSupabaseServiceClient()
   const { error } = await supabase
     .from('registrations')
-    .update({ generated_form_url: generatedFormUrl })
+    .update({
+      generated_form_url: generatedFormUrl,
+      blank_link: generatedFormUrl,
+    })
     .eq('id', registrationId)
 
   if (error) {
     throw new Error(error.message)
   }
 }
-

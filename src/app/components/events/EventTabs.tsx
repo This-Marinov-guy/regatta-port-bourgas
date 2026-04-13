@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 
 type Props = {
   registerHref: string
+  registerOpen: boolean
   documents: string[]
   noticeBoard: string[]
   results: string[]
@@ -31,7 +32,7 @@ function FileList({ urls }: { urls: string[] }) {
   const safeUrls = normalizeUrls(urls)
 
   if (safeUrls.length === 0) {
-    return <p className="text-dark/50 dark:text-white/50 text-sm italic">—</p>
+    return <p className="text-dark/50 dark:text-white/50  italic">—</p>
   }
   return (
     <ul className="space-y-2">
@@ -41,7 +42,7 @@ function FileList({ urls }: { urls: string[] }) {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-primary hover:underline text-sm sm:text-base break-all"
+            className="inline-flex items-center gap-2 text-primary hover:underline  sm:text-base break-all"
           >
             {url.split('/').pop() || url}
           </a>
@@ -53,6 +54,7 @@ function FileList({ urls }: { urls: string[] }) {
 
 export default function EventTabs({
   registerHref,
+  registerOpen,
   documents,
   noticeBoard,
   results,
@@ -69,25 +71,25 @@ export default function EventTabs({
             <TabsList className="w-full sm:w-auto flex-wrap sm:flex-nowrap">
               <TabsTrigger
                 value="documents"
-                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px] text-xs sm:text-sm md:text-base px-2 sm:px-4 md:px-6"
+                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-6"
               >
                 <span className="truncate">{t("tabs.documents")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="noticeBoard"
-                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px] text-xs sm:text-sm md:text-base px-2 sm:px-4 md:px-6"
+                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-6"
               >
                 <span className="truncate">{t("tabs.noticeBoard")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="applications"
-                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px] text-xs sm:text-sm md:text-base px-2 sm:px-4 md:px-6"
+                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-6"
               >
                 <span className="truncate">{t("tabs.applications")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="results"
-                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px] text-xs sm:text-sm md:text-base px-2 sm:px-4 md:px-6"
+                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-6"
               >
                 <span className="truncate">{t("tabs.results")}</span>
               </TabsTrigger>
@@ -112,19 +114,27 @@ export default function EventTabs({
                 <h3 className="text-2xl font-semibold text-dark dark:text-white">
                   {t("register")}
                 </h3>
-                <p className="mt-4 text-sm leading-7 text-dark/65 dark:text-white/65">
+                <p className="mt-4  leading-7 text-dark/65 dark:text-white/65">
                   {t("tabsContent.applications")}
                 </p>
-                <p className="mt-3 text-sm leading-7 text-dark/55 dark:text-white/55">
-                  {safeRegisterForm.length > 0
+                <p className="mt-3  leading-7 text-dark/55 dark:text-white/55">
+                  {!registerOpen
+                    ? t("tabsContent.applicationsClosed")
+                    : safeRegisterForm.length > 0
                     ? t("tabsContent.applicationsFiles")
                     : t("tabsContent.applicationsEmpty")}
                 </p>
-                <Button asChild className="mt-6 rounded-xl px-6 text-white">
-                  <Link href={registerHref} scroll={false}>
-                    {t("openRegistration")}
-                  </Link>
-                </Button>
+                {registerOpen ? (
+                  <Button asChild className="mt-6 rounded-xl px-6 text-white">
+                    <Link href={registerHref} scroll={false}>
+                      {t("openRegistration")}
+                    </Link>
+                  </Button>
+                ) : (
+                  <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3  font-medium text-red-700">
+                    {t("registrationClosed")}
+                  </p>
+                )}
               </div>
             </div>
           </TabsContent>

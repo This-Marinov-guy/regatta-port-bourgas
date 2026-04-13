@@ -140,6 +140,38 @@ button {
   outline-offset: 4px;
 }
 
+.blog-details .ProseMirror-selectednode {
+  outline: 3px solid rgba(52, 53, 170, 0.45);
+  outline-offset: 4px;
+}
+
+.admin-rich-editor__content {
+  min-height: 24rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(23, 32, 35, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1.5rem 1.5rem 2rem;
+  color: #172023;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+
+.admin-rich-editor__content:focus {
+  border-color: rgba(52, 53, 170, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 0 0 4px rgba(52, 53, 170, 0.08);
+}
+
+.admin-rich-editor__content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: rgba(23, 32, 35, 0.38);
+  pointer-events: none;
+  height: 0;
+}
+
 .blog-details strong {
   @apply font-bold dark:text-white;
 }

@@ -14,7 +14,7 @@ export default async function GalleryAccordion() {
 
   if (years.length === 0) {
     return (
-      <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] px-6 py-8 text-sm text-dark/65 dark:text-white/65">
+      <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] px-6 py-8  text-dark/65 dark:text-white/65">
         {t('empty')}
       </div>
     )

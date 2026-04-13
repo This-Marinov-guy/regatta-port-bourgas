@@ -23,14 +23,14 @@ export default async function EventsPreview() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-dark dark:text-white mb-3">
               {t("events.future")}
             </h2>
-            <p className="text-dark/60 dark:text-white/60 text-sm sm:text-base max-w-2xl">
+            <p className="text-dark/60 dark:text-white/60  sm:text-base max-w-2xl">
               {t("events.previewSubtitle")}
             </p>
           </div>
 
           <Link
             href="/events"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-primary bg-primary text-white hover:bg-primary/90 transition-colors duration-300 font-semibold text-sm sm:text-base"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-primary bg-primary text-white hover:bg-primary/90 transition-colors duration-300 font-semibold  sm:text-base"
           >
             {t("events.seeMore")}
             <Image src="/images/SVGs/arrow-right.svg" alt="Arrow Right" className='ml-2 brightness-0 invert' width={24} height={24} />

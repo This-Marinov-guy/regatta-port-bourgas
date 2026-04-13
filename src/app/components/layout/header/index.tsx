@@ -28,7 +28,7 @@ const Header: React.FC = () => {
     { label: t('navigation.news'), href: `/${locale}/news` },
     { label: t('navigation.gallery'), href: `/${locale}/gallery` },
     { label: t('navigation.contactUs'), href: `/${locale}/contact-us` },
-    { label: t('navigation.documents'), href: `/${locale}/documents` },
+    // { label: t('navigation.documents'), href: `/${locale}/documents` },
   ], [locale, t])
 
   const [navLinks, setNavLinks] = useState<NavLinks[]>(fallbackLinks)
@@ -189,7 +189,7 @@ const Header: React.FC = () => {
                 >
                   <Icon icon="ph:user-circle-bold" width={24} height={24} />
                 </div>
-                <p className="absolute w-fit text-sm font-medium text-center z-10 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-200 bg-primary dark:bg-middlegreen text-creamwhite py-1 px-2 min-w-28 rounded-xl shadow-2xl top-full left-1/2 transform -translate-x-1/2 mt-3">
+                <p className="absolute w-fit  font-medium text-center z-10 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-200 bg-primary dark:bg-middlegreen text-creamwhite py-1 px-2 min-w-28 rounded-xl shadow-2xl top-full left-1/2 transform -translate-x-1/2 mt-3">
                   {authDisplayName}
                 </p>
               </div>
@@ -258,7 +258,7 @@ const Header: React.FC = () => {
                       <Icon icon="ph:user-circle-bold" width={28} height={28} />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
+                      <p className=" font-semibold uppercase tracking-[0.2em] text-white/45">
                         Account
                       </p>
                       <p className="mt-1 text-base font-medium text-white">

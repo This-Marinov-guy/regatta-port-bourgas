@@ -72,7 +72,7 @@ const Signin = () => {
             className={`w-full rounded-2xl border placeholder:text-gray-400 border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary
               ${validationErrors.email ? 'border-red-500' : 'border-black/10'}`}
           />
-          {validationErrors.email && (<p className="text-red-500 dark:text-red-500 text-sm mt-1">{validationErrors.email}</p>)}
+          {validationErrors.email && (<p className="text-red-500 dark:text-red-500  mt-1">{validationErrors.email}</p>)}
         </div>
         <div className="mb-[22px]">
           <input
@@ -84,7 +84,7 @@ const Signin = () => {
             className={`w-full rounded-2xl border border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary
               ${validationErrors.password ? 'border-red-500' : 'border-black/10'}`}
           />
-          {validationErrors.password && (<p className="text-red-500 text-sm mt-1">{validationErrors.password}</p>)}
+          {validationErrors.password && (<p className="text-red-500  mt-1">{validationErrors.password}</p>)}
         </div>
         <div className="mb-9">
           <button

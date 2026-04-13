@@ -20,14 +20,14 @@ export default async function LatestNews() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-dark dark:text-white mb-3">
               {t('news.latest')}
             </h2>
-            <p className="text-dark/60 dark:text-white/60 text-sm sm:text-base max-w-2xl">
+            <p className="text-dark/60 dark:text-white/60  sm:text-base max-w-2xl">
               {t('news.previewSubtitle')}
             </p>
           </div>
 
           <Link
             href="/news"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-primary bg-primary text-white hover:bg-primary/90 transition-colors duration-300 font-semibold text-sm sm:text-base"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-primary bg-primary text-white hover:bg-primary/90 transition-colors duration-300 font-semibold  sm:text-base"
           >
             {t('news.seeMore')}
             <Image

@@ -70,6 +70,33 @@ function normalizeStringArray(value: unknown) {
   return []
 }
 
+function stripHtmlToText(value: string) {
+  return value
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildNewsExcerptFromBody(value: string, maxLength = 180) {
+  const plainText = stripHtmlToText(value)
+
+  if (plainText.length <= maxLength) {
+    return plainText || null
+  }
+
+  return `${plainText.slice(0, maxLength).trimEnd()}...`
+}
+
 function normalizeStatus(value: unknown): EventStatus {
   const status = Number(value)
 
@@ -113,8 +140,8 @@ export function parseNewsPayload(input: Record<string, unknown>): AdminNewsPaylo
     slug: normalizeSlug(input.slug, input.name_en, 'news'),
     name_en: normalizeRequiredText(input.name_en, 'English name'),
     name_bg: normalizeOptionalText(input.name_bg),
-    description_en: normalizeOptionalText(input.description_en),
-    description_bg: normalizeOptionalText(input.description_bg),
+    description_en: buildNewsExcerptFromBody(bodyEn),
+    description_bg: bodyBg ? buildNewsExcerptFromBody(bodyBg) : null,
     body_en: bodyEn,
     body_bg: bodyBg,
     attachments: extractNewsAttachmentUrls(bodyEn, bodyBg ?? bodyEn)

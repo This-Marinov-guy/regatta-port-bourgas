@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { publishRegistrationCreated } from '@/lib/registrations/publish'
+import { isEventRegistrationOpen } from '@/lib/events'
 
 type CrewMemberPayload = {
   name?: unknown
@@ -33,6 +34,7 @@ type RegistrationPayload = {
   receive_documents_by_email?: unknown
   crew_insurance?: unknown
   third_party_insurance?: unknown
+  insurance_documents?: unknown
   disclaimer_accepted?: unknown
   gdpr_accepted?: unknown
   crew_list?: unknown
@@ -154,6 +156,16 @@ function normalizeCrewList(value: unknown) {
     .filter(Boolean)
 }
 
+function normalizeDocumentUrls(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .map((item) => optionalText(item))
+    .filter((item): item is string => Boolean(item))
+}
+
 function requiresLegacyEmailColumn(errorMessage: string) {
   return (
     errorMessage.includes('null value in column "email"') &&
@@ -203,6 +215,7 @@ export async function POST(request: Request) {
       receive_documents_by_email: toBoolean(body.receive_documents_by_email, true),
       crew_insurance: toBoolean(body.crew_insurance),
       third_party_insurance: toBoolean(body.third_party_insurance),
+      insurance_documents: normalizeDocumentUrls(body.insurance_documents),
       disclaimer_accepted: toBoolean(body.disclaimer_accepted),
       gdpr_accepted: toBoolean(body.gdpr_accepted),
       crew_list: normalizeCrewList(body.crew_list)
@@ -215,7 +228,34 @@ export async function POST(request: Request) {
       )
     }
 
+    if (payload.insurance_documents.length === 0) {
+      return NextResponse.json(
+        { error: 'Insurance documents are required.' },
+        { status: 400 }
+      )
+    }
+
     const supabase = createSupabaseServiceClient()
+    const { data: eventData, error: eventError } = await supabase
+      .from('events')
+      .select('id, start_date')
+      .eq('id', payload.event_id)
+      .single()
+
+    if (eventError || !eventData) {
+      return NextResponse.json(
+        { error: 'Event not found.' },
+        { status: 404 }
+      )
+    }
+
+    if (!isEventRegistrationOpen(eventData.start_date)) {
+      return NextResponse.json(
+        { error: 'Registration for this event is closed.' },
+        { status: 400 }
+      )
+    }
+
     let { data, error } = await supabase
       .from('registrations')
       .insert(payload)

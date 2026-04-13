@@ -106,7 +106,7 @@ const Footer = () => {
                 <Link
                   key={index}
                   href={item.href}
-                  className="text-white/60 hover:text-white text-xs md:text-sm lg:text-base transition-colors duration-300 w-fit"
+                  className="text-white/60 hover:text-white  md: lg:text-base transition-colors duration-300 w-fit"
                 >
                   {item.label}
                 </Link>
@@ -119,7 +119,7 @@ const Footer = () => {
                 <Link
                   key={index}
                   href={item.href}
-                  className="text-white/60 hover:text-white text-sm md:text-base transition-colors duration-300 w-fit"
+                  className="text-white/60 hover:text-white  md:text-base transition-colors duration-300 w-fit"
                 >
                   {item.label}
                 </Link>
@@ -132,7 +132,7 @@ const Footer = () => {
                 <Link
                   key={index}
                   href={item.href}
-                  className="text-white/60 hover:text-white text-xs transition-colors duration-300 w-fit"
+                  className="text-white/60 hover:text-white  transition-colors duration-300 w-fit"
                 >
                   {item.label}
                 </Link>
@@ -143,7 +143,7 @@ const Footer = () => {
 
         {/* Bottom Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-6 md:py-8 gap-4 sm:gap-6">
-          <p className="text-white/60 text-xs sm:text-sm">
+          <p className="text-white/60  sm:">
             © {new Date().getFullYear()} Regatta Port Bourgas. Developed by{" "}
             <Link
               href="https://vladislavmarinov.com/"
@@ -157,13 +157,13 @@ const Footer = () => {
           {/* <div className="flex flex-wrap gap-4 sm:gap-8 items-center">
             <Link
               href="/terms-and-conditions"
-              className="text-white/60 hover:text-primary text-xs sm:text-sm transition-colors duration-300"
+              className="text-white/60 hover:text-primary  sm: transition-colors duration-300"
             >
               Terms & Conditions
             </Link>
             <Link
               href="/privacy-policy"
-              className="text-white/60 hover:text-primary text-xs sm:text-sm transition-colors duration-300"
+              className="text-white/60 hover:text-primary  sm: transition-colors duration-300"
             >
               Privacy Policy
             </Link>

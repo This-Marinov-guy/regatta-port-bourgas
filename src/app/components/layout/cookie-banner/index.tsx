@@ -58,20 +58,20 @@ const CookieBanner = () => {
                   {t('title')}
                 </h3>
               </div>
-              <p className="text-sm md:text-base text-dark/70 dark:text-white/70 leading-relaxed">
+              <p className=" md:text-base text-dark/70 dark:text-white/70 leading-relaxed">
                 {t('description')}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <button
                 onClick={() => handleAccept('mandatory')}
-                className="px-4 md:px-6 py-2.5 md:py-3 rounded-md border border-dark dark:border-white bg-transparent text-dark dark:text-white hover:bg-dark dark:hover:bg-white hover:text-white dark:hover:text-dark transition-colors duration-300 text-sm md:text-base font-medium whitespace-nowrap"
+                className="px-4 md:px-6 py-2.5 md:py-3 rounded-md border border-dark dark:border-white bg-transparent text-dark dark:text-white hover:bg-dark dark:hover:bg-white hover:text-white dark:hover:text-dark transition-colors duration-300  md:text-base font-medium whitespace-nowrap"
               >
                 {t('mandatoryOnly')}
               </button>
               <button
                 onClick={() => handleAccept('all')}
-                className="px-4 md:px-6 py-2.5 md:py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors duration-300 text-sm md:text-base font-medium whitespace-nowrap"
+                className="px-4 md:px-6 py-2.5 md:py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors duration-300  md:text-base font-medium whitespace-nowrap"
               >
                 {t('acceptAll')}
               </button>

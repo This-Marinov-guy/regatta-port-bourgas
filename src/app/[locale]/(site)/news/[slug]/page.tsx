@@ -92,7 +92,7 @@ export default async function NewsDetailPage({ params }: Props) {
         </Link>
 
         <article className="max-w-4xl">
-          <div className="flex items-center gap-2 text-sm text-dark/60 dark:text-white/60 mb-4">
+          <div className="flex items-center gap-2  text-dark/60 dark:text-white/60 mb-4">
             <Icon icon="ph:calendar-blank-bold" width={18} height={18} className="text-primary" />
             <span>{formattedDate}</span>
           </div>
@@ -131,7 +131,7 @@ export default async function NewsDetailPage({ params }: Props) {
                         href={attachment.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                        className="inline-flex items-center gap-2  font-medium text-primary hover:underline"
                       >
                         <Icon icon="ph:paperclip-bold" width={18} height={18} />
                         {decodeURIComponent(attachment.label || fallbackLabel)}

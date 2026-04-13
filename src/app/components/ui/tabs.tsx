@@ -68,7 +68,7 @@ function TabsTrigger({
     <button
       type="button"
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-sm sm:rounded-md px-2 sm:px-3 md:px-4 lg:px-6 py-1.5 sm:py-2 md:py-2.5 text-xs sm:text-sm md:text-base font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-sm sm:rounded-md px-2 sm:px-3 md:px-4 lg:px-6 py-1.5 sm:py-2 md:py-2.5  sm: md:text-base font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         isActive
           ? "bg-white dark:bg-dark text-primary shadow-sm sm:shadow-md"
           : "text-dark/70 dark:text-white/70 hover:text-dark dark:hover:text-white hover:bg-white/50 dark:hover:bg-dark/50",

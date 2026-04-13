@@ -133,13 +133,13 @@ export default function EventRegistrationModal({
           >
             <div className="sticky top-0 z-10 flex items-start justify-between gap-4 rounded-t-[2rem] border-b border-black/10 bg-[#f8f6ef]/95 px-5 py-5 backdrop-blur dark:border-white/10 dark:bg-[#11110f]/95 sm:px-8">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/80">
+                <p className=" font-semibold uppercase tracking-[0.22em] text-primary/80">
                   {t('registerModalEyebrow')}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-dark dark:text-white sm:text-3xl">
                   {eventTitle}
                 </h2>
-                <p className="mt-2 text-sm font-medium text-dark/60 dark:text-white/60">
+                <p className="mt-2  font-medium text-dark/60 dark:text-white/60">
                   {eventDate}
                 </p>
               </div>

@@ -1,3 +1,4 @@
+import { addDays, parseISO, startOfDay } from 'date-fns'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export type DbEvent = {
@@ -69,4 +70,12 @@ export async function getEvent(slug: string): Promise<DbEvent | null> {
   }
 
   return normalizeEvent(data as Record<string, unknown>)
+}
+
+export function isEventRegistrationOpen(
+  startDate: string,
+  now = new Date()
+) {
+  const cutoff = addDays(startOfDay(parseISO(startDate)), 1)
+  return now < cutoff
 }

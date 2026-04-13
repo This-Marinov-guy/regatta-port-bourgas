@@ -64,6 +64,21 @@ export type CrewMember = {
   date_of_birth?: string
 }
 
+export type RegistrationPaymentData = {
+  stripe?: {
+    checkout_session_id?: string
+    checkout_url?: string | null
+    status?: string | null
+    payment_status?: string | null
+    crew_count?: number
+    unit_amount?: number
+    total_amount?: number
+    currency?: string
+    created_at?: string
+    completed_at?: string
+  }
+} | null
+
 export type RegistrationRecord = {
   id: string
   event_id: string
@@ -103,7 +118,10 @@ export type RegistrationRecord = {
   gdpr_accepted: boolean
 
   crew_list: CrewMember[]
+  insurance_documents: string[]
   generated_form_url: string | null
+  blank_link: string | null
+  payment_data: RegistrationPaymentData
   status: RegistrationStatus
   created_at: string
   updated_at: string

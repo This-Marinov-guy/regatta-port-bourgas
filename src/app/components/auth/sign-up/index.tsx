@@ -82,7 +82,7 @@ const SignUp = () => {
             className={`w-full rounded-2xl border placeholder:text-gray-400 border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary
               ${errors.name ? 'border-red-500 dark:border-red-500' : 'border-stroke'}`}
           />
-          {errors.name && <p className="text-red-500 dark:text-red-500 text-sm mt-1">{errors.name}</p>}
+          {errors.name && <p className="text-red-500 dark:text-red-500  mt-1">{errors.name}</p>}
         </div>
         <div className="mb-[22px]">
           <input
@@ -94,7 +94,7 @@ const SignUp = () => {
             className={`w-full rounded-2xl border placeholder:text-gray-400 border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary
               ${errors.email ? 'border-red-500 dark:border-red-500' : 'border-stroke'}`}
           />
-          {errors.email && <p className="text-red-500 dark:text-red-500 text-sm mt-1">{errors.email}</p>}
+          {errors.email && <p className="text-red-500 dark:text-red-500  mt-1">{errors.email}</p>}
         </div>
         <div className="mb-[22px]">
           <input
@@ -106,7 +106,7 @@ const SignUp = () => {
             className={`w-full rounded-2xl border placeholder:text-gray-400 border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary
               ${errors.password ? 'border-red-500 dark:border-red-500' : 'border-stroke'}`}
           />
-          {errors.password && <p className="text-red-500 dark:text-red-500 text-sm mt-1">{errors.password}</p>}
+          {errors.password && <p className="text-red-500 dark:text-red-500  mt-1">{errors.password}</p>}
         </div>
         <div className="mb-9">
           <button

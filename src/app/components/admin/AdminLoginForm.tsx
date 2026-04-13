@@ -45,17 +45,17 @@ export default function AdminLoginForm() {
 
   return (
     <div className="rounded-[1.5rem] border border-black/10 bg-white p-6 md:p-8">
-      <p className="mb-2 text-sm uppercase tracking-[0.28em] text-primary/70">
+      <p className="mb-2  uppercase tracking-[0.28em] text-primary/70">
         Secure login
       </p>
-      {/* <p className="mb-8 text-sm leading-6 text-dark/60">
+      {/* <p className="mb-8  leading-6 text-dark/60">
         Use a Supabase email/password user. Social login and the public site
         sign-in page are not used here.
       </p> */}
 
       <form className="space-y-5" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-dark">
+          <span className="mb-2 block  font-medium text-dark">
             Email
           </span>
           <input
@@ -68,7 +68,7 @@ export default function AdminLoginForm() {
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-dark">
+          <span className="mb-2 block  font-medium text-dark">
             Password
           </span>
           <input
@@ -81,7 +81,7 @@ export default function AdminLoginForm() {
         </label>
 
         {errorMessage ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3  text-red-700">
             {errorMessage}
           </div>
         ) : null}

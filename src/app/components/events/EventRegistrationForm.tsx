@@ -9,6 +9,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import { useLocale } from 'next-intl'
 import { Button } from '@/app/components/ui/button'
 import EventSubmissionStatusModal from '@/app/components/events/EventSubmissionStatusModal'
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 
 type CrewMemberDraft = {
   name: string
@@ -40,6 +41,7 @@ type RegistrationDraft = {
   receive_documents_by_email: boolean
   crew_insurance: boolean
   third_party_insurance: boolean
+  insurance_documents: string[]
   disclaimer_accepted: boolean
   gdpr_accepted: boolean
   crew_list: CrewMemberDraft[]
@@ -53,6 +55,14 @@ type Props = {
 
 type LegalModalKey = 'disclaimer' | 'gdpr'
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error'
+type RegistrationSubmitResponse = {
+  data?: {
+    id: string
+  }
+  error?: string
+}
+
+const REGATTA_EMAIL = 'events@yachtclubportbourgas.org'
 
 function syncSkipperIntoCrew(
   crewList: CrewMemberDraft[] | undefined,
@@ -96,6 +106,7 @@ const defaultDraft = (): RegistrationDraft => ({
   receive_documents_by_email: true,
   crew_insurance: false,
   third_party_insurance: false,
+  insurance_documents: [],
   disclaimer_accepted: false,
   gdpr_accepted: false,
   crew_list: [{ name: '', date_of_birth: '' }]
@@ -143,6 +154,7 @@ const content = {
         "The boat crew is insured - min. 1'000 euro per person",
       third_party_insurance:
         "Third party liability insurance is minimum 10'000 euro",
+      insurance_documents: 'Insurance documents',
       disclaimer_accepted: 'I accept the event disclaimer',
       gdpr_accepted: 'I accept the GDPR / privacy terms',
       crew_name: 'Crew member name',
@@ -156,6 +168,7 @@ const content = {
     },
     addCrew: 'Add crew member',
     removeCrew: 'Remove',
+    removeFile: 'Remove',
     datePlaceholder: 'Select a date',
     cancel: 'Cancel',
     submit: 'Submit registration',
@@ -164,6 +177,11 @@ const content = {
     insuranceRequired: 'The crew must have minimum insurance',
     insuranceBanner:
       'Please provide the insurance policies at the regatta email',
+    insuranceDocumentsHelp:
+      'Upload one or more insurance files. These documents are required.',
+    addInsuranceDocuments: 'Add insurance documents',
+    insuranceDocumentsRequired: 'Please upload the insurance documents.',
+    uploadingInsuranceDocuments: 'Uploading insurance documents...',
     success:
       'Registration submitted successfully. Your local draft has been cleared.',
     error: 'We could not submit your registration. Please try again.',
@@ -173,6 +191,9 @@ const content = {
       successTitle: 'Registration sent',
       errorTitle: 'Submission failed',
       close: 'Close',
+      paymentAction: 'Make payment',
+      paymentLoading: 'Opening checkout...',
+      paymentError: 'We could not start the payment. Please try again.',
     },
     crewEmpty:
       'The first row is the skipper and is filled from the skipper information above. Add more rows only for the rest of the crew.',
@@ -229,6 +250,7 @@ const content = {
         "Имам застраховка на Екипажа за минимум 2'000 лв.",
       third_party_insurance:
         "Имам застраховка Отговорност към трети лица, минимум 20'000 лв.",
+      insurance_documents: 'Застрахователни документи',
       disclaimer_accepted: 'Приемам декларацията на събитието',
       gdpr_accepted: 'Приемам GDPR / условията за поверителност',
       crew_name: 'Име на член от екипажа',
@@ -242,6 +264,7 @@ const content = {
     },
     addCrew: 'Добави член на екипажа',
     removeCrew: 'Премахни',
+    removeFile: 'Премахни',
     datePlaceholder: 'Изберете дата',
     cancel: 'Отказ',
     submit: 'Изпрати регистрация',
@@ -250,6 +273,11 @@ const content = {
     insuranceRequired: 'The crew must have minimum insurance',
     insuranceBanner:
       'Моля изпратете застраховките и екипажния списък на емейла на регатата',
+    insuranceDocumentsHelp:
+      'Качете един или повече файла със застраховки. Тези документи са задължителни.',
+    addInsuranceDocuments: 'Добави застрахователни документи',
+    insuranceDocumentsRequired: 'Моля, качете застрахователните документи.',
+    uploadingInsuranceDocuments: 'Качване на застрахователни документи...',
     success:
       'Регистрацията е изпратена успешно. Локалната чернова беше изчистена.',
     error: 'Неуспешно изпращане на регистрацията. Моля, опитайте отново.',
@@ -259,6 +287,9 @@ const content = {
       successTitle: 'Регистрацията е изпратена',
       errorTitle: 'Грешка при изпращане',
       close: 'Затвори',
+      paymentAction: 'Плати сега',
+      paymentLoading: 'Отваряне на плащането...',
+      paymentError: 'Не успяхме да стартираме плащането. Моля, опитайте отново.',
     },
     crewEmpty:
       'Първият ред е за шкипера и се попълва автоматично от секцията за шкипер по-горе. Добавяйте следващи редове само за останалите членове на екипажа.',
@@ -291,7 +322,7 @@ function DraftField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-dark dark:text-white">
+      <span className="mb-2 block  font-medium text-dark dark:text-white">
         {label}
         {required ? ' *' : ''}
       </span>
@@ -301,7 +332,7 @@ function DraftField({
 }
 
 function inputClassName(invalid = false) {
-  return `w-full rounded-2xl border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:bg-black/30 dark:text-white ${
+  return `w-full rounded-2xl border bg-white px-4 py-3  text-dark outline-none transition focus:border-primary dark:bg-black/30 dark:text-white ${
     invalid
       ? 'border-red-500 focus:border-red-500 dark:border-red-500'
       : 'border-black/10 dark:border-white/10'
@@ -427,7 +458,7 @@ function LegalInfoModal({
               {closeLabel}
             </Button>
           </div>
-          <div className="mt-5 max-h-[70vh] overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white/80 p-5 text-sm leading-7 whitespace-pre-line text-dark/80 dark:border-white/10 dark:bg-black/20 dark:text-white/80">
+          <div className="mt-5 max-h-[70vh] overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white/80 p-5  leading-7 whitespace-pre-line text-dark/80 dark:border-white/10 dark:bg-black/20 dark:text-white/80">
             {body}
           </div>
         </div>
@@ -452,6 +483,36 @@ function scrollToElement(element: HTMLElement | null) {
   }, 180)
 }
 
+function isImageFile(file: File) {
+  return file.type.startsWith('image/')
+}
+
+function createUploadPath(file: File) {
+  const extension = file.name.includes('.')
+    ? `.${file.name.split('.').pop()?.toLowerCase() ?? 'bin'}`
+    : ''
+  const safeName = file.name
+    .replace(/\.[^/.]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName || 'file'}${extension}`
+}
+
+async function uploadInsuranceDocument(file: File) {
+  const supabase = createSupabaseBrowserClient()
+  const bucket = isImageFile(file) ? 'images' : 'documents'
+  const path = createUploadPath(file)
+
+  const { error } = await supabase.storage.from(bucket).upload(path, file)
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+}
+
 export default function EventRegistrationForm({
   eventId,
   onCancel,
@@ -462,9 +523,12 @@ export default function EventRegistrationForm({
   const storageKey = useMemo(() => getStorageKey(eventId), [eventId])
   const [form, setForm] = useState<RegistrationDraft>(() => defaultDraft())
   const [submitting, setSubmitting] = useState(false)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [insuranceUploading, setInsuranceUploading] = useState(false)
   const [invalidFields, setInvalidFields] = useState<string[]>([])
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle')
   const [submissionMessage, setSubmissionMessage] = useState<string>('')
+  const [createdRegistrationId, setCreatedRegistrationId] = useState<string | null>(null)
   const [activeLegalModal, setActiveLegalModal] = useState<LegalModalKey | null>(null)
   const hydratedRef = useRef(false)
 
@@ -498,20 +562,6 @@ export default function EventRegistrationForm({
 
     window.localStorage.setItem(storageKey, JSON.stringify(form))
   }, [form, storageKey])
-
-  useEffect(() => {
-    if (submissionState !== 'success' || !onSuccess) {
-      return
-    }
-
-    const timeout = window.setTimeout(() => {
-      onSuccess()
-    }, 1200)
-
-    return () => {
-      window.clearTimeout(timeout)
-    }
-  }, [onSuccess, submissionState])
 
   function updateField<K extends keyof RegistrationDraft>(
     field: K,
@@ -612,10 +662,96 @@ export default function EventRegistrationForm({
     }
   }
 
+  async function handleInsuranceFiles(files: FileList | null) {
+    if (!files || files.length === 0) {
+      return
+    }
+
+    setInsuranceUploading(true)
+
+    try {
+      const uploadedUrls = await Promise.all(
+        Array.from(files).map((file) => uploadInsuranceDocument(file))
+      )
+
+      setInvalidFields((current) =>
+        current.filter((item) => item !== 'insurance_documents')
+      )
+      setForm((current) => ({
+        ...current,
+        insurance_documents: [
+          ...current.insurance_documents,
+          ...uploadedUrls.filter((url) => !current.insurance_documents.includes(url)),
+        ],
+      }))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t.error)
+    } finally {
+      setInsuranceUploading(false)
+    }
+  }
+
+  function removeInsuranceDocument(index: number) {
+    setForm((current) => ({
+      ...current,
+      insurance_documents: current.insurance_documents.filter((_, itemIndex) => itemIndex !== index),
+    }))
+  }
+
+  function closeSubmissionModal() {
+    const shouldCloseRegistration = submissionState === 'success'
+    setSubmissionState('idle')
+    setSubmissionMessage('')
+    setCreatedRegistrationId(null)
+    setPaymentLoading(false)
+
+    if (shouldCloseRegistration) {
+      onSuccess?.()
+    }
+  }
+
+  async function handlePaymentCheckout() {
+    if (!createdRegistrationId) {
+      return
+    }
+
+    setPaymentLoading(true)
+
+    try {
+      const response = await fetch(
+        `/api/registrations/${createdRegistrationId}/checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ locale }),
+        }
+      )
+
+      const payload = (await response.json().catch(() => null)) as
+        | { data?: { checkoutUrl?: string }; error?: string }
+        | null
+
+      if (!response.ok || !payload?.data?.checkoutUrl) {
+        throw new Error(payload?.error || t.submissionStatus.paymentError)
+      }
+
+      window.location.assign(payload.data.checkoutUrl)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t.submissionStatus.paymentError
+      )
+      setPaymentLoading(false)
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSubmissionState('idle')
     setSubmissionMessage('')
+    setCreatedRegistrationId(null)
+    setPaymentLoading(false)
     const formElement = event.currentTarget
     const hasMinimumInsurance =
       form.crew_insurance || form.third_party_insurance
@@ -632,13 +768,25 @@ export default function EventRegistrationForm({
       nextInvalidFields.push('crew_insurance', 'third_party_insurance')
     }
 
+    if (form.insurance_documents.length === 0) {
+      nextInvalidFields.push('insurance_documents')
+    }
+
     if (nextInvalidFields.length > 0 || !formElement.checkValidity() || !hasMinimumInsurance) {
       setInvalidFields(Array.from(new Set(nextInvalidFields)))
-      toast.error(hasMinimumInsurance ? t.fixForm : t.insuranceRequired)
+      toast.error(
+        !hasMinimumInsurance
+          ? t.insuranceRequired
+          : form.insurance_documents.length === 0
+            ? t.insuranceDocumentsRequired
+            : t.fixForm
+      )
       scrollToElement(
-        hasMinimumInsurance
-          ? (nativeInvalidFields[0] ?? null)
-          : document.getElementById('crew_insurance')
+        !hasMinimumInsurance
+          ? document.getElementById('crew_insurance')
+          : form.insurance_documents.length === 0
+            ? document.getElementById('insurance_documents')
+            : (nativeInvalidFields[0] ?? null)
       )
       return
     }
@@ -661,7 +809,7 @@ export default function EventRegistrationForm({
       })
 
       const payload = (await response.json().catch(() => null)) as
-        | { error?: string }
+        | RegistrationSubmitResponse
         | null
 
       if (!response.ok) {
@@ -669,6 +817,7 @@ export default function EventRegistrationForm({
       }
 
       clearDraft()
+      setCreatedRegistrationId(payload?.data?.id ?? null)
       setSubmissionState('success')
       setSubmissionMessage(t.success)
     } catch (error) {
@@ -721,7 +870,20 @@ export default function EventRegistrationForm({
           }
           message={submissionMessage}
           closeLabel={t.submissionStatus.close}
-          onClose={() => setSubmissionState('idle')}
+          onClose={closeSubmissionModal}
+          actionLabel={
+            submissionState === 'success'
+              ? paymentLoading
+                ? t.submissionStatus.paymentLoading
+                : t.submissionStatus.paymentAction
+              : undefined
+          }
+          onAction={
+            submissionState === 'success' && createdRegistrationId
+              ? handlePaymentCheckout
+              : undefined
+          }
+          actionDisabled={paymentLoading}
         />
       ) : null}
 
@@ -975,7 +1137,7 @@ export default function EventRegistrationForm({
         </SectionCard>
 
         <SectionCard title={t.crewSection}>
-          <p className="mb-4 text-sm leading-7 text-dark/65 dark:text-white/65">
+          <p className="mb-4  leading-7 text-dark/65 dark:text-white/65">
             {t.crewEmpty}
           </p>
 
@@ -986,7 +1148,7 @@ export default function EventRegistrationForm({
                 className="rounded-[1.5rem] border border-black/10 bg-white/70 p-4 dark:border-white/10 dark:bg-black/20"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-dark/50 dark:text-white/50">
+                  <p className=" font-semibold uppercase tracking-[0.18em] text-dark/50 dark:text-white/50">
                     {index === 0
                       ? t.skipperCrewTitle
                       : `${t.crewMemberTitle} #${index}`}
@@ -995,7 +1157,7 @@ export default function EventRegistrationForm({
                     <button
                       type="button"
                       onClick={() => removeCrewMember(index)}
-                      className="text-sm font-semibold text-red-500 hover:underline"
+                      className=" font-semibold text-red-500 hover:underline"
                     >
                       {t.removeCrew}
                     </button>
@@ -1068,7 +1230,7 @@ export default function EventRegistrationForm({
             ).map((field) => (
               <div
                 key={field}
-                className={`flex items-start gap-3 rounded-2xl border bg-white/70 px-4 py-4 text-sm text-dark dark:bg-black/20 dark:text-white ${
+                className={`flex items-start gap-3 rounded-2xl border bg-white/70 px-4 py-4  text-dark dark:bg-black/20 dark:text-white ${
                   invalidFields.includes(field)
                     ? 'border-red-500 dark:border-red-500'
                     : 'border-black/10 dark:border-white/10'
@@ -1090,7 +1252,7 @@ export default function EventRegistrationForm({
                     <button
                       type="button"
                       onClick={() => setActiveLegalModal('disclaimer')}
-                      className="mt-2 block text-sm font-semibold text-primary hover:underline"
+                      className="mt-2 block  font-semibold text-primary hover:underline"
                     >
                       {t.legal.disclaimerLink}
                     </button>
@@ -1099,7 +1261,7 @@ export default function EventRegistrationForm({
                     <button
                       type="button"
                       onClick={() => setActiveLegalModal('gdpr')}
-                      className="mt-2 block text-sm font-semibold text-primary hover:underline"
+                      className="mt-2 block  font-semibold text-primary hover:underline"
                     >
                       {t.legal.gdprLink}
                     </button>
@@ -1110,16 +1272,84 @@ export default function EventRegistrationForm({
           </div>
 
           {form.crew_insurance || form.third_party_insurance ? (
-            <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-100 px-4 py-4 text-sm leading-7 text-amber-950">
+            <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-100 px-4 py-4  leading-7 text-amber-950">
               {t.insuranceBanner}{' '}
               <a
-                href="mailto:events@yachtclubportbourgas.org"
+                href={`mailto:${REGATTA_EMAIL}`}
                 className="font-semibold underline decoration-amber-700 underline-offset-2 hover:text-amber-700"
               >
-                events@yachtclubportbourgas.org
+                {REGATTA_EMAIL}
               </a>
             </div>
           ) : null}
+
+          <div
+            id="insurance_documents"
+            className={`mt-4 rounded-2xl border bg-white/70 p-4 dark:bg-black/20 ${
+              invalidFields.includes('insurance_documents')
+                ? 'border-red-500 dark:border-red-500'
+                : 'border-black/10 dark:border-white/10'
+            }`}
+          >
+            <DraftField label={t.labels.insurance_documents} required>
+              <div className="space-y-4">
+                <p className=" leading-7 text-dark/65 dark:text-white/65">
+                  {t.insuranceDocumentsHelp}
+                </p>
+
+                <input
+                  id="insurance_documents_input"
+                  type="file"
+                  multiple
+                  onChange={(event) => {
+                    void handleInsuranceFiles(event.target.files)
+                    event.currentTarget.value = ''
+                  }}
+                  className="hidden"
+                />
+
+                <Button
+                  type="button"
+                  onClick={() =>
+                    document.getElementById('insurance_documents_input')?.click()
+                  }
+                  disabled={insuranceUploading}
+                  className="rounded-xl px-5 text-white"
+                >
+                  {insuranceUploading
+                    ? t.uploadingInsuranceDocuments
+                    : t.addInsuranceDocuments}
+                </Button>
+
+                {form.insurance_documents.length > 0 ? (
+                  <div className="space-y-3">
+                    {form.insurance_documents.map((url, index) => (
+                      <div
+                        key={`${url}-${index}`}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white px-4 py-3  dark:border-white/10 dark:bg-black/20"
+                      >
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-w-0 truncate font-medium text-primary hover:underline"
+                        >
+                          {url.split('/').pop() || url}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => removeInsuranceDocument(index)}
+                          className="shrink-0  font-semibold text-red-500 hover:underline"
+                        >
+                          {t.removeFile}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </DraftField>
+          </div>
         </SectionCard>
 
         <div className="flex flex-wrap items-center justify-center gap-3">

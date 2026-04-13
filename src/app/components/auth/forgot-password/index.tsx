@@ -64,7 +64,7 @@ const ForgotPassword = () => {
                           ${emailError ? 'border-red-500 dark:border-red-500' : 'border-black/10'}`}
                       />
                       {emailError && (
-                        <p className="text-red-500 text-sm mt-1">{emailError}</p>
+                        <p className="text-red-500  mt-1">{emailError}</p>
                       )}
                     </div>
                     <div>
