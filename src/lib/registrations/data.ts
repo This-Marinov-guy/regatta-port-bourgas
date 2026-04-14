@@ -40,7 +40,10 @@ export async function getRegistrationWithEvent(registrationId: string) {
     throw new Error(error.message)
   }
 
-  return data as RegistrationWithEvent
+  return {
+    ...data,
+    generated_form_url: data.blank_link ?? null,
+  } as RegistrationWithEvent
 }
 
 export async function setGeneratedRegistrationFormUrl(
@@ -51,7 +54,6 @@ export async function setGeneratedRegistrationFormUrl(
   const { error } = await supabase
     .from('registrations')
     .update({
-      generated_form_url: generatedFormUrl,
       blank_link: generatedFormUrl,
     })
     .eq('id', registrationId)

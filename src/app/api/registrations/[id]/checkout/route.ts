@@ -48,13 +48,23 @@ export async function POST(
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      client_reference_id: registration.id,
       customer_email: registration.contact_email,
       success_url: `${baseUrl}${eventPath}?payment=success`,
       cancel_url: `${baseUrl}${eventPath}?payment=cancelled`,
       metadata: {
-        registrationId: registration.id,
-        eventId: registration.event_id,
-        crewCount: String(crewCount),
+        method: 'regatta-fee',
+        'registration-id': registration.id,
+        'event-id': registration.event_id,
+        'crew-count': String(crewCount),
+      },
+      payment_intent_data: {
+        metadata: {
+          method: 'regatta-fee',
+          'registration-id': registration.id,
+          'event-id': registration.event_id,
+          'crew-count': String(crewCount),
+        },
       },
       line_items: [
         {
@@ -84,6 +94,12 @@ export async function POST(
         checkout_url: session.url,
         status: session.status,
         payment_status: session.payment_status,
+        payment_intent_id:
+          typeof session.payment_intent === 'string' ? session.payment_intent : null,
+        method: 'regatta-fee',
+        registration_id: registration.id,
+        event_id: registration.event_id,
+        customer_email: registration.contact_email,
         crew_count: crewCount,
         unit_amount: unitAmount,
         total_amount: totalAmount,

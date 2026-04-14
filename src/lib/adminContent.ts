@@ -268,7 +268,10 @@ export async function listRegistrations(eventId?: string) {
     throw new Error(error.message)
   }
 
-  return (data ?? []) as RegistrationRecord[]
+  return (data ?? []).map((reg) => ({
+    ...reg,
+    generated_form_url: reg.blank_link ?? null,
+  })) as RegistrationRecord[]
 }
 
 export async function updateRegistrationStatus(

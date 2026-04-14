@@ -19,3 +19,15 @@ export function getStripeServerClient() {
 
   return stripeClient
 }
+
+function getStripeWebhookSecret() {
+  return requireEnv('STRIPE_WEBHOOK_SECRET')
+}
+
+export function constructStripeWebhookEvent(payload: string | Buffer, signature: string) {
+  return getStripeServerClient().webhooks.constructEvent(
+    payload,
+    signature,
+    getStripeWebhookSecret()
+  )
+}

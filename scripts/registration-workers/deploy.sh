@@ -16,6 +16,25 @@ cd "$ROOT_DIR"
 
 sam build --template-file aws/registration-processing.template.yaml
 
+PARAM_OVERRIDES=(
+  "SupabaseUrl=$NEXT_PUBLIC_SUPABASE_URL"
+  "SupabaseServiceKey=$SUPABASE_SERVICE_KEY"
+  "RegistrationSmtpUser=$SMTP_USER"
+  "RegistrationSmtpPassword=$SMTP_PASSWORD"
+  "RegistrationSmtpFrom=$SMTP_FROM"
+  "RegistrationSmtpHost=${SMTP_HOST:-smtp.gmail.com}"
+  "RegistrationSmtpPort=${SMTP_PORT:-465}"
+  "RegistrationSmtpSecure=${SMTP_SECURE:-true}"
+  "RegistrationTemplateKey=$REGISTRATION_TEMPLATE_S3_KEY"
+  "RegistrationPdfFontKey=$REGISTRATION_FONT_S3_KEY"
+)
+[[ -n "${REGISTRATION_NOTIFICATION_EMAILS:-}" ]] && \
+  PARAM_OVERRIDES+=("RegistrationNotificationEmails=$REGISTRATION_NOTIFICATION_EMAILS")
+[[ -n "${AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL:-}" ]] && \
+  PARAM_OVERRIDES+=("RegistrationOutputPublicBaseUrl=$AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL")
+[[ -n "${AWS_REGISTRATION_OUTPUT_BUCKET:-}" ]] && \
+  PARAM_OVERRIDES+=("RegistrationArtifactsBucketName=$AWS_REGISTRATION_OUTPUT_BUCKET")
+
 sam deploy \
   --template-file .aws-sam/build/template.yaml \
   --stack-name "$REGISTRATION_STACK_NAME" \
@@ -23,20 +42,7 @@ sam deploy \
   --resolve-s3 \
   --profile "$AWS_PROFILE" \
   --region "$AWS_REGION" \
-  --parameter-overrides \
-    SupabaseUrl="$NEXT_PUBLIC_SUPABASE_URL" \
-    SupabaseServiceKey="$SUPABASE_SERVICE_KEY" \
-    RegistrationSmtpUser="$SMTP_USER" \
-    RegistrationSmtpPassword="$SMTP_PASSWORD" \
-    RegistrationSmtpFrom="$SMTP_FROM" \
-    RegistrationSmtpHost="${SMTP_HOST:-smtp.gmail.com}" \
-    RegistrationSmtpPort="${SMTP_PORT:-465}" \
-    RegistrationSmtpSecure="${SMTP_SECURE:-true}" \
-    RegistrationNotificationEmails="${REGISTRATION_NOTIFICATION_EMAILS:-}" \
-    RegistrationOutputPublicBaseUrl="${AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL:-}" \
-    RegistrationArtifactsBucketName="${AWS_REGISTRATION_OUTPUT_BUCKET:-}" \
-    RegistrationTemplateKey="$REGISTRATION_TEMPLATE_S3_KEY" \
-    RegistrationPdfFontKey="$REGISTRATION_FONT_S3_KEY"
+  --parameter-overrides "${PARAM_OVERRIDES[@]}"
 
 ARTIFACTS_BUCKET="$(stack_output RegistrationArtifactsBucketName)"
 

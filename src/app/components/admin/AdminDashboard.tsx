@@ -2871,16 +2871,22 @@ export default function AdminDashboard({
                             value={registration.contact_email}
                           />
                           <RegistrationDetailRow
-                            label="Generated form URL"
-                            value={formatOptionalValue(
-                              registration.generated_form_url,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Blank link"
-                            value={formatOptionalValue(
-                              registration.blank_link,
-                            )}
+                            label="Generated form"
+                            value={
+                              registration.generated_form_url ? (
+                                <a
+                                  href={registration.generated_form_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
+                                >
+                                  <Icon icon="ph:file-pdf-bold" width={16} height={16} />
+                                  Download PDF
+                                </a>
+                              ) : (
+                                <span className="text-dark/40">Processing…</span>
+                              )
+                            }
                           />
                           <RegistrationDetailRow
                             label="Payment status"

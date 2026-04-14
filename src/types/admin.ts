@@ -70,6 +70,11 @@ export type RegistrationPaymentData = {
     checkout_url?: string | null
     status?: string | null
     payment_status?: string | null
+    payment_intent_id?: string | null
+    method?: string | null
+    registration_id?: string | null
+    event_id?: string | null
+    customer_email?: string | null
     crew_count?: number
     unit_amount?: number
     total_amount?: number

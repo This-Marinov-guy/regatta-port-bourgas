@@ -11,9 +11,11 @@
     "registration:deploy": "bash scripts/registration-workers/deploy.sh",
     "registration:stop": "bash scripts/registration-workers/stop.sh",
     "registration:restart": "bash scripts/registration-workers/restart.sh",
-    "registration:update": "bash scripts/registration-workers/update.sh"
+    "registration:update": "bash scripts/registration-workers/update.sh",
+    "healthcheck": "bash scripts/healthcheck.sh"
   },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.1030.0",
     "@aws-sdk/client-s3": "^3.1029.0",
     "@aws-sdk/client-sns": "^3.1029.0",
     "@aws-sdk/client-sqs": "^3.1029.0",
@@ -63,6 +65,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-slick": "^0.23.13",
+    "esbuild": "^0.28.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
     "tailwindcss": "^4",
