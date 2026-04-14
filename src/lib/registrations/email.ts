@@ -28,7 +28,16 @@ function getTransport() {
 }
 
 function getFromAddress() {
-  return getRegistrationSmtpConfig().from
+  const smtp = getRegistrationSmtpConfig()
+
+  return {
+    address: smtp.from,
+    name: smtp.name || undefined,
+  }
+}
+
+function getReplyToAddress() {
+  return getRegistrationSmtpConfig().replyTo || undefined
 }
 
 function formatEventDates(registration: RegistrationWithEvent) {
@@ -56,6 +65,7 @@ export async function sendRegistrationPdfToEntrant(args: {
 
   await getTransport().sendMail({
     from: getFromAddress(),
+    replyTo: getReplyToAddress(),
     to: registration.contact_email,
     subject: template.subject,
     text: template.text,
@@ -77,6 +87,7 @@ export async function sendRegistrationPaymentConfirmationToEntrant(
 
   await getTransport().sendMail({
     from: getFromAddress(),
+    replyTo: getReplyToAddress(),
     to: registration.contact_email,
     subject: template.subject,
     text: template.text,
@@ -102,6 +113,7 @@ export async function sendNewEventAnnouncementEmail(args: {
 
   await getTransport().sendMail({
     from: getFromAddress(),
+    replyTo: getReplyToAddress(),
     to: args.to,
     subject: template.subject,
     text: template.text,
@@ -123,6 +135,7 @@ export async function sendRegistrationNotificationToAdmins(
 
   await getTransport().sendMail({
     from: getFromAddress(),
+    replyTo: getReplyToAddress(),
     to: recipients,
     subject: `New event registration: ${registration.boat_name}`,
     text: [

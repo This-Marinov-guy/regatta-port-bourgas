@@ -28,6 +28,10 @@ PARAM_OVERRIDES=(
   "RegistrationTemplateKey=$REGISTRATION_TEMPLATE_S3_KEY"
   "RegistrationPdfFontKey=$REGISTRATION_FONT_S3_KEY"
 )
+[[ -n "${SMTP_NAME:-}" ]] && \
+  PARAM_OVERRIDES+=("RegistrationSmtpName=$SMTP_NAME")
+[[ -n "${SMTP_REPLY_TO:-}" ]] && \
+  PARAM_OVERRIDES+=("RegistrationSmtpReplyTo=$SMTP_REPLY_TO")
 [[ -n "${REGISTRATION_NOTIFICATION_EMAILS:-}" ]] && \
   PARAM_OVERRIDES+=("RegistrationNotificationEmails=$REGISTRATION_NOTIFICATION_EMAILS")
 [[ -n "${AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL:-}" ]] && \

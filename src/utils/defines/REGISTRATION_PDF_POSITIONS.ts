@@ -38,7 +38,7 @@ export const REGISTRATION_PDF_PAGE_1_POSITIONS = {
 
 export const REGISTRATION_PDF_PAGE_2_POSITIONS = {
   eventName: { previewLeft: 521.5, previewTop: 40 },
-  eventDates: { previewLeft: 1195.2, previewTop: 80 },
+  eventDates: { previewLeft: 1195.2, previewTop: 85 },
   boatName: { previewLeft: 223.8, previewTop: 290 },
   country: { previewLeft: 941.5, previewTop: 290 },
   portOfRegistry: { previewLeft: 1366.3, previewTop: 290 },

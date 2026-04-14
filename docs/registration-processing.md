@@ -36,6 +36,8 @@ Lambda workers:
 - `SMTP_USER`
 - `SMTP_PASSWORD`
 - `SMTP_FROM`
+- `SMTP_NAME` (optional display name for the sender)
+- `SMTP_REPLY_TO` (optional reply-to address)
 - `REGISTRATION_NOTIFICATION_EMAILS` (comma-separated)
 
 ## Deployment notes

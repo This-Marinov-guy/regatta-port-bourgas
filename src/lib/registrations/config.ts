@@ -23,6 +23,11 @@ function optionalNumber(value: string | undefined, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
+function optionalString(value: string | undefined) {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
 export function getAwsRegion() {
   return process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-central-1'
 }
@@ -84,5 +89,7 @@ export function getRegistrationSmtpConfig() {
       process.env.SMTP_PASSWORD
     ),
     from: requireEnv('SMTP_FROM', process.env.SMTP_FROM),
+    name: optionalString(process.env.SMTP_NAME),
+    replyTo: optionalString(process.env.SMTP_REPLY_TO),
   }
 }

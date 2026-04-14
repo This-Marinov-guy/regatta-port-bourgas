@@ -15,6 +15,12 @@ Parameters:
     NoEcho: true
   RegistrationSmtpFrom:
     Type: String
+  RegistrationSmtpName:
+    Type: String
+    Default: ''
+  RegistrationSmtpReplyTo:
+    Type: String
+    Default: ''
   RegistrationSmtpHost:
     Type: String
     Default: smtp.gmail.com
@@ -69,6 +75,8 @@ Globals:
         SMTP_USER: !Ref RegistrationSmtpUser
         SMTP_PASSWORD: !Ref RegistrationSmtpPassword
         SMTP_FROM: !Ref RegistrationSmtpFrom
+        SMTP_NAME: !Ref RegistrationSmtpName
+        SMTP_REPLY_TO: !Ref RegistrationSmtpReplyTo
         REGISTRATION_NOTIFICATION_EMAILS: !Ref RegistrationNotificationEmails
         AWS_REGISTRATION_OUTPUT_PUBLIC_BASE_URL: !If
           - HasOutputPublicBaseUrl
