@@ -7,6 +7,11 @@ const Partners: React.FC = () => {
 
   const partners = [
     {
+      name: 'Bulstrad',
+      logo: '/images/brands/bulstrad.png',
+      alt: 'Bulstrad'
+    },
+    {
       name: 'BSF',
       logo: '/images/brands/bsf.png',
       alt: 'BSF'
@@ -35,11 +40,6 @@ const Partners: React.FC = () => {
       name: 'Audi',
       logo: '/images/brands/audi.png',
       alt: 'Audi'
-    },
-    {
-      name: 'Bulstrad',
-      logo: '/images/brands/bulstrad.png',
-      alt: 'Bulstrad'
     }
   ]
 

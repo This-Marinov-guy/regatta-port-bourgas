@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { publishRegistrationCreated } from '@/lib/registrations/publish'
 import { isEventRegistrationOpen } from '@/lib/events'
+import { readLocaleFromRequest } from '@/lib/locale'
 
 type CrewMemberPayload = {
   name?: unknown
@@ -175,6 +176,7 @@ function requiresLegacyEmailColumn(errorMessage: string) {
 
 export async function POST(request: Request) {
   try {
+    const locale = readLocaleFromRequest(request)
     const body = (await request.json()) as RegistrationPayload
 
     const payload = {
@@ -218,7 +220,8 @@ export async function POST(request: Request) {
       insurance_documents: normalizeDocumentUrls(body.insurance_documents),
       disclaimer_accepted: toBoolean(body.disclaimer_accepted),
       gdpr_accepted: toBoolean(body.gdpr_accepted),
-      crew_list: normalizeCrewList(body.crew_list)
+      crew_list: normalizeCrewList(body.crew_list),
+      preferred_language: locale,
     }
 
     if (!payload.disclaimer_accepted || !payload.gdpr_accepted) {
@@ -289,6 +292,7 @@ export async function POST(request: Request) {
         registrationId: data.id,
         eventId: payload.event_id,
         createdAt: new Date().toISOString(),
+        locale,
       })
     } catch (queueError) {
       await supabase.from('registrations').delete().eq('id', data.id)

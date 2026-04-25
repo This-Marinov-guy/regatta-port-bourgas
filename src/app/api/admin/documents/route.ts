@@ -3,6 +3,13 @@ import { getAdminUser } from '@/lib/adminAuth'
 import { listDocuments, parseDocumentPayload } from '@/lib/adminContent'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 
+function requiresLegacyBgName(errorMessage: string) {
+  return (
+    errorMessage.includes('null value in column "name_bg"') &&
+    errorMessage.includes('relation "documents"')
+  )
+}
+
 export async function GET() {
   const user = await getAdminUser()
 
@@ -35,11 +42,25 @@ export async function POST(request: Request) {
     const payload = parseDocumentPayload(input)
     const supabase = createSupabaseServiceClient()
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('documents')
       .insert(payload)
       .select('*')
       .single()
+
+    if (error && requiresLegacyBgName(error.message)) {
+      const legacyInsert = await supabase
+        .from('documents')
+        .insert({
+          ...payload,
+          name_bg: payload.name_bg ?? payload.name_en
+        })
+        .select('*')
+        .single()
+
+      data = legacyInsert.data
+      error = legacyInsert.error
+    }
 
     if (error) {
       throw new Error(error.message)

@@ -1,7 +1,10 @@
+import type { AppLocale } from '@/lib/locale'
+
 export type RegistrationCreatedMessage = {
   registrationId: string
   eventId: string
   createdAt: string
+  locale?: AppLocale
 }
 
 export type QueueRecord = {
@@ -16,4 +19,3 @@ export type QueueEvent = {
 export type QueueBatchResponse = {
   batchItemFailures: Array<{ itemIdentifier: string }>
 }
-

@@ -22,11 +22,11 @@ export default async function AdminLoginPage() {
             <h1 className="mb-4 text-4xl font-semibold leading-tight md:text-5xl">
               Admin control room
             </h1>
-            <p className="max-w-md  leading-6 text-white/70 md:text-base">
+            {/* <p className="max-w-md  leading-6 text-white/70 md:text-base">
               Sign in with a Supabase email and password account to manage
               events, news, documents, and the public content shown on the
               site.
-            </p>
+            </p> */}
             {/* <div className="mt-8 grid gap-3  text-white/75">
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                 Only Supabase-authenticated users can access this area.

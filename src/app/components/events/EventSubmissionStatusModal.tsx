@@ -86,7 +86,7 @@ export default function EventSubmissionStatusModal({
 
             {!isLoading ? (
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row">
-                {actionLabel && onAction ? (
+                {/* {actionLabel && onAction ? (
                   <Button
                     type="button"
                     onClick={onAction}
@@ -95,7 +95,7 @@ export default function EventSubmissionStatusModal({
                   >
                     {actionLabel}
                   </Button>
-                ) : null}
+                ) : null} */}
                 <Button
                   type="button"
                   variant="outline"

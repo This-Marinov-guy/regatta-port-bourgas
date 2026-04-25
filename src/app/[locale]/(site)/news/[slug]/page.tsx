@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import { format } from 'date-fns'
 import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { Icon } from '@iconify/react'
@@ -7,6 +6,7 @@ import { getNewsItem } from '@/lib/news'
 import { localizeText } from '@/lib/localizedContent'
 import { extractNewsAttachmentLinks } from '@/lib/newsAttachments'
 import markdownToHtml from '@/lib/markdownToHtml'
+import { formatDisplayDate } from '@/lib/formatDate'
 
 type Props = {
   params: Promise<{ slug: string; locale: string }>
@@ -56,7 +56,7 @@ export default async function NewsDetailPage({ params }: Props) {
   const title = localizeText(locale, news.name_en, news.name_bg)
   const description = localizeText(locale, news.description_en, news.description_bg)
   const body = localizeText(locale, news.body_en, news.body_bg)
-  const formattedDate = format(new Date(news.created_at), 'MMMM dd, yyyy')
+  const formattedDate = formatDisplayDate(news.created_at)
   const bodyHtml = /<([a-z][^/\s>]*)\b[^>]*>/i.test(body)
     ? body
     : await markdownToHtml(body)

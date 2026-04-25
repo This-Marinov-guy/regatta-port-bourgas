@@ -2,13 +2,18 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
 import { getTranslations, getLocale } from "next-intl/server";
 
-import { getEvent, isEventRegistrationOpen } from "@/lib/events";
+import {
+  getEvent,
+  getEventDocumentsByRefs,
+  isEventRegistrationOpen,
+} from "@/lib/events";
 import EventTabs from "@/app/components/events/EventTabs";
 import EventRegistrationModal from "@/app/components/events/EventRegistrationModal";
 import { localizeText } from "@/lib/localizedContent";
+import { listRegistrations } from "@/lib/adminContent";
+import { formatDisplayDate } from "@/lib/formatDate";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
 
@@ -53,8 +58,8 @@ export default async function EventDetailsPage({ params }: Props) {
 
   const t = await getTranslations();
   const locale = await getLocale();
-  const from = format(new Date(event.start_date), "MMM dd, yyyy");
-  const to = format(new Date(event.end_date), "MMM dd, yyyy");
+  const from = formatDisplayDate(event.start_date);
+  const to = formatDisplayDate(event.end_date);
 
   const title = localizeText(locale, event.name_en, event.name_bg);
   const description = localizeText(
@@ -63,6 +68,20 @@ export default async function EventDetailsPage({ params }: Props) {
     event.description_bg
   );
   const registrationOpen = isEventRegistrationOpen(event.start_date)
+  const [noticeBoardDocuments, resultDocuments] = await Promise.all([
+    getEventDocumentsByRefs(event.notice_board),
+    getEventDocumentsByRefs(event.results),
+  ])
+  const entries = (await listRegistrations(event.id))
+    .map((registration) => ({
+      id: registration.id,
+      boatName: registration.boat_name,
+      nationality: registration.country,
+      sailNumber: registration.sail_number,
+      yachtClub: registration.yacht_club,
+      skipperName: registration.skipper_name,
+    }))
+    .sort((left, right) => left.boatName.localeCompare(right.boatName))
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -131,12 +150,10 @@ export default async function EventDetailsPage({ params }: Props) {
         </div>
 
         <EventTabs
-          registerHref={`/events/${event.slug}?register=1`}
-          registerOpen={registrationOpen}
-          documents={event.documents}
-          noticeBoard={event.notice_board}
-          results={event.results}
-          registerForm={event.register_form}
+          locale={locale}
+          noticeBoard={noticeBoardDocuments}
+          results={resultDocuments}
+          entries={entries}
         />
         {registrationOpen ? (
           <EventRegistrationModal

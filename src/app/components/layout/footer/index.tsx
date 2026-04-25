@@ -17,7 +17,7 @@ const Footer = () => {
     { label: t('navigation.news'), href: `/${locale}/news` },
     { label: t('navigation.gallery'), href: `/${locale}/gallery` },
     { label: t('navigation.contactUs'), href: `/${locale}/contact-us` },
-    { label: t('navigation.documents'), href: `/${locale}/documents` },
+    // { label: t('navigation.documents'), href: `/${locale}/documents` },
   ], [locale, t])
 
   const [footerLinks, setFooterLinks] = useState<any>(fallbackLinks);

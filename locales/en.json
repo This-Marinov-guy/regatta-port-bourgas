@@ -20,7 +20,7 @@
   },
   "hero": {
     "location": "Bourgas, Bulgaria",
-    "title": "International Regatta Port Bourgas",
+    "title": "International Regatta Bulstrad Port Bourgas ",
     "generalSponsor": "General Sponsor"
   },
   "notFound": {
@@ -99,24 +99,32 @@
     "registerModalEyebrow": "Event registration",
     "registerModalDescription": "Complete the full registration form in this page overlay. The URL updates as you open or close it, so it can also be shared directly.",
     "tabs": {
-      "documents": "Competition Documents",
       "noticeBoard": "Notice Board",
-      "applications": "Participation Applications",
+      "entryList": "Entry List",
       "results": "Results"
     },
     "tabsContent": {
-      "documents": "Competition documents and regulations will be available here.",
       "noticeBoard": "Important notices and updates will be posted here.",
-      "applications": "Open the full registration form for this event.",
-      "applicationsClosed": "Registration is no longer available because more than one day has passed since the event started.",
-      "applicationsFiles": "Supporting participation files are included inside the registration overlay.",
-      "applicationsEmpty": "This event does not currently include supporting registration files.",
-      "results": "Competition results will be displayed here."
+      "entryListEmpty": "There are no entries for this event yet.",
+      "noticeBoardEmpty": "No notice board documents have been uploaded for this event yet.",
+      "results": "Competition results will be displayed here.",
+      "resultsEmpty": "No result documents have been uploaded for this event yet."
+    },
+    "documentCard": {
+      "uploaded": "Uploaded",
+      "download": "Download"
+    },
+    "entryList": {
+      "boat": "Boat",
+      "nationality": "Nationality",
+      "sailNumber": "Sail Number",
+      "yachtClub": "Yacht Club",
+      "skipper": "Skipper Name"
     },
     "items": {
       "regatta-port-bourgas-2025": {
-        "title": "International Regatta Port Bourgas 2025",
-        "excerpt": "Join us for the 2025 edition of the International Regatta Port Bourgas.",
+        "title": "International Regatta Bulstrad Port Bourgas  2025",
+        "excerpt": "Join us for the 2025 edition of the International Regatta Bulstrad Port Bourgas .",
         "body": "This is a mock event details page. Replace this text with the real program, schedule, and registration information."
       },
       "training-weekend-spring-2025": {
@@ -125,7 +133,7 @@
         "body": "This is a mock event details page. Add training agenda, coaches, and participation details here."
       },
       "regatta-port-bourgas-2024": {
-        "title": "International Regatta Port Bourgas 2024",
+        "title": "International Regatta Bulstrad Port Bourgas  2024",
         "excerpt": "Highlights from the 2024 edition—great wind, great races, great memories.",
         "body": "This is a mock event recap. Add results, gallery links, and a short summary here."
       },
@@ -138,16 +146,16 @@
   },
   "news": {
     "title": "News",
-    "subtitle": "Stay updated with the latest news, announcements, and updates from the International Regatta Port Bourgas.",
+    "subtitle": "Stay updated with the latest news, announcements, and updates from the International Regatta Bulstrad Port Bourgas .",
     "latest": "Latest News",
     "previewSubtitle": "Stay informed with the latest updates and announcements from our sailing community.",
     "seeMore": "See more",
     "back": "Back to news",
     "items": {
       "regatta-2025-announcement": {
-        "title": "International Regatta Port Bourgas 2025 - Registration Open",
-        "description": "We are excited to announce that registration for the 2025 International Regatta Port Bourgas is now open. Join us for an unforgettable sailing experience.",
-        "body": "The International Regatta Port Bourgas 2025 promises to be an exceptional event with participants from around the world. Early registration is recommended as spots are limited. The regatta will feature multiple classes and categories, ensuring competitive racing for all skill levels.\n\nKey highlights:\n- Multiple racing classes\n- Professional race management\n- Social events and networking opportunities\n- Awards ceremony\n\nRegistration closes on May 1, 2025. Don't miss this opportunity to be part of one of the premier sailing events in the Black Sea region."
+        "title": "International Regatta Bulstrad Port Bourgas  2025 - Registration Open",
+        "description": "We are excited to announce that registration for the 2025 International Regatta Bulstrad Port Bourgas  is now open. Join us for an unforgettable sailing experience.",
+        "body": "The International Regatta Bulstrad Port Bourgas  2025 promises to be an exceptional event with participants from around the world. Early registration is recommended as spots are limited. The regatta will feature multiple classes and categories, ensuring competitive racing for all skill levels.\n\nKey highlights:\n- Multiple racing classes\n- Professional race management\n- Social events and networking opportunities\n- Awards ceremony\n\nRegistration closes on May 1, 2025. Don't miss this opportunity to be part of one of the premier sailing events in the Black Sea region."
       },
       "new-training-program": {
         "title": "New Training Program Launched",
@@ -172,16 +180,16 @@
     }
   },
   "seo": {
-    "title": "International Regatta Port Bourgas | Sailing Events & Competitions",
-    "titleTemplate": "%s | International Regatta Port Bourgas",
-    "description": "Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.",
+    "title": "International Regatta Bulstrad Port Bourgas  | Sailing Events & Competitions",
+    "titleTemplate": "%s | International Regatta Bulstrad Port Bourgas ",
+    "description": "Official website of the International Regatta Bulstrad Port Bourgas . Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.",
     "keywords": "regatta, sailing, yacht racing, Bourgas, Bulgaria, sailing events, sailing competitions, yacht club, sailing regatta, sailing rules, racing rules of sailing, sailing community, sailing photos, sailing gallery",
-    "siteName": "International Regatta Port Bourgas",
-    "ogTitle": "International Regatta Port Bourgas | Sailing Events & Competitions",
-    "ogDescription": "Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.",
-    "ogImageAlt": "International Regatta Port Bourgas - Sailing Competition",
-    "twitterTitle": "International Regatta Port Bourgas | Sailing Events & Competitions",
-    "twitterDescription": "Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, and connect with the sailing community.",
+    "siteName": "International Regatta Bulstrad Port Bourgas ",
+    "ogTitle": "International Regatta Bulstrad Port Bourgas  | Sailing Events & Competitions",
+    "ogDescription": "Official website of the International Regatta Bulstrad Port Bourgas . Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.",
+    "ogImageAlt": "International Regatta Bulstrad Port Bourgas  - Sailing Competition",
+    "twitterTitle": "International Regatta Bulstrad Port Bourgas  | Sailing Events & Competitions",
+    "twitterDescription": "Official website of the International Regatta Bulstrad Port Bourgas . Discover upcoming sailing events, regatta competitions, and connect with the sailing community.",
     "category": "Sports",
     "classification": "Sailing, Yacht Racing, Regatta"
   }

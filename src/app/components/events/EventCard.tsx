@@ -1,8 +1,8 @@
 import Image from 'next/image'
-import { format } from 'date-fns'
 import { Icon } from '@iconify/react'
 import { Link } from '@/i18n/routing'
 import CurrentEventBadge from './CurrentEventBadge'
+import { formatDisplayDate } from '@/lib/formatDate'
 
 type Props = {
   href: string
@@ -23,8 +23,8 @@ export default function EventCard({
   detailsLabel,
   currentLabel
 }: Props) {
-  const from = format(new Date(dateFrom), 'MMM dd, yyyy')
-  const to = format(new Date(dateTo), 'MMM dd, yyyy')
+  const from = formatDisplayDate(dateFrom)
+  const to = formatDisplayDate(dateTo)
 
   return (
     <div className="relative rounded-2xl border border-dark/10 dark:border-white/10 overflow-hidden group hover:shadow-3xl duration-300 dark:hover:shadow-white/10 bg-white dark:bg-black">

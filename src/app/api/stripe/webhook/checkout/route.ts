@@ -2,6 +2,9 @@ import type Stripe from 'stripe'
 import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { constructStripeWebhookEvent } from '@/lib/stripe/server'
+import { getRegistrationWithEvent } from '@/lib/registrations/data'
+import { sendRegistrationPaymentConfirmationToEntrant } from '@/lib/registrations/email'
+import { normalizeLocale } from '@/lib/locale'
 import type { RegistrationPaymentData } from '@/types/admin'
 
 export const runtime = 'nodejs'
@@ -37,6 +40,9 @@ function buildUpdatedPaymentData(args: {
 
   const method = getStripeMetadataValue(session.metadata, 'method')
   const eventId = getStripeMetadataValue(session.metadata, 'event-id')
+  const locale = normalizeLocale(
+    getStripeMetadataValue(session.metadata, 'locale') ?? existingStripe.locale
+  )
   const crewCountValue = getStripeMetadataValue(session.metadata, 'crew-count')
   const crewCount = crewCountValue ? Number(crewCountValue) : existingStripe.crew_count
 
@@ -60,6 +66,7 @@ function buildUpdatedPaymentData(args: {
         session.customer_email ??
         existingStripe.customer_email ??
         null,
+      locale,
       crew_count: Number.isFinite(crewCount) ? crewCount : existingStripe.crew_count,
       total_amount: session.amount_total ?? existingStripe.total_amount,
       currency: session.currency ?? existingStripe.currency,
@@ -90,6 +97,7 @@ async function updateRegistrationPayment(args: {
   }
 
   const registration = data as RegistrationPaymentRow
+  const wasPaid = registration.payment_data?.stripe?.payment_status === 'paid'
   const nextPaymentData = buildUpdatedPaymentData({
     current: registration.payment_data,
     session,
@@ -103,6 +111,12 @@ async function updateRegistrationPayment(args: {
 
   if (updateError) {
     throw new Error(updateError.message)
+  }
+
+  return {
+    shouldSendPaymentConfirmation:
+      !wasPaid && nextPaymentData.stripe?.payment_status === 'paid',
+    locale: nextPaymentData.stripe?.locale ?? 'en',
   }
 }
 
@@ -118,10 +132,18 @@ async function handleCheckoutSessionEvent(session: Stripe.Checkout.Session) {
     }
   }
 
-  await updateRegistrationPayment({
+  const updateResult = await updateRegistrationPayment({
     registrationId,
     session,
   })
+
+  if (updateResult.shouldSendPaymentConfirmation) {
+    const registration = await getRegistrationWithEvent(registrationId)
+    await sendRegistrationPaymentConfirmationToEntrant(
+      registration,
+      updateResult.locale
+    )
+  }
 
   return {
     ignored: false,

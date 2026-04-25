@@ -186,7 +186,7 @@ export async function generateRegistrationPdf(registration: RegistrationWithEven
   const font = await pdf.embedFont(fontBytes, { subset: true })
   const [page1, page2] = pdf.getPages()
 
-  const eventName = registration.event?.name_en || registration.event?.name_bg || 'International Regatta Port Bourgas'
+  const eventName = registration.event?.name_en || registration.event?.name_bg || 'International Regatta Bulstrad Port Bourgas '
   const eventDates =
     registration.event
       ? `${format(new Date(registration.event.start_date), 'dd.MM.yyyy')} - ${format(

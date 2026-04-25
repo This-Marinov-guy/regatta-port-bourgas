@@ -3,6 +3,7 @@ import { useLocale } from 'next-intl'
 import { useRouter, usePathname } from '@/i18n/routing'
 import { routing } from '@/i18n/routing'
 import { Icon } from '@iconify/react'
+import { persistClientLocale, type AppLocale } from '@/lib/locale'
 
 interface LanguageSwitcherProps {
   variant?: 'header' | 'mobile'
@@ -22,6 +23,8 @@ export default function LanguageSwitcher({
   const router = useRouter()
 
   const switchLocale = (newLocale: string) => {
+    const resolvedLocale: AppLocale = newLocale === 'bg' ? 'bg' : 'en'
+    persistClientLocale(resolvedLocale)
     // Remove current locale from pathname
     const pathWithoutLocale = pathname.replace(`/${locale}`, '') || '/'
     // Navigate to new locale using next-intl router
@@ -87,4 +90,3 @@ export default function LanguageSwitcher({
     </div>
   )
 }
-

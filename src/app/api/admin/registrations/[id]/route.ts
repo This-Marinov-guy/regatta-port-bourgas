@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/adminAuth'
-import { updateRegistrationStatus } from '@/lib/adminContent'
+import {
+  updateRegistrationPaymentStatus,
+  updateRegistrationStatus,
+} from '@/lib/adminContent'
 import type { RegistrationRecord } from '@/types/admin'
 
 export async function PATCH(
@@ -14,13 +17,26 @@ export async function PATCH(
 
   try {
     const { id } = await params
-    const { status } = (await request.json()) as { status: RegistrationRecord['status'] }
+    const { status, feedback, paymentStatus } = (await request.json()) as {
+      status?: RegistrationRecord['status']
+      feedback?: string | null
+      paymentStatus?: 'paid'
+    }
 
-    if (!['pending', 'approved', 'rejected'].includes(status)) {
+    if (paymentStatus) {
+      if (paymentStatus !== 'paid') {
+        return NextResponse.json({ error: 'Invalid payment status.' }, { status: 400 })
+      }
+
+      const data = await updateRegistrationPaymentStatus(id, paymentStatus)
+      return NextResponse.json({ data })
+    }
+
+    if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status.' }, { status: 400 })
     }
 
-    const data = await updateRegistrationStatus(id, status)
+    const data = await updateRegistrationStatus(id, status, feedback)
     return NextResponse.json({ data })
   } catch (error) {
     return NextResponse.json(

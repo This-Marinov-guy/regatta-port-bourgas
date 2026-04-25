@@ -1,3 +1,5 @@
+import type { AppLocale } from '@/lib/locale'
+
 export type EventStatus = 1 | 2 | 3
 
 export type AdminEventRecord = {
@@ -15,6 +17,7 @@ export type AdminEventRecord = {
   notice_board: string[]
   results: string[]
   register_form: string[]
+  total_entries: number
   created_at: string
   updated_at: string
 }
@@ -38,13 +41,14 @@ export type AdminDocumentRecord = {
   name_en: string
   name_bg: string | null
   source: string
+  general_use: boolean
   created_at: string
   updated_at: string
 }
 
 export type AdminEventPayload = Omit<
   AdminEventRecord,
-  'id' | 'created_at' | 'updated_at'
+  'id' | 'created_at' | 'updated_at' | 'total_entries'
 >
 
 export type AdminNewsPayload = Omit<
@@ -74,11 +78,18 @@ export type RegistrationPaymentData = {
     method?: string | null
     registration_id?: string | null
     event_id?: string | null
+    customer_id?: string | null
     customer_email?: string | null
+    locale?: AppLocale
     crew_count?: number
     unit_amount?: number
     total_amount?: number
     currency?: string
+    invoice_id?: string | null
+    invoice_number?: string | null
+    invoice_hosted_url?: string | null
+    invoice_pdf?: string | null
+    invoice_created_at?: string | null
     created_at?: string
     completed_at?: string
   }
@@ -128,6 +139,8 @@ export type RegistrationRecord = {
   blank_link: string | null
   payment_data: RegistrationPaymentData
   status: RegistrationStatus
+  preferred_language: AppLocale
+  rejection_feedback: string | null
   created_at: string
   updated_at: string
 }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Header from "./components/layout/header";
 
 export const metadata: Metadata = {
-  title: "Page Not Found | International Regatta Port Bourgas",
+  title: "Page Not Found | International Regatta Bulstrad Port Bourgas ",
   robots: { index: false, follow: false },
 };
 

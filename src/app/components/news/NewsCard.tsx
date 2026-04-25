@@ -1,6 +1,6 @@
-import { format } from 'date-fns'
 import { Icon } from '@iconify/react'
 import { Link } from '@/i18n/routing'
+import { formatDisplayDate } from '@/lib/formatDate'
 
 type Props = {
   href: string
@@ -15,7 +15,7 @@ export default function NewsCard({
   description,
   date
 }: Props) {
-  const formattedDate = format(new Date(date), 'MMM dd, yyyy')
+  const formattedDate = formatDisplayDate(date)
 
   return (
     <Link

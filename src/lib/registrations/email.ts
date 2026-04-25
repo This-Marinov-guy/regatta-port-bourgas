@@ -2,10 +2,12 @@ import nodemailer from 'nodemailer'
 import { format } from 'date-fns'
 import { getRegistrationNotificationEmails, getRegistrationSmtpConfig } from './config'
 import type { RegistrationWithEvent } from './data'
+import type { AppLocale } from '@/lib/locale'
 import {
   buildNewEventAnnouncementTemplate,
   buildRegistrationConfirmationTemplate,
   buildRegistrationPaymentConfirmationTemplate,
+  buildRegistrationStatusChangeTemplate,
 } from './emailTemplates'
 
 let transport: nodemailer.Transporter | null = null
@@ -56,11 +58,13 @@ export async function sendRegistrationPdfToEntrant(args: {
   pdfBuffer: Buffer
   fileName: string
   generatedFormUrl: string
+  locale?: AppLocale
 }) {
-  const { registration, pdfBuffer, fileName, generatedFormUrl } = args
+  const { registration, pdfBuffer, fileName, generatedFormUrl, locale } = args
   const template = buildRegistrationConfirmationTemplate({
     registration,
     generatedFormUrl,
+    locale,
   })
 
   await getTransport().sendMail({
@@ -81,14 +85,38 @@ export async function sendRegistrationPdfToEntrant(args: {
 }
 
 export async function sendRegistrationPaymentConfirmationToEntrant(
-  registration: RegistrationWithEvent
+  registration: RegistrationWithEvent,
+  locale: AppLocale = 'en'
 ) {
-  const template = buildRegistrationPaymentConfirmationTemplate(registration)
+  const template = buildRegistrationPaymentConfirmationTemplate(registration, locale)
 
   await getTransport().sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: registration.contact_email,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  })
+}
+
+export async function sendRegistrationStatusEmail(args: {
+  registration: RegistrationWithEvent
+  status: 'approved' | 'rejected'
+  feedback?: string | null
+}) {
+  const locale = args.registration.preferred_language === 'bg' ? 'bg' : 'en'
+  const template = buildRegistrationStatusChangeTemplate({
+    registration: args.registration,
+    status: args.status,
+    locale,
+    feedback: args.feedback,
+  })
+
+  await getTransport().sendMail({
+    from: getFromAddress(),
+    replyTo: getReplyToAddress(),
+    to: args.registration.contact_email,
     subject: template.subject,
     text: template.text,
     html: template.html,

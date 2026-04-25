@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
+import LocalePersistence from '@/app/components/layout/LocalePersistence'
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
@@ -9,11 +10,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default:
-      'International Regatta Port Bourgas | Sailing Events & Competitions',
-    template: '%s | International Regatta Port Bourgas',
+      'International Regatta Bulstrad Port Bourgas  | Sailing Events & Competitions',
+    template: '%s | International Regatta Bulstrad Port Bourgas ',
   },
   description:
-    'Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.',
+    'Official website of the International Regatta Bulstrad Port Bourgas . Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.',
   keywords: [
     'regatta',
     'sailing',
@@ -38,24 +39,24 @@ export const metadata: Metadata = {
     locale: 'en_US',
     alternateLocale: ['bg_BG'],
     url: siteUrl,
-    siteName: 'International Regatta Port Bourgas',
-    title: 'International Regatta Port Bourgas | Sailing Events & Competitions',
+    siteName: 'International Regatta Bulstrad Port Bourgas ',
+    title: 'International Regatta Bulstrad Port Bourgas  | Sailing Events & Competitions',
     description:
-      'Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.',
+      'Official website of the International Regatta Bulstrad Port Bourgas . Discover upcoming sailing events, regatta competitions, past events, photo galleries, and connect with the sailing community in Bourgas, Bulgaria.',
     images: [
       {
         url: `${siteUrl}/images/banner.png`,
         width: 1200,
         height: 630,
-        alt: 'International Regatta Port Bourgas - Sailing Competition',
+        alt: 'International Regatta Bulstrad Port Bourgas  - Sailing Competition',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'International Regatta Port Bourgas | Sailing Events & Competitions',
+    title: 'International Regatta Bulstrad Port Bourgas  | Sailing Events & Competitions',
     description:
-      'Official website of the International Regatta Port Bourgas. Discover upcoming sailing events, regatta competitions, and connect with the sailing community.',
+      'Official website of the International Regatta Bulstrad Port Bourgas . Discover upcoming sailing events, regatta competitions, and connect with the sailing community.',
     images: [`${siteUrl}/images/banner.png`],
   },
   alternates: {
@@ -108,6 +109,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="site-page-bg antialiased" suppressHydrationWarning>
+        <LocalePersistence />
         <Toaster position="top-center" />
         {children}
       </body>

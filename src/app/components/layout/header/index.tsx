@@ -8,6 +8,7 @@ import Image from 'next/image'
 import NavLink from './navigation/NavLink'
 import { signOut, useSession } from 'next-auth/react'
 import LanguageSwitcher from '../language-switcher'
+import AdminShortcut from '../AdminShortcut'
 import { CLUB_PHONE } from '@/utils/defines/CONTACTS'
 import type { NavLinks } from '@/app/types/navlink'
 
@@ -145,6 +146,11 @@ const Header: React.FC = () => {
 
           <div className="flex items-center gap-2 sm:gap-6">
             <LanguageSwitcher
+              variant="header"
+              isHomepage={isHomepage}
+              isSticky={sticky}
+            />
+            <AdminShortcut
               variant="header"
               isHomepage={isHomepage}
               isSticky={sticky}
@@ -293,6 +299,7 @@ const Header: React.FC = () => {
               variant="mobile"
               onLanguageChange={() => setNavbarOpen(false)}
             />
+            <AdminShortcut variant="mobile" />
           </div>
 
           <div className="flex flex-col gap-1 my-16 text-white">

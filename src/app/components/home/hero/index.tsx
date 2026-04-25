@@ -7,8 +7,8 @@ const Hero: React.FC = () => {
   const tCommon = useTranslations('common')
 
   return (
-    <section className="!py-0">
-      <div className="bg-gradient-to-b from-skyblue via-lightskyblue dark:via-[#4298b0] to-white/10 dark:to-black/10 overflow-hidden relative min-h-[52vh] sm:min-h-[58vh] md:min-h-0">
+    <section className="!py-0 min-h-screen flex flex-col">
+      <div className="bg-gradient-to-b from-skyblue via-lightskyblue dark:via-[#4298b0] to-white/10 dark:to-black/10 overflow-hidden relative flex-1">
         {/* Video Background */}
         <video
           autoPlay
@@ -24,24 +24,24 @@ const Hero: React.FC = () => {
         <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 pb-16 sm:pt-36 sm:pb-20 md:pt-60 md:pb-68 relative z-10">
           <div className="relative text-white dark:text-dark text-center md:text-start z-20">
             {/* Title — desktop only inside the video */}
-            <h1 className="hidden md:block text-inherit text-9xl font-medium -tracking-wider md:max-w-45p mt-4 mb-6">
+            <h1 className="hidden md:block text-inherit text-8xl font-medium -tracking-wider md:max-w-45p mt-4 mb-6">
               {t("title")}
             </h1>
             {/* Desktop buttons — visible inside the video on md+ */}
             <div className="hidden md:flex md:flex-row md:justify-start gap-4 mb-10">
               <Link
                 href={`/contact-us`}
-                className="px-4 py-2 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
+                className="px-4 text-lg py-2 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
               >
                 {tCommon("getInTouch")}
               </Link>
               <Link
                 href={`/events`}
-                className="px-4 py-2 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
+                className="px-4 text-lg py-2 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
               >
                 {tCommon("viewDetails")}
               </Link>
-              <a
+              {/* <a
                 href={`https://www.bulstrad.bg/`}
                 className="px-4 py-2 border border-white bg-white text-dark dark:bg-white dark:text-dark duration-300 hover:bg-white/90 text-base font-semibold rounded-md hover:cursor-pointer flex items-center justify-center"
               >
@@ -51,7 +51,7 @@ const Hero: React.FC = () => {
                   width={150}
                   height={150}
                 />
-              </a>
+              </a> */}
             </div>
           </div>
           {/* <div className='hidden md:block absolute -top-2 -right-68'>

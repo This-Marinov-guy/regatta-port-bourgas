@@ -34,6 +34,7 @@ export async function handler(event: QueueEvent): Promise<QueueBatchResponse> {
           fileName,
           pdfBuffer,
           generatedFormUrl: uploaded.url,
+          locale: message.locale,
         })
       } catch (error) {
         console.error('registrationBlanks failed', error)
@@ -44,4 +45,3 @@ export async function handler(event: QueueEvent): Promise<QueueBatchResponse> {
 
   return { batchItemFailures }
 }
-

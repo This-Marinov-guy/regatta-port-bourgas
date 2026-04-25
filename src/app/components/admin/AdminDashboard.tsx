@@ -1,6 +1,6 @@
 'use client'
 
-import type { FormEvent, ReactNode } from 'react'
+import type { DragEvent, FormEvent, ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -21,6 +21,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/app/components/ui/accordion'
+import { ExternalLink } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 import { localizeText } from '@/lib/localizedContent'
 import { slugify } from '@/lib/slug'
@@ -30,6 +31,7 @@ import type {
   AdminNewsRecord
 } from '@/types/admin'
 import type { RegistrationRecord, RegistrationStatus } from '@/types/admin'
+import moment from 'moment'
 
 type AdminDashboardProps = {
   userEmail: string
@@ -70,6 +72,7 @@ type DocumentFormState = {
   name_en: string
   name_bg: string
   source: string
+  general_use: boolean
 }
 
 type AssetBucket = 'images' | 'documents'
@@ -220,7 +223,8 @@ function emptyDocumentForm(): DocumentFormState {
     id: null,
     name_en: '',
     name_bg: '',
-    source: ''
+    source: '',
+    general_use: false
   }
 }
 
@@ -243,6 +247,23 @@ function eventToForm(event: AdminEventRecord): EventFormState {
   }
 }
 
+function reorderStringValues(values: string[], fromIndex: number, toIndex: number) {
+  if (
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= values.length ||
+    toIndex >= values.length ||
+    fromIndex === toIndex
+  ) {
+    return values
+  }
+
+  const next = [...values]
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  return next
+}
+
 function newsToForm(item: AdminNewsRecord): NewsFormState {
   return {
     id: item.id,
@@ -260,7 +281,8 @@ function documentToForm(item: AdminDocumentRecord): DocumentFormState {
     id: item.id,
     name_en: item.name_en,
     name_bg: item.name_bg ?? '',
-    source: item.source
+    source: item.source,
+    general_use: item.general_use
   }
 }
 
@@ -279,6 +301,14 @@ function isImageUrl(url: string) {
 function getFileLabelFromUrl(url: string) {
   const label = url.split('/').pop()?.split('?')[0] || url
   return decodeURIComponent(label)
+}
+
+function getDocumentNameFromFileName(fileName: string) {
+  const withoutExtension = fileName.replace(/\.[^.]+$/, '')
+  return withoutExtension
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function createUploadPath(file: File) {
@@ -522,6 +552,26 @@ async function uploadFile(
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path)
   return data.publicUrl
+}
+
+async function createAdminDocument(args: {
+  file: File
+  generalUse?: boolean
+}): Promise<AdminDocumentRecord> {
+  const source = await uploadFile(args.file)
+  const fallbackName = getDocumentNameFromFileName(args.file.name) || args.file.name
+  const payload = await readJson<{ data: AdminDocumentRecord }>('/api/admin/documents', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      name_en: fallbackName,
+      name_bg: '',
+      source,
+      general_use: Boolean(args.generalUse),
+    }),
+  })
+
+  return payload.data
 }
 
 async function listStorageAssets(bucket: AssetBucket): Promise<StorageAsset[]> {
@@ -1660,6 +1710,414 @@ function MultiFileUploadField({
   )
 }
 
+function EventDocumentPickerModal({
+  open,
+  title,
+  documents,
+  onClose,
+  onSelect
+}: {
+  open: boolean
+  title: string
+  documents: AdminDocumentRecord[]
+  onClose: () => void
+  onSelect: (id: string) => void
+}) {
+  return (
+    <AdminModal
+      open={open}
+      title={title}
+      description="Select a document from the shared document library."
+      onClose={onClose}
+    >
+      {documents.length === 0 ? (
+        <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10  text-dark/60">
+          No documents in the library yet.
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {documents.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                onSelect(item.id)
+                onClose()
+              }}
+              className={`rounded-[1.25rem] border border-black/10 bg-white/90 p-4 text-left shadow-sm ${interactiveButtonClass}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Icon icon="ph:file-text-bold" width={20} height={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate font-semibold text-dark">{item.name_en}</p>
+                    {item.general_use ? (
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700">
+                        General use
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 truncate text-dark/55">
+                    {item.name_bg || 'No Bulgarian label'}
+                  </p>
+                  <p className="mt-2 truncate text-sm text-primary">
+                    {getFileLabelFromUrl(item.source)}
+                  </p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </AdminModal>
+  )
+}
+
+function EventDocumentReferenceField({
+  label,
+  values,
+  documents,
+  onChange,
+  onReorder,
+  onError,
+  onDocumentsCreated,
+  onDocumentUpdated
+}: {
+  label: string
+  values: string[]
+  documents: AdminDocumentRecord[]
+  onChange: (values: string[]) => void
+  onReorder?: (values: string[]) => void | Promise<void>
+  onError: (msg: string) => void
+  onDocumentsCreated: (docs: AdminDocumentRecord[]) => void
+  onDocumentUpdated: (doc: AdminDocumentRecord) => void
+}) {
+  const [uploading, setUploading] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [generalUseUploads, setGeneralUseUploads] = useState(false)
+  const [draggedValue, setDraggedValue] = useState<string | null>(null)
+  const [dragOverValue, setDragOverValue] = useState<string | null>(null)
+
+  const documentsById = new Map(documents.map((item) => [item.id, item]))
+
+  async function handleFiles(files: File[]) {
+    setUploading(true)
+
+    try {
+      const createdDocs = await Promise.all(
+        files.map((file) =>
+          createAdminDocument({ file, generalUse: generalUseUploads })
+        )
+      )
+      onDocumentsCreated(createdDocs)
+      onChange([
+        ...values,
+        ...createdDocs
+          .map((item) => item.id)
+          .filter((id) => !values.includes(id)),
+      ])
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Upload failed.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function addExisting(id: string) {
+    if (values.includes(id)) {
+      return
+    }
+
+    onChange([...values, id])
+  }
+
+  function remove(index: number) {
+    onChange(values.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  function handleDragStart(value: string) {
+    setDraggedValue(value)
+    setDragOverValue(value)
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>, value: string) {
+    if (!draggedValue) {
+      return
+    }
+
+    event.preventDefault()
+
+    if (dragOverValue !== value) {
+      setDragOverValue(value)
+    }
+  }
+
+  function handleDrop(value: string) {
+    if (!draggedValue) {
+      return
+    }
+
+    const fromIndex = values.indexOf(draggedValue)
+    const toIndex = values.indexOf(value)
+    const next = reorderStringValues(values, fromIndex, toIndex)
+
+    if (next !== values) {
+      onChange(next)
+      void onReorder?.(next)
+    }
+
+    setDraggedValue(null)
+    setDragOverValue(null)
+  }
+
+  function handleDragEnd() {
+    setDraggedValue(null)
+    setDragOverValue(null)
+  }
+
+  return (
+    <div>
+      <FileDropPanel
+        label={label}
+        multiple
+        uploading={uploading}
+        onFiles={handleFiles}
+        helperText="Drop files here to create document records and attach them to this event, or reuse documents from the library."
+        onOpenLibrary={() => setPickerOpen(true)}
+        libraryLabel="Choose from library"
+      />
+      {/* <label className="mt-3 inline-flex items-center gap-2 text-sm text-dark/70">
+        <input
+          type="checkbox"
+          checked={generalUseUploads}
+          onChange={(event) => setGeneralUseUploads(event.target.checked)}
+          className="h-4 w-4 rounded border-black/20 text-primary focus:ring-primary"
+        />
+        Mark uploaded documents as general use
+      </label> */}
+
+      <p className="mt-3 text-sm text-dark/60">
+        Drag attached documents to reorder them. The saved order is used on the
+        event details page.
+      </p>
+      <p className="my-4 font-semibold">Current documents</p>
+
+      {values.length > 0 ? (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {values.map((value, index) => {
+            const document = documentsById.get(value);
+
+            if (document) {
+              return (
+                <div
+                  key={`${value}-${index}`}
+                  onDragOver={(event) => handleDragOver(event, value)}
+                  onDrop={() => handleDrop(value)}
+                  className={`rounded-[1.35rem] transition-all ${
+                    dragOverValue === value && draggedValue !== value
+                      ? 'ring-2 ring-primary/40 ring-offset-2'
+                      : ''
+                  } ${
+                    draggedValue === value ? 'opacity-80' : ''
+                  }`}
+                >
+                  <EventAttachedDocumentCard
+                    document={document}
+                    onRemove={() => remove(index)}
+                    onError={onError}
+                    onUpdated={onDocumentUpdated}
+                    onDragStart={() => handleDragStart(value)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedValue === value}
+                  />
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={`${value}-${index}`}
+                className="rounded-[1.25rem] border border-amber-200 bg-amber-50/70 p-4 shadow-sm"
+              >
+                <p className="font-semibold text-amber-800">
+                  Legacy file reference
+                </p>
+                <p className="mt-1 break-all text-sm text-amber-700">{value}</p>
+                <button
+                  type="button"
+                  onClick={() => remove(index)}
+                  className="mt-3 font-semibold text-red-500 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p>No documents for this section currently</p>
+      )}
+      <EventDocumentPickerModal
+        open={pickerOpen}
+        title="Document library"
+        documents={documents}
+        onClose={() => setPickerOpen(false)}
+        onSelect={addExisting}
+      />
+    </div>
+  );
+}
+
+function EventAttachedDocumentCard({
+  document,
+  onRemove,
+  onError,
+  onUpdated,
+  onDragStart,
+  onDragEnd,
+  isDragging = false
+}: {
+  document: AdminDocumentRecord
+  onRemove: () => void
+  onError: (msg: string) => void
+  onUpdated: (doc: AdminDocumentRecord) => void
+  onDragStart?: () => void
+  onDragEnd?: () => void
+  isDragging?: boolean
+}) {
+  const [nameEn, setNameEn] = useState(document.name_en)
+  const [nameBg, setNameBg] = useState(document.name_bg ?? '')
+  const [generalUse, setGeneralUse] = useState(document.general_use)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setNameEn(document.name_en)
+    setNameBg(document.name_bg ?? '')
+    setGeneralUse(document.general_use)
+  }, [document.id, document.name_en, document.name_bg, document.general_use])
+
+  const dirty =
+    nameEn !== document.name_en ||
+    nameBg !== (document.name_bg ?? '') ||
+    generalUse !== document.general_use
+
+  async function handleSave() {
+    setSaving(true)
+
+    try {
+      const payload = await readJson<{ data: AdminDocumentRecord }>(
+        `/api/admin/documents/${document.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            name_en: nameEn,
+            name_bg: nameBg,
+            source: document.source,
+            general_use: generalUse
+          })
+        }
+      )
+
+      onUpdated(payload.data)
+    } catch (error) {
+      onError(
+        error instanceof Error ? error.message : 'Unable to update document.'
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      className={`rounded-[1.25rem] border border-black/10 bg-white/90 p-4 shadow-sm transition-all ${
+        isDragging ? 'border-primary/30 bg-primary/[0.03] shadow-md' : ''
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon icon="ph:file-text-bold" width={20} height={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <a
+            href={document.source}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block truncate font-semibold text-primary hover:underline"
+          >
+            {/* {getFileLabelFromUrl(document.source)} */}
+            Click to open
+          </a>
+          <p className="mt-1 text-sm text-dark/50">
+            Uploaded {formatTimestamp(document.updated_at)}
+          </p>
+        </div>
+        <button
+          type="button"
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          className="inline-flex cursor-grab items-center gap-2 rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-sm font-medium text-dark/70 active:cursor-grabbing"
+          aria-label={`Drag to reorder ${document.name_en}`}
+          title="Drag to reorder"
+        >
+          <Icon icon="ph:dots-six-vertical-bold" width={16} height={16} />
+          Move
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        <AdminField
+          label="Name (EN)"
+          value={nameEn}
+          onChange={setNameEn}
+          required
+        />
+        <AdminField
+          label="Name (BG, optional)"
+          value={nameBg}
+          onChange={setNameBg}
+        />
+        <label className="inline-flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark">
+          <input
+            type="checkbox"
+            checked={generalUse}
+            onChange={(event) => setGeneralUse(event.target.checked)}
+            className="h-4 w-4 rounded border-black/20 text-primary focus:ring-primary"
+          />
+          <div>
+            <p className="font-medium">General use document</p>
+            <p className="text-sm text-dark/60">
+              Make this reusable outside this event too.
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <Button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={saving || !dirty || !nameEn.trim()}
+          className="rounded-xl px-4 text-white"
+        >
+          {saving ? 'Saving...' : 'Apply'}
+        </Button>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="font-semibold text-red-500 hover:underline"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminDashboard({
   userEmail,
   initialEvents,
@@ -1682,10 +2140,19 @@ export default function AdminDashboard({
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [newsModalOpen, setNewsModalOpen] = useState(false)
   const [entriesModalOpen, setEntriesModalOpen] = useState(false)
+  const [eventDocumentsModalOpen, setEventDocumentsModalOpen] = useState(false)
+  const [eventDocumentsForm, setEventDocumentsForm] = useState<EventFormState | null>(null)
   const [activeEntriesEvent, setActiveEntriesEvent] = useState<AdminEventRecord | null>(null)
+  const [activeEventDocumentsEvent, setActiveEventDocumentsEvent] = useState<AdminEventRecord | null>(null)
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
   const [registrationStatusBusyId, setRegistrationStatusBusyId] = useState<string | null>(null)
+  const [registrationActionBusyKey, setRegistrationActionBusyKey] = useState<string | null>(null)
+  const [registrationStatusFilter, setRegistrationStatusFilter] = useState<RegistrationStatus | null>(null)
+  const [downloadingBlanks, setDownloadingBlanks] = useState(false)
+  const [downloadingPaidBlanks, setDownloadingPaidBlanks] = useState(false)
+  const [rejectionModal, setRejectionModal] = useState<{ registrationId: string; boatName: string } | null>(null)
+  const [rejectionFeedback, setRejectionFeedback] = useState('')
 
   function openEventEditor(form = emptyEventForm()) {
     setEventForm(form)
@@ -1713,6 +2180,42 @@ export default function AdminDashboard({
     setRegistrations([])
     setRegistrationsLoading(false)
     setRegistrationStatusBusyId(null)
+    setRegistrationActionBusyKey(null)
+    setRegistrationStatusFilter(null)
+    setRejectionModal(null)
+    setRejectionFeedback('')
+    setDownloadingBlanks(false)
+    setDownloadingPaidBlanks(false)
+  }
+
+  function addDocumentsToLibrary(createdDocs: AdminDocumentRecord[]) {
+    setDocuments((current) => {
+      const next = [...current]
+      createdDocs.forEach((item) => {
+        if (!next.some((existing) => existing.id === item.id)) {
+          next.unshift(item)
+        }
+      })
+      return next
+    })
+  }
+
+  function updateDocumentInLibrary(document: AdminDocumentRecord) {
+    setDocuments((current) =>
+      current.map((item) => (item.id === document.id ? document : item))
+    )
+  }
+
+  function openEventDocumentsEditor(item: AdminEventRecord) {
+    setActiveEventDocumentsEvent(item)
+    setEventDocumentsForm(eventToForm(item))
+    setEventDocumentsModalOpen(true)
+  }
+
+  function closeEventDocumentsEditor() {
+    setEventDocumentsModalOpen(false)
+    setActiveEventDocumentsEvent(null)
+    setEventDocumentsForm(null)
   }
 
   async function refreshEvents() {
@@ -1754,6 +2257,78 @@ export default function AdminDashboard({
     setActiveEntriesEvent(item)
     setEntriesModalOpen(true)
     await loadRegistrations(item.id)
+  }
+
+  async function handleEventDocumentsSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!eventDocumentsForm?.id) {
+      return
+    }
+
+    setEventsBusy(true)
+
+    try {
+      await readJson(`/api/admin/events/${eventDocumentsForm.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(eventDocumentsForm)
+      })
+
+      await refreshEvents()
+      toast.success('Event documents updated.')
+      closeEventDocumentsEditor()
+      router.refresh()
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to update event documents.'
+      )
+    } finally {
+      setEventsBusy(false)
+    }
+  }
+
+  async function autosaveEventDocumentOrder(
+    key: 'notice_board' | 'results',
+    values: string[]
+  ) {
+    setEventDocumentsForm((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        [key]: values,
+      }
+    })
+
+    if (!eventDocumentsForm?.id) {
+      return
+    }
+
+    setEventsBusy(true)
+
+    try {
+      const nextForm = {
+        ...eventDocumentsForm,
+        [key]: values,
+      }
+
+      await readJson(`/api/admin/events/${eventDocumentsForm.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(nextForm),
+      })
+
+      await refreshEvents()
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to autosave document order.'
+      )
+    } finally {
+      setEventsBusy(false)
+    }
   }
 
   async function handleSignOut() {
@@ -1913,7 +2488,8 @@ export default function AdminDashboard({
 
   async function handleRegistrationStatusChange(
     registrationId: string,
-    status: RegistrationStatus
+    status: RegistrationStatus,
+    feedback?: string
   ) {
     setRegistrationStatusBusyId(registrationId)
 
@@ -1923,7 +2499,7 @@ export default function AdminDashboard({
         {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ status })
+          body: JSON.stringify({ status, feedback: feedback ?? null })
         }
       )
 
@@ -1938,6 +2514,213 @@ export default function AdminDashboard({
     } finally {
       setRegistrationStatusBusyId(null)
     }
+  }
+
+  async function handleMarkRegistrationPaid(registrationId: string) {
+    setRegistrationActionBusyKey(`${registrationId}:mark-paid`)
+
+    try {
+      const payload = await readJson<{ data: RegistrationRecord }>(
+        `/api/admin/registrations/${registrationId}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ paymentStatus: 'paid' }),
+        }
+      )
+
+      setRegistrations((current) =>
+        current.map((item) => (item.id === registrationId ? payload.data : item))
+      )
+      toast.success('Payment marked as paid.')
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to update payment status.'
+      )
+    } finally {
+      setRegistrationActionBusyKey(null)
+    }
+  }
+
+  function openExternalUrl(url: string) {
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.target = '_blank'
+    anchor.rel = 'noopener noreferrer'
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+  }
+
+  function downloadRegistrationForm(registration: RegistrationRecord) {
+    const blankUrl = getRegistrationBlankUrl(registration)
+
+    if (!blankUrl) {
+      toast.error('This form is still being generated.')
+      return
+    }
+
+    const anchor = document.createElement('a')
+    anchor.href = blankUrl
+    anchor.download = `${registration.boat_name ?? 'entry'}.pdf`
+    anchor.target = '_blank'
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+  }
+
+  async function handleGeneratePaymentLink(registration: RegistrationRecord) {
+    const busyKey = `${registration.id}:payment`
+    setRegistrationActionBusyKey(busyKey)
+
+    try {
+      const payload = await readJson<{
+        data: { checkoutUrl: string; sessionId: string }
+      }>(`/api/registrations/${registration.id}/checkout`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          locale: registration.preferred_language ?? 'en',
+        }),
+      })
+
+      setRegistrations((current) =>
+        current.map((item) =>
+          item.id === registration.id
+            ? {
+                ...item,
+                payment_data: {
+                  ...(item.payment_data && typeof item.payment_data === 'object'
+                    ? item.payment_data
+                    : {}),
+                  stripe: {
+                    ...(item.payment_data?.stripe ?? {}),
+                    checkout_session_id: payload.data.sessionId,
+                    checkout_url: payload.data.checkoutUrl,
+                  },
+                },
+              }
+            : item
+        )
+      )
+
+      openExternalUrl(payload.data.checkoutUrl)
+      toast.success('Payment link generated.')
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to generate payment link.'
+      )
+    } finally {
+      setRegistrationActionBusyKey(null)
+    }
+  }
+
+  async function handleGenerateInvoice(registration: RegistrationRecord) {
+    const busyKey = `${registration.id}:invoice`
+    setRegistrationActionBusyKey(busyKey)
+
+    try {
+      const payload = await readJson<{
+        data: {
+          registration?: RegistrationRecord
+          hostedInvoiceUrl?: string | null
+          invoicePdf?: string | null
+        }
+      }>(`/api/admin/registrations/${registration.id}/invoice`, {
+        method: 'POST',
+      })
+
+      if (payload.data.registration) {
+        setRegistrations((current) =>
+          current.map((item) =>
+            item.id === registration.id ? payload.data.registration! : item
+          )
+        )
+      }
+
+      const invoiceUrl =
+        payload.data.invoicePdf ?? payload.data.hostedInvoiceUrl ?? null
+
+      if (invoiceUrl) {
+        openExternalUrl(invoiceUrl)
+      }
+
+      toast.success('Invoice ready.')
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to generate invoice.'
+      )
+    } finally {
+      setRegistrationActionBusyKey(null)
+    }
+  }
+
+  function getRegistrationBlankUrl(registration: RegistrationRecord) {    
+    return registration.blank_link ?? registration.generated_form_url ?? null
+  }
+
+  const approvedRegistrations = registrations.filter(
+    (registration) => registration.status === 'approved'
+  )
+  const paidRegistrations = registrations.filter(
+    (registration) => registration.payment_data?.stripe?.payment_status === 'paid'
+  )
+
+  function startBlankDownloads(
+    targets: RegistrationRecord[],
+    setDownloading: (value: boolean) => void
+  ) {
+    const blankTargets = targets.filter((registration) =>
+      Boolean(getRegistrationBlankUrl(registration))
+    )
+
+    if (blankTargets.length === 0) {
+      toast.error('No generated blanks are ready to download yet.')
+      return
+    }
+
+    setDownloading(true)
+
+    void (async () => {
+      try {
+        for (let index = 0; index < blankTargets.length; index += 1) {
+          const registration = blankTargets[index]
+          const blankUrl = getRegistrationBlankUrl(registration)
+
+          if (!blankUrl) {
+            continue
+          }
+
+          const response = await fetch(blankUrl)
+
+          if (!response.ok) {
+            throw new Error('Unable to download one of the blank forms.')
+          }
+
+          const blob = await response.blob()
+          const objectUrl = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = objectUrl
+          a.download = `${registration.boat_name ?? 'entry'}.pdf`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          window.URL.revokeObjectURL(objectUrl)
+
+          if (index < blankTargets.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 300))
+          }
+        }
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : 'Unable to download the blank forms.'
+        )
+      } finally {
+        setDownloading(false)
+      }
+    })()
   }
 
   return (
@@ -2004,25 +2787,40 @@ export default function AdminDashboard({
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-2xl font-semibold">{item.name_en}</h3>
+                      <h3 className="flex items-center gap-2 text-2xl font-semibold">
+                        {item.name_en}
+                        <a
+                          href={`/en/events/${item.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-dark/30 transition-colors hover:text-dark/70"
+                          title="Open event in new tab"
+                        >
+                          <ExternalLink className="h-6 w-6 text-blue-400" />
+                        </a>
+                      </h3>
                       <p className="mt-1  text-dark/60">
                         {localizeText("bg", item.name_en, item.name_bg)}
                       </p>
-                      <p className="mt-2  font-medium uppercase tracking-[0.18em] text-dark/45">
+                      {/* <p className="mt-2  font-medium uppercase tracking-[0.18em] text-dark/45">
                         /events/{item.slug}
-                      </p>
+                      </p> */}
                       <div className="mt-3 flex flex-wrap gap-2  text-dark/60">
                         <span className="rounded-full bg-white/70 px-3 py-1">
-                          {item.start_date} to {item.end_date}
+                          {moment(item.start_date).format("DD-MM-YYYY")} to{" "}
+                          {moment(item.end_date).format("DD-MM-YYYY")}
                         </span>
-                        <span
+                        <span className="rounded-full bg-white/70 px-3 py-1">
+                          {item.total_entries} total entr{item.total_entries === 1 ? 'y' : 'ies'}
+                        </span>
+                        {/* <span
                           className={`rounded-full px-3 py-1 font-semibold ${getEventStatusBadgeClasses(item.status)}`}
                         >
                           {getStatusLabel(item.status)}
-                        </span>
-                        <span className="rounded-full bg-white/70 px-3 py-1">
+                        </span> */}
+                        {/* <span className="rounded-full bg-white/70 px-3 py-1">
                           {item.documents.length} documents
-                        </span>
+                        </span> */}
                       </div>
                     </div>
 
@@ -2033,6 +2831,13 @@ export default function AdminDashboard({
                         className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
                       >
                         Entries
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => openEventDocumentsEditor(item)}
+                        className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+                      >
+                        Documents
                       </Button>
                       <Button
                         variant="outline"
@@ -2161,6 +2966,17 @@ export default function AdminDashboard({
                         <p className="mt-1  text-dark/60">
                           {localizeText("bg", item.name_en, item.name_bg)}
                         </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {item.general_use ? (
+                            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-emerald-700">
+                              General use
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-dark/55">
+                              Event-specific
+                            </span>
+                          )}
+                        </div>
                         <a
                           href={item.source}
                           target="_blank"
@@ -2256,6 +3072,26 @@ export default function AdminDashboard({
                     onError={(msg) => toast.error(msg)}
                     required
                   />
+                  <label className="inline-flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark">
+                    <input
+                      type="checkbox"
+                      checked={documentForm.general_use}
+                      onChange={(event) =>
+                        setDocumentForm((current) => ({
+                          ...current,
+                          general_use: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-black/20 text-primary focus:ring-primary"
+                    />
+                    <div>
+                      <p className="font-medium">General use document</p>
+                      <p className="text-sm text-dark/60">
+                        Keep this available as a reusable document across
+                        events.
+                      </p>
+                    </div>
+                  </label>
                 </div>
 
                 <div className="mt-6">
@@ -2470,9 +3306,10 @@ export default function AdminDashboard({
                   }
                   onError={(msg) => toast.error(msg)}
                 />
-                <MultiFileUploadField
+                <EventDocumentReferenceField
                   label="Notice board"
                   values={eventForm.notice_board}
+                  documents={documents}
                   onChange={(urls) =>
                     setEventForm((current) => ({
                       ...current,
@@ -2480,14 +3317,19 @@ export default function AdminDashboard({
                     }))
                   }
                   onError={(msg) => toast.error(msg)}
+                  onDocumentsCreated={addDocumentsToLibrary}
+                  onDocumentUpdated={updateDocumentInLibrary}
                 />
-                <MultiFileUploadField
+                <EventDocumentReferenceField
                   label="Results"
                   values={eventForm.results}
-                  onChange={(urls) =>
-                    setEventForm((current) => ({ ...current, results: urls }))
+                  documents={documents}
+                  onChange={(values) =>
+                    setEventForm((current) => ({ ...current, results: values }))
                   }
                   onError={(msg) => toast.error(msg)}
+                  onDocumentsCreated={addDocumentsToLibrary}
+                  onDocumentUpdated={updateDocumentInLibrary}
                 />
                 <MultiFileUploadField
                   label="Register form"
@@ -2658,351 +3500,673 @@ export default function AdminDashboard({
           ) : (
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2  text-dark/60">
-                <span className="rounded-full bg-black/5 px-3 py-1">
+                <button
+                  type="button"
+                  onClick={() => setRegistrationStatusFilter(null)}
+                  className={`rounded-full px-3 py-1 transition-all ${registrationStatusFilter === null ? "bg-black/20 font-semibold text-dark" : "bg-black/5 hover:bg-black/10"}`}
+                >
                   {registrations.length} total entries
-                </span>
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistrationStatusFilter("pending")}
+                  className={`rounded-full px-3 py-1 transition-all ${registrationStatusFilter === "pending" ? "bg-amber-300 font-semibold text-amber-900" : "bg-amber-100 text-amber-800 hover:bg-amber-200"}`}
+                >
                   {
                     registrations.filter((item) => item.status === "pending")
                       .length
                   }{" "}
                   pending
-                </span>
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistrationStatusFilter("approved")}
+                  className={`rounded-full px-3 py-1 transition-all ${registrationStatusFilter === "approved" ? "bg-emerald-300 font-semibold text-emerald-900" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}
+                >
                   {
                     registrations.filter((item) => item.status === "approved")
                       .length
                   }{" "}
                   approved
-                </span>
-                <span className="rounded-full bg-red-100 px-3 py-1 text-red-700">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistrationStatusFilter("rejected")}
+                  className={`rounded-full px-3 py-1 transition-all ${registrationStatusFilter === "rejected" ? "bg-red-300 font-semibold text-red-900" : "bg-red-100 text-red-700 hover:bg-red-200"}`}
+                >
                   {
                     registrations.filter((item) => item.status === "rejected")
                       .length
                   }{" "}
                   rejected
-                </span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={downloadingBlanks}
+                  onClick={() => {
+                    startBlankDownloads(
+                      approvedRegistrations,
+                      setDownloadingBlanks
+                    )
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Icon icon="ph:file-pdf-bold" width={15} height={15} />
+                  Download all approved blanks
+                  {downloadingBlanks
+                    ? " …"
+                    : ` (${approvedRegistrations.length})`}
+                </button>
+                <button
+                  type="button"
+                  disabled={downloadingPaidBlanks}
+                  onClick={() => {
+                    startBlankDownloads(
+                      paidRegistrations,
+                      setDownloadingPaidBlanks
+                    )
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Icon icon="ph:file-pdf-bold" width={15} height={15} />
+                  Download all paid blanks
+                  {downloadingPaidBlanks
+                    ? " …"
+                    : ` (${paidRegistrations.length})`}
+                </button>
               </div>
 
               <Accordion type="single" collapsible className="space-y-3">
-                {registrations.map((registration) => {
+                {(registrationStatusFilter
+                  ? registrations.filter(
+                      (r) => r.status === registrationStatusFilter,
+                    )
+                  : registrations
+                ).map((registration) => {
                   const stripePaymentStatus =
-                    registration.payment_data?.stripe?.payment_status
-                  const isUnpaid = stripePaymentStatus !== "paid"
+                    registration.payment_data?.stripe?.payment_status;
+                  const isUnpaid = stripePaymentStatus !== "paid";
+                  const isPaymentActionBusy =
+                    registrationActionBusyKey === `${registration.id}:payment`;
+                  const isInvoiceActionBusy =
+                    registrationActionBusyKey === `${registration.id}:invoice`;
+                  const isMarkPaidActionBusy =
+                    registrationActionBusyKey === `${registration.id}:mark-paid`;
+                  const hasInvoice = Boolean(
+                    registration.payment_data?.stripe?.invoice_id,
+                  );
 
                   return (
-                  <AccordionItem
-                    key={registration.id}
-                    value={registration.id}
-                    className={`overflow-hidden rounded-[1.5rem] border shadow-sm ${
-                      isUnpaid
-                        ? "border-red-200 bg-red-50/70"
-                        : "border-black/10 bg-white/90"
-                    }`}
-                  >
-                    <AccordionTrigger className="items-center bg-white px-5 py-4 hover:no-underline">
-                      <div className="flex flex-1 flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-lg font-semibold text-dark">
-                            {registration.boat_name}
-                          </p>
-                          <p className="mt-1  text-dark/60">
-                            {registration.skipper_name} • {registration.country}
-                          </p>
-                          <p className="mt-1  text-dark/45">
-                            {registration.contact_email} • Submitted{" "}
-                            {formatTimestamp(registration.created_at)}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`rounded-full px-3 py-1  font-semibold ${getRegistrationStatusBadgeClasses(
-                              registration.status,
-                            )}`}
-                          >
-                            {registration.status}
-                          </span>
-                          <span className="rounded-full bg-black/5 px-3 py-1  text-dark/60">
-                            {registration.crew_list.length} crew
-                          </span>
-                          {isUnpaid ? (
-                            <span className="rounded-full bg-red-100 px-3 py-1  font-semibold text-red-700">
-                              Unpaid
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-
-                    <AccordionContent className="px-5 pb-5 text-dark">
-                      <div className="space-y-5">
-                        {isUnpaid ? (
-                          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3  font-medium text-red-700">
-                            Payment has not been completed for this registration yet.
+                    <AccordionItem
+                      key={registration.id}
+                      value={registration.id}
+                      className={`overflow-hidden rounded-[1.5rem] border shadow-sm ${
+                        isUnpaid
+                          ? "border-red-200 bg-red-50/70"
+                          : "border-black/10 bg-white/90"
+                      }`}
+                    >
+                      <AccordionTrigger className="items-center bg-white px-5 py-4 hover:no-underline">
+                        <div className="flex flex-1 flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-lg font-semibold text-dark">
+                              {registration.boat_name}
+                            </p>
+                            <p className="mt-1  text-dark/60">
+                              {registration.skipper_name} •{" "}
+                              {registration.country}
+                            </p>
+                            <p className="mt-1  text-dark/45">
+                              {registration.contact_email} • Submitted{" "}
+                              {formatTimestamp(registration.created_at)}
+                            </p>
                           </div>
-                        ) : null}
-                        <div className="flex flex-wrap gap-2">
-                          {(
-                            [
-                              "pending",
-                              "approved",
-                              "rejected",
-                            ] as RegistrationStatus[]
-                          ).map((status) => (
-                            <button
-                              key={status}
-                              type="button"
-                              disabled={
-                                registrationStatusBusyId === registration.id
-                              }
-                              onClick={() =>
-                                void handleRegistrationStatusChange(
-                                  registration.id,
-                                  status,
-                                )
-                              }
-                              className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
-                                status,
+
+                          <div className="flex text-sm flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-3 py-1  font-semibold ${getRegistrationStatusBadgeClasses(
                                 registration.status,
                               )}`}
                             >
-                              {status}
+                              {registration.status}
+                            </span>
+                            {/* <span className="rounded-full bg-black/5 px-3 py-1  text-dark/60">
+                            {registration.crew_list.length} crew
+                          </span> */}
+                            {isUnpaid ? (
+                              <span className="rounded-full bg-red-100 px-3 py-1  font-semibold text-red-700">
+                                Unpaid
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+
+                      <AccordionContent className="px-5 pb-5 text-dark">
+                        <div className="space-y-5">
+                          {isUnpaid ? (
+                            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3  font-medium text-red-700">
+                              Payment has not been completed for this
+                              registration yet.
+                            </div>
+                          ) : null}
+                          <div className="flex flex-wrap gap-2">
+                            {(
+                              [
+                                "pending",
+                                "approved",
+                                "rejected",
+                              ] as RegistrationStatus[]
+                            ).map((status) => (
+                              <button
+                                key={status}
+                                type="button"
+                                disabled={
+                                  registrationStatusBusyId === registration.id
+                                }
+                                onClick={() => {
+                                  if (status === "rejected") {
+                                    setRejectionModal({ registrationId: registration.id, boatName: registration.boat_name })
+                                    setRejectionFeedback('')
+                                  } else {
+                                    void handleRegistrationStatusChange(registration.id, status)
+                                  }
+                                }}
+                                className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
+                                  status,
+                                  registration.status,
+                                )}`}
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={
+                                !getRegistrationBlankUrl(registration) ||
+                                isPaymentActionBusy ||
+                                isInvoiceActionBusy ||
+                                isMarkPaidActionBusy
+                              }
+                              onClick={() => downloadRegistrationForm(registration)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Icon icon="ph:file-pdf-bold" width={15} height={15} />
+                              Download form
                             </button>
-                          ))}
-                        </div>
+                            <button
+                              type="button"
+                              disabled={
+                                isUnpaid === false ||
+                                isPaymentActionBusy ||
+                                isInvoiceActionBusy ||
+                                isMarkPaidActionBusy
+                              }
+                              onClick={() => {
+                                void handleGeneratePaymentLink(registration)
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Icon icon="ph:credit-card-bold" width={15} height={15} />
+                              {isPaymentActionBusy
+                                ? "Generating payment link..."
+                                : "Generate payment link"}
+                            </button>
+                            {isUnpaid ? (
+                              <button
+                                type="button"
+                                disabled={
+                                  isPaymentActionBusy ||
+                                  isInvoiceActionBusy ||
+                                  isMarkPaidActionBusy
+                                }
+                                onClick={() => {
+                                  void handleMarkRegistrationPaid(registration.id)
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Icon icon="ph:check-circle-bold" width={15} height={15} />
+                                {isMarkPaidActionBusy
+                                  ? "Marking as paid..."
+                                  : "Mark as paid"}
+                              </button>
+                            ) : null}
+                            {!isUnpaid ? (
+                              <button
+                                type="button"
+                                disabled={
+                                  isPaymentActionBusy ||
+                                  isInvoiceActionBusy ||
+                                  isMarkPaidActionBusy
+                                }
+                                onClick={() => {
+                                  void handleGenerateInvoice(registration)
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Icon icon="ph:receipt-bold" width={15} height={15} />
+                                {isInvoiceActionBusy
+                                  ? "Preparing invoice..."
+                                  : hasInvoice
+                                    ? "Open invoice"
+                                    : "Generate invoice"}
+                              </button>
+                            ) : null}
+                          </div>
 
-                        <div className="grid gap-4 lg:grid-cols-2">
-                          <RegistrationDetailRow
-                            label="Boat name"
-                            value={registration.boat_name}
-                          />
-                          <RegistrationDetailRow
-                            label="Border number"
-                            value={formatOptionalValue(
-                              registration.border_number,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Country"
-                            value={registration.country}
-                          />
-                          <RegistrationDetailRow
-                            label="Model / design"
-                            value={registration.model_design}
-                          />
-                          <RegistrationDetailRow
-                            label="Sail number"
-                            value={registration.sail_number}
-                          />
-                          <RegistrationDetailRow
-                            label="Boat age"
-                            value={registration.boat_age}
-                          />
-                          <RegistrationDetailRow
-                            label="LOA"
-                            value={`${registration.loa} m`}
-                          />
-                          <RegistrationDetailRow
-                            label="GPH / IRC"
-                            value={registration.gph_irc}
-                          />
-                          <RegistrationDetailRow
-                            label="Boat color"
-                            value={formatOptionalValue(registration.boat_color)}
-                          />
-                          <RegistrationDetailRow
-                            label="Port of registry"
-                            value={formatOptionalValue(
-                              registration.port_of_registry,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Yacht club"
-                            value={formatOptionalValue(registration.yacht_club)}
-                          />
-                          <RegistrationDetailRow
-                            label="Certificate of navigation"
-                            value={formatOptionalValue(
-                              registration.certificate_of_navigation,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Certificate of navigation expiry"
-                            value={formatOptionalValue(
-                              registration.certificate_of_navigation_expiry,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Skipper name"
-                            value={registration.skipper_name}
-                          />
-                          <RegistrationDetailRow
-                            label="Skipper yacht club"
-                            value={registration.skipper_yacht_club}
-                          />
-                          <RegistrationDetailRow
-                            label="Charterer name"
-                            value={formatOptionalValue(
-                              registration.charterer_name,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Certificate of competency"
-                            value={registration.certificate_of_competency}
-                          />
-                          <RegistrationDetailRow
-                            label="Competency expiry"
-                            value={formatOptionalValue(
-                              registration.certificate_of_competency_expiry,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Contact name"
-                            value={registration.contact_name}
-                          />
-                          <RegistrationDetailRow
-                            label="Contact phone"
-                            value={registration.contact_phone}
-                          />
-                          <RegistrationDetailRow
-                            label="Contact email"
-                            value={registration.contact_email}
-                          />
-                          <RegistrationDetailRow
-                            label="Generated form"
-                            value={
-                              registration.generated_form_url ? (
-                                <a
-                                  href={registration.generated_form_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
-                                >
-                                  <Icon icon="ph:file-pdf-bold" width={16} height={16} />
-                                  Download PDF
-                                </a>
-                              ) : (
-                                <span className="text-dark/40">Processing…</span>
-                              )
-                            }
-                          />
-                          <RegistrationDetailRow
-                            label="Payment status"
-                            value={formatOptionalValue(
-                              registration.payment_data?.stripe?.payment_status,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Stripe checkout session"
-                            value={formatOptionalValue(
-                              registration.payment_data?.stripe?.checkout_session_id,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Stripe checkout URL"
-                            value={formatOptionalValue(
-                              registration.payment_data?.stripe?.checkout_url,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Receive documents by email"
-                            value={formatBooleanValue(
-                              registration.receive_documents_by_email,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Crew insurance"
-                            value={formatBooleanValue(
-                              registration.crew_insurance,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Third-party insurance"
-                            value={formatBooleanValue(
-                              registration.third_party_insurance,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="Disclaimer accepted"
-                            value={formatBooleanValue(
-                              registration.disclaimer_accepted,
-                            )}
-                          />
-                          <RegistrationDetailRow
-                            label="GDPR accepted"
-                            value={formatBooleanValue(
-                              registration.gdpr_accepted,
-                            )}
-                          />
-                        </div>
-
-                        <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
-                            Crew list
-                          </p>
-                          {registration.crew_list.length === 0 ? (
-                            <p className="mt-3  text-dark/60">
-                              No crew members were added.
-                            </p>
-                          ) : (
-                            <div className="mt-3 space-y-3">
-                              {registration.crew_list.map(
-                                (crewMember, index) => (
-                                  <div
-                                    key={`${registration.id}-crew-${index}`}
-                                    className="rounded-2xl border border-black/10 bg-white p-4"
-                                  >
-                                    <p className=" font-semibold text-dark">
-                                      {crewMember.name}
-                                    </p>
-                                    <div className="mt-2 grid gap-2  text-dark/65 sm:grid-cols-1">
-                                      <p>
-                                        Date of birth:{" "}
-                                        {formatOptionalValue(
-                                          crewMember.date_of_birth ?? null,
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ),
+                          <div className="grid gap-4 lg:grid-cols-2">
+                            <RegistrationDetailRow
+                              label="Boat name"
+                              value={registration.boat_name}
+                            />
+                            <RegistrationDetailRow
+                              label="Border number"
+                              value={formatOptionalValue(
+                                registration.border_number,
                               )}
-                            </div>
-                          )}
-                        </div>
+                            />
+                            <RegistrationDetailRow
+                              label="Country"
+                              value={registration.country}
+                            />
+                            <RegistrationDetailRow
+                              label="Model / design"
+                              value={registration.model_design}
+                            />
+                            <RegistrationDetailRow
+                              label="Sail number"
+                              value={registration.sail_number}
+                            />
+                            <RegistrationDetailRow
+                              label="Boat age"
+                              value={registration.boat_age}
+                            />
+                            <RegistrationDetailRow
+                              label="LOA"
+                              value={`${registration.loa} m`}
+                            />
+                            <RegistrationDetailRow
+                              label="GPH / IRC"
+                              value={registration.gph_irc}
+                            />
+                            <RegistrationDetailRow
+                              label="Boat color"
+                              value={formatOptionalValue(
+                                registration.boat_color,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Port of registry"
+                              value={formatOptionalValue(
+                                registration.port_of_registry,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Yacht club"
+                              value={formatOptionalValue(
+                                registration.yacht_club,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Certificate of navigation"
+                              value={formatOptionalValue(
+                                registration.certificate_of_navigation,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Certificate of navigation expiry"
+                              value={formatOptionalValue(
+                                registration.certificate_of_navigation_expiry,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Skipper name"
+                              value={registration.skipper_name}
+                            />
+                            <RegistrationDetailRow
+                              label="Skipper yacht club"
+                              value={registration.skipper_yacht_club}
+                            />
+                            <RegistrationDetailRow
+                              label="Charterer name"
+                              value={formatOptionalValue(
+                                registration.charterer_name,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Certificate of competency"
+                              value={registration.certificate_of_competency}
+                            />
+                            <RegistrationDetailRow
+                              label="Competency expiry"
+                              value={formatOptionalValue(
+                                registration.certificate_of_competency_expiry,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Contact name"
+                              value={registration.contact_name}
+                            />
+                            <RegistrationDetailRow
+                              label="Contact phone"
+                              value={registration.contact_phone}
+                            />
+                            <RegistrationDetailRow
+                              label="Contact email"
+                              value={registration.contact_email}
+                            />
+                            <RegistrationDetailRow
+                              label="Generated form"
+                              value={
+                                registration.generated_form_url ? (
+                                  <a
+                                    href={registration.generated_form_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
+                                  >
+                                    <Icon
+                                      icon="ph:file-pdf-bold"
+                                      width={16}
+                                      height={16}
+                                    />
+                                    Download PDF
+                                  </a>
+                                ) : (
+                                  <span className="text-dark/40">
+                                    Processing…
+                                  </span>
+                                )
+                              }
+                            />
+                            <RegistrationDetailRow
+                              label="Payment status"
+                              value={formatOptionalValue(
+                                registration.payment_data?.stripe
+                                  ?.payment_status,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Stripe checkout session"
+                              value={formatOptionalValue(
+                                registration.payment_data?.stripe
+                                  ?.checkout_session_id,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Stripe checkout URL"
+                              value={formatOptionalValue(
+                                registration.payment_data?.stripe?.checkout_url,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Receive documents by email"
+                              value={formatBooleanValue(
+                                registration.receive_documents_by_email,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Crew insurance"
+                              value={formatBooleanValue(
+                                registration.crew_insurance,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Third-party insurance"
+                              value={formatBooleanValue(
+                                registration.third_party_insurance,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Disclaimer accepted"
+                              value={formatBooleanValue(
+                                registration.disclaimer_accepted,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="GDPR accepted"
+                              value={formatBooleanValue(
+                                registration.gdpr_accepted,
+                              )}
+                            />
+                            <RegistrationDetailRow
+                              label="Preferred language"
+                              value={registration.preferred_language ?? "en"}
+                            />
+                            {registration.status === "rejected" ? (
+                              <RegistrationDetailRow
+                                label="Rejection feedback"
+                                value={formatOptionalValue(registration.rejection_feedback)}
+                              />
+                            ) : null}
+                          </div>
 
-                        <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
-                            Insurance documents
-                          </p>
-                          {registration.insurance_documents.length === 0 ? (
-                            <p className="mt-3  text-dark/60">
-                              No insurance documents were uploaded.
+                          <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                              Crew list
                             </p>
-                          ) : (
-                            <div className="mt-3 space-y-3">
-                              {registration.insurance_documents.map((url, index) => (
-                                <a
-                                  key={`${registration.id}-insurance-${index}`}
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="block rounded-2xl border border-black/10 bg-white p-4  font-medium text-primary hover:underline"
-                                >
-                                  {url.split('/').pop() || url}
-                                </a>
-                              ))}
-                            </div>
-                          )}
+                            {registration.crew_list.length === 0 ? (
+                              <p className="mt-3  text-dark/60">
+                                No crew members were added.
+                              </p>
+                            ) : (
+                              <div className="mt-3 space-y-3">
+                                {registration.crew_list.map(
+                                  (crewMember, index) => (
+                                    <div
+                                      key={`${registration.id}-crew-${index}`}
+                                      className="rounded-2xl border border-black/10 bg-white p-4"
+                                    >
+                                      <p className=" font-semibold text-dark">
+                                        {crewMember.name}
+                                      </p>
+                                      <div className="mt-2 grid gap-2  text-dark/65 sm:grid-cols-1">
+                                        <p>
+                                          Date of birth:{" "}
+                                          {formatOptionalValue(
+                                            crewMember.date_of_birth ?? null,
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                              Insurance documents
+                            </p>
+                            {registration.insurance_documents.length === 0 ? (
+                              <p className="mt-3  text-dark/60">
+                                No insurance documents were uploaded.
+                              </p>
+                            ) : (
+                              <div className="mt-3 space-y-3">
+                                {registration.insurance_documents.map(
+                                  (url, index) => (
+                                    <a
+                                      key={`${registration.id}-insurance-${index}`}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block rounded-2xl border border-black/10 bg-white p-4  font-medium text-primary hover:underline"
+                                    >
+                                      {url.split("/").pop() || url}
+                                    </a>
+                                  ),
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )})}
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
               </Accordion>
             </div>
           )}
         </AdminModal>
+
+        <AdminModal
+          open={eventDocumentsModalOpen}
+          title={
+            activeEventDocumentsEvent
+              ? `Documents for ${activeEventDocumentsEvent.name_en}`
+              : 'Event documents'
+          }
+          description={
+            activeEventDocumentsEvent
+              ? 'Manage the notice board and result documents linked to this event.'
+              : 'Manage event documents.'
+          }
+          onClose={closeEventDocumentsEditor}
+        >
+          {eventDocumentsForm ? (
+            <form onSubmit={handleEventDocumentsSubmit}>
+              <Tabs defaultValue="noticeBoard">
+                <TabsList className="mb-6">
+                  <TabsTrigger value="noticeBoard">Notice board</TabsTrigger>
+                  <TabsTrigger value="results">Results</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="noticeBoard">
+                  <EventDocumentReferenceField
+                    label="Notice board documents"
+                    values={eventDocumentsForm.notice_board}
+                    documents={documents}
+                    onChange={(values) =>
+                      setEventDocumentsForm((current) =>
+                        current
+                          ? {
+                              ...current,
+                              notice_board: values,
+                            }
+                          : current
+                      )
+                    }
+                    onReorder={(values) =>
+                      autosaveEventDocumentOrder('notice_board', values)
+                    }
+                    onError={(msg) => toast.error(msg)}
+                    onDocumentsCreated={addDocumentsToLibrary}
+                    onDocumentUpdated={updateDocumentInLibrary}
+                  />
+                </TabsContent>
+
+                <TabsContent value="results">
+                  <EventDocumentReferenceField
+                    label="Result documents"
+                    values={eventDocumentsForm.results}
+                    documents={documents}
+                    onChange={(values) =>
+                      setEventDocumentsForm((current) =>
+                        current
+                          ? {
+                              ...current,
+                              results: values,
+                            }
+                          : current
+                      )
+                    }
+                    onReorder={(values) =>
+                      autosaveEventDocumentOrder('results', values)
+                    }
+                    onError={(msg) => toast.error(msg)}
+                    onDocumentsCreated={addDocumentsToLibrary}
+                    onDocumentUpdated={updateDocumentInLibrary}
+                  />
+                </TabsContent>
+              </Tabs>
+
+              <div className="mt-6 flex items-center gap-3">
+                <Button
+                  type="submit"
+                  disabled={eventsBusy}
+                  className="rounded-xl px-5 text-white"
+                >
+                  {eventsBusy ? 'Saving...' : 'Save document changes'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeEventDocumentsEditor}
+                  className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          ) : null}
+        </AdminModal>
+
+        {/* Rejection confirmation modal */}
+        {rejectionModal ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setRejectionModal(null)}
+            />
+            <div className="relative w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-2xl">
+              <h3 className="text-xl font-semibold text-dark">
+                Reject registration
+              </h3>
+              <p className="mt-2 text-dark/60">
+                You are about to reject the entry for{" "}
+                <strong>{rejectionModal.boatName}</strong>. The entrant will
+                receive an email notification.
+              </p>
+              <div className="mt-4">
+                <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-dark/45">
+                  Feedback for the entrant{" "}
+                  <span className="normal-case tracking-normal text-dark/30">
+                    (optional)
+                  </span>
+                </label>
+                <textarea
+                  value={rejectionFeedback}
+                  onChange={(e) => setRejectionFeedback(e.target.value)}
+                  placeholder="Explain why the registration is being rejected…"
+                  rows={4}
+                  className="mt-2 w-full rounded-xl border border-black/15 bg-black/[0.02] px-4 py-3 text-dark placeholder:text-dark/30 focus:border-black/30 focus:outline-none"
+                />
+              </div>
+              <div className="mt-5 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setRejectionModal(null)}
+                  className="flex-1 rounded-xl border-black/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={registrationStatusBusyId === rejectionModal.registrationId}
+                  onClick={() => {
+                    const { registrationId } = rejectionModal
+                    setRejectionModal(null)
+                    void handleRegistrationStatusChange(
+                      registrationId,
+                      "rejected",
+                      rejectionFeedback.trim() || undefined
+                    )
+                  }}
+                  className="flex-1 rounded-xl bg-red-600 text-white hover:bg-red-700"
+                >
+                  Confirm rejection
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </main>
   );

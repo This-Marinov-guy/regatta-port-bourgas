@@ -1,8 +1,8 @@
 import React, { FC } from "react";
 import Image from "next/image";
 import { Blog } from "@/app/types/blog";
-import { format } from "date-fns";
 import Link from "next/link";
+import { formatDisplayDate } from "@/lib/formatDate";
 
 const BlogCard: FC<{ blog: Blog }> = ({ blog }) => {
     const { title, coverImage, date, slug, tag } = blog;
@@ -25,7 +25,7 @@ const BlogCard: FC<{ blog: Blog }> = ({ blog }) => {
                         {title}
                     </h3>
                     <span className="text-base font-medium dark:text-white/50 text-dark/50 leading-loose">
-                        {format(new Date(date), "MMM dd, yyyy")}
+                        {formatDisplayDate(date)}
                     </span>
                 </div>
                 <div className="py-2.5 px-5 bg-dark/5 rounded-full dark:bg-white/15">

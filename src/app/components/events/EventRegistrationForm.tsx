@@ -329,6 +329,10 @@ function getStorageKey(eventId: string) {
   return `event-registration-draft:${eventId}`
 }
 
+function isDefaultDraft(form: RegistrationDraft) {
+  return JSON.stringify(form) === JSON.stringify(defaultDraft())
+}
+
 function DraftField({
   label,
   required = false,
@@ -404,7 +408,7 @@ function DateInput({
         onChange={(date) => onChange(formatDateValue(date))}
         shouldCloseOnSelect
         portalId="event-registration-datepicker-portal"
-        dateFormat="dd.MM.yyyy"
+        dateFormat="dd-MM-yyyy"
         placeholderText={placeholder}
         locale={locale === 'bg' ? bg : enUS}
         className={`${inputClassName(invalid)} pr-12`}
@@ -667,6 +671,11 @@ export default function EventRegistrationForm({
       return
     }
 
+    if (isDefaultDraft(form)) {
+      window.localStorage.removeItem(storageKey)
+      return
+    }
+
     window.localStorage.setItem(storageKey, JSON.stringify(form))
   }, [form, storageKey])
 
@@ -764,6 +773,9 @@ export default function EventRegistrationForm({
     const next = defaultDraft()
     setForm(next)
     setInvalidFields([])
+    if (insuranceInputRef.current) {
+      insuranceInputRef.current.value = ''
+    }
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(storageKey)
     }

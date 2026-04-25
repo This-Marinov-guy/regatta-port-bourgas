@@ -1,6 +1,8 @@
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { extractNewsAttachmentUrls } from '@/lib/newsAttachments'
 import { ensureSlug, slugify } from '@/lib/slug'
+import { getRegistrationWithEvent } from '@/lib/registrations/data'
+import { sendRegistrationStatusEmail } from '@/lib/registrations/email'
 import type {
   AdminDocumentPayload,
   AdminDocumentRecord,
@@ -9,6 +11,7 @@ import type {
   AdminNewsPayload,
   AdminNewsRecord,
   EventStatus,
+  RegistrationPaymentData,
   RegistrationRecord
 } from '@/types/admin'
 
@@ -68,6 +71,10 @@ function normalizeStringArray(value: unknown) {
   }
 
   return []
+}
+
+function normalizeBoolean(value: unknown, fallback = false) {
+  return typeof value === 'boolean' ? value : fallback
 }
 
 function stripHtmlToText(value: string) {
@@ -154,7 +161,8 @@ export function parseDocumentPayload(
   return {
     name_en: normalizeRequiredText(input.name_en, 'English name'),
     name_bg: normalizeOptionalText(input.name_bg),
-    source: normalizeRequiredText(input.source, 'Source')
+    source: normalizeRequiredText(input.source, 'Source'),
+    general_use: normalizeBoolean(input.general_use)
   }
 }
 
@@ -208,16 +216,38 @@ export async function ensureUniqueNewsSlug(slug: string, excludeId?: string) {
 
 export async function listEvents() {
   const supabase = createSupabaseServiceClient()
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .order('start_date', { ascending: false })
+  const [{ data, error }, { data: registrations, error: registrationsError }] =
+    await Promise.all([
+      supabase
+        .from('events')
+        .select('*')
+        .order('start_date', { ascending: false }),
+      supabase.from('registrations').select('event_id')
+    ])
 
   if (error) {
     throw new Error(error.message)
   }
 
-  return (data ?? []) as AdminEventRecord[]
+  if (registrationsError) {
+    throw new Error(registrationsError.message)
+  }
+
+  const totalsByEventId = new Map<string, number>()
+
+  for (const registration of registrations ?? []) {
+    const eventId = registration.event_id
+    if (typeof eventId !== 'string' || !eventId) {
+      continue
+    }
+
+    totalsByEventId.set(eventId, (totalsByEventId.get(eventId) ?? 0) + 1)
+  }
+
+  return ((data ?? []) as Omit<AdminEventRecord, 'total_entries'>[]).map((item) => ({
+    ...item,
+    total_entries: totalsByEventId.get(item.id) ?? 0
+  }))
 }
 
 export async function listNews() {
@@ -276,12 +306,19 @@ export async function listRegistrations(eventId?: string) {
 
 export async function updateRegistrationStatus(
   id: string,
-  status: RegistrationRecord['status']
+  status: RegistrationRecord['status'],
+  feedback?: string | null
 ) {
   const supabase = createSupabaseServiceClient()
+
+  const updatePayload: Record<string, unknown> = { status }
+  if (status === 'rejected') {
+    updatePayload.rejection_feedback = feedback ?? null
+  }
+
   const { data, error } = await supabase
     .from('registrations')
-    .update({ status })
+    .update(updatePayload)
     .eq('id', id)
     .select('*')
     .single()
@@ -290,5 +327,69 @@ export async function updateRegistrationStatus(
     throw new Error(error.message)
   }
 
+  if (status === 'approved' || status === 'rejected') {
+    try {
+      const registration = await getRegistrationWithEvent(id)
+      await sendRegistrationStatusEmail({
+        registration,
+        status,
+        feedback: status === 'rejected' ? (feedback ?? null) : undefined,
+      })
+    } catch (emailError) {
+      console.error('Failed to send status change email:', emailError)
+    }
+  }
+
   return data as RegistrationRecord
+}
+
+export async function updateRegistrationPaymentStatus(
+  id: string,
+  paymentStatus: 'paid'
+) {
+  const registration = await getRegistrationWithEvent(id)
+  const supabase = createSupabaseServiceClient()
+  const existingStripe =
+    registration.payment_data?.stripe &&
+    typeof registration.payment_data.stripe === 'object'
+      ? registration.payment_data.stripe
+      : {}
+
+  const timestamp = new Date().toISOString()
+  const crewCount = Math.max(existingStripe.crew_count ?? registration.crew_list.length, 1)
+
+  const nextPaymentData: RegistrationPaymentData = {
+    ...(registration.payment_data && typeof registration.payment_data === 'object'
+      ? registration.payment_data
+      : {}),
+    stripe: {
+      ...existingStripe,
+      status: existingStripe.status ?? 'complete',
+      payment_status: paymentStatus,
+      method: existingStripe.method ?? 'manual-admin',
+      registration_id: existingStripe.registration_id ?? registration.id,
+      event_id: existingStripe.event_id ?? registration.event_id,
+      customer_email: existingStripe.customer_email ?? registration.contact_email,
+      locale: existingStripe.locale ?? registration.preferred_language,
+      crew_count: crewCount,
+      created_at: existingStripe.created_at ?? timestamp,
+      completed_at: existingStripe.completed_at ?? timestamp,
+    },
+  }
+
+  const { data, error } = await supabase
+    .from('registrations')
+    .update({ payment_data: nextPaymentData })
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    ...data,
+    generated_form_url: data.blank_link ?? null,
+  } as RegistrationRecord
 }

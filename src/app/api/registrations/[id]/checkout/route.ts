@@ -3,13 +3,10 @@ import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { getRegistrationWithEvent } from '@/lib/registrations/data'
 import { getStripeServerClient } from '@/lib/stripe/server'
 import type { RegistrationPaymentData } from '@/types/admin'
+import { normalizeLocale, readLocaleFromRequest } from '@/lib/locale'
 
 type CheckoutPayload = {
   locale?: unknown
-}
-
-function normalizeLocale(value: unknown) {
-  return value === 'bg' ? 'bg' : 'en'
 }
 
 function getBaseUrl(request: Request) {
@@ -28,7 +25,7 @@ export async function POST(
 ) {
   try {
     const body = (await request.json().catch(() => ({}))) as CheckoutPayload
-    const locale = normalizeLocale(body.locale)
+    const locale = normalizeLocale(body.locale ?? readLocaleFromRequest(request))
     const { id } = await params
     const registration = await getRegistrationWithEvent(id)
 
@@ -57,6 +54,7 @@ export async function POST(
         'registration-id': registration.id,
         'event-id': registration.event_id,
         'crew-count': String(crewCount),
+        locale,
       },
       payment_intent_data: {
         metadata: {
@@ -64,6 +62,7 @@ export async function POST(
           'registration-id': registration.id,
           'event-id': registration.event_id,
           'crew-count': String(crewCount),
+          locale,
         },
       },
       line_items: [
@@ -100,6 +99,7 @@ export async function POST(
         registration_id: registration.id,
         event_id: registration.event_id,
         customer_email: registration.contact_email,
+        locale,
         crew_count: crewCount,
         unit_amount: unitAmount,
         total_amount: totalAmount,
