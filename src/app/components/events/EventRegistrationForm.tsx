@@ -190,7 +190,7 @@ const content = {
     insuranceDocumentCompressionFailed:
       'We could not compress this image enough. Please upload a smaller file under 10 MB.',
     success:
-      'Registration submitted successfully. Your local draft has been cleared.',
+      'Registration submitted successfully. Your local draft has been cleared. If you have not paid the entry fee, you can do it here.',
     error: 'We could not submit your registration. Please try again.',
     submissionStatus: {
       loadingTitle: 'Submitting registration',
@@ -198,7 +198,7 @@ const content = {
       successTitle: 'Registration sent',
       errorTitle: 'Submission failed',
       close: 'Close',
-      paymentAction: 'Make payment',
+      paymentAction: 'Pay entry fee',
       paymentLoading: 'Opening checkout...',
       paymentError: 'We could not start the payment. Please try again.',
     },
@@ -292,7 +292,7 @@ const content = {
     insuranceDocumentCompressionFailed:
       'Не успяхме да компресираме това изображение достатъчно. Моля, качете по-малък файл под 10 MB.',
     success:
-      'Регистрацията е изпратена успешно. Локалната чернова беше изчистена.',
+      'Регистрацията е изпратена успешно. Локалната чернова беше изчистена. Ако все още не сте платили таксата за участие, можете да го направите оттук.',
     error: 'Неуспешно изпращане на регистрацията. Моля, опитайте отново.',
     submissionStatus: {
       loadingTitle: 'Изпращане на регистрацията',
@@ -300,7 +300,7 @@ const content = {
       successTitle: 'Регистрацията е изпратена',
       errorTitle: 'Грешка при изпращане',
       close: 'Затвори',
-      paymentAction: 'Плати сега',
+      paymentAction: 'Плати такса участие',
       paymentLoading: 'Отваряне на плащането...',
       paymentError: 'Не успяхме да стартираме плащането. Моля, опитайте отново.',
     },
