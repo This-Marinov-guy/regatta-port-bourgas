@@ -65,6 +65,11 @@ const MAX_INSURANCE_FILE_SIZE = 10 * 1024 * 1024
 const MAX_IMAGE_DIMENSION = 2400
 const IMAGE_COMPRESSION_QUALITY_STEPS = [0.82, 0.72, 0.62, 0.5, 0.4]
 
+type InsuranceDocumentMessages = {
+  insuranceDocumentTooLarge: string
+  insuranceDocumentCompressionFailed: string
+}
+
 function syncSkipperIntoCrew(
   crewList: CrewMemberDraft[] | undefined,
   skipperName: string
@@ -571,7 +576,10 @@ async function compressInsuranceImage(file: File) {
   return null
 }
 
-async function prepareInsuranceDocument(file: File, t: (typeof content)['en']) {
+async function prepareInsuranceDocument(
+  file: File,
+  t: InsuranceDocumentMessages
+) {
   if (file.size <= MAX_INSURANCE_FILE_SIZE) {
     return file
   }

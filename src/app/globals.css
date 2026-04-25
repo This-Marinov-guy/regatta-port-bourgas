@@ -84,6 +84,15 @@ html {
   scroll-behavior: smooth;
 }
 
+:root {
+  --font-manrope: "Manrope", "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  --font-cormorant-infant: "Cormorant Infant", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+}
+
+body {
+  font-family: var(--font-manrope), sans-serif;
+}
+
 .site-page-bg {
   background-image: linear-gradient(180deg, #f8fafc 0%, #eef2ff 46%, #ffffff 100%);
   background-attachment: fixed;

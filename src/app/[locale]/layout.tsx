@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Manrope, Cormorant_Infant } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -12,18 +11,6 @@ import Footer from '../components/layout/footer';
 import CookieBanner from '../components/layout/cookie-banner';
 import SessionProviderComp from '../../providers/SessionProvider';
 import ScrollToTop from '../components/scroll-to-top';
-
-const manrope = Manrope({ 
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: '--font-manrope',
-});
-
-const cormorantInfant = Cormorant_Infant({ 
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: '--font-cormorant-infant',
-});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
 
@@ -197,7 +184,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${manrope.variable} ${cormorantInfant.variable} ${manrope.className} site-page-bg antialiased`} suppressHydrationWarning>
+      <body className="site-page-bg antialiased" suppressHydrationWarning>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
