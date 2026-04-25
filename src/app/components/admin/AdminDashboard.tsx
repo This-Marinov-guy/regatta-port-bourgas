@@ -1942,7 +1942,6 @@ export default function AdminDashboard({
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_46%,#ffffff_100%)] px-5 py-6 text-dark md:px-8 md:py-8">
-      <Toaster position="top-right" />
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 rounded-[2rem] border border-black/10 bg-white/90 p-6 shadow-[0_24px_80px_rgba(23,32,35,0.1)] backdrop-blur md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">

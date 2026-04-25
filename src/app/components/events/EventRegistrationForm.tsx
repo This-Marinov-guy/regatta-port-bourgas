@@ -9,7 +9,6 @@ import toast, { Toaster } from 'react-hot-toast'
 import { useLocale } from 'next-intl'
 import { Button } from '@/app/components/ui/button'
 import EventSubmissionStatusModal from '@/app/components/events/EventSubmissionStatusModal'
-import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 
 type CrewMemberDraft = {
   name: string
@@ -62,7 +61,9 @@ type RegistrationSubmitResponse = {
   error?: string
 }
 
-const REGATTA_EMAIL = 'events@yachtclubportbourgas.org'
+const MAX_INSURANCE_FILE_SIZE = 10 * 1024 * 1024
+const MAX_IMAGE_DIMENSION = 2400
+const IMAGE_COMPRESSION_QUALITY_STEPS = [0.82, 0.72, 0.62, 0.5, 0.4]
 
 function syncSkipperIntoCrew(
   crewList: CrewMemberDraft[] | undefined,
@@ -178,10 +179,16 @@ const content = {
     insuranceBanner:
       'Please provide the insurance policies at the regatta email',
     insuranceDocumentsHelp:
-      'Upload one or more insurance files. These documents are required.',
+      'Upload one or more insurance files. Maximum 10 MB per file. Large images are compressed automatically before upload.',
     addInsuranceDocuments: 'Add insurance documents',
+    insuranceDocumentsDropzone:
+      'Drag and drop insurance files here, or click to browse.',
     insuranceDocumentsRequired: 'Please upload the insurance documents.',
     uploadingInsuranceDocuments: 'Uploading insurance documents...',
+    insuranceDocumentTooLarge:
+      'This file is too large. Please keep each document under 10 MB.',
+    insuranceDocumentCompressionFailed:
+      'We could not compress this image enough. Please upload a smaller file under 10 MB.',
     success:
       'Registration submitted successfully. Your local draft has been cleared.',
     error: 'We could not submit your registration. Please try again.',
@@ -274,10 +281,16 @@ const content = {
     insuranceBanner:
       'Моля изпратете застраховките и екипажния списък на емейла на регатата',
     insuranceDocumentsHelp:
-      'Качете един или повече файла със застраховки. Тези документи са задължителни.',
+      'Качете един или повече файла със застраховки. Максимум 10 MB на файл. Големите изображения се компресират автоматично преди качване.',
     addInsuranceDocuments: 'Добави застрахователни документи',
+    insuranceDocumentsDropzone:
+      'Пуснете застрахователните файлове тук или натиснете, за да изберете.',
     insuranceDocumentsRequired: 'Моля, качете застрахователните документи.',
     uploadingInsuranceDocuments: 'Качване на застрахователни документи...',
+    insuranceDocumentTooLarge:
+      'Файлът е твърде голям. Моля, всеки документ да бъде под 10 MB.',
+    insuranceDocumentCompressionFailed:
+      'Не успяхме да компресираме това изображение достатъчно. Моля, качете по-малък файл под 10 MB.',
     success:
       'Регистрацията е изпратена успешно. Локалната чернова беше изчистена.',
     error: 'Неуспешно изпращане на регистрацията. Моля, опитайте отново.',
@@ -483,34 +496,118 @@ function scrollToElement(element: HTMLElement | null) {
   }, 180)
 }
 
-function isImageFile(file: File) {
-  return file.type.startsWith('image/')
+function isCompressibleImage(file: File) {
+  return ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
 }
 
-function createUploadPath(file: File) {
-  const extension = file.name.includes('.')
-    ? `.${file.name.split('.').pop()?.toLowerCase() ?? 'bin'}`
-    : ''
-  const safeName = file.name
-    .replace(/\.[^/.]+$/, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName || 'file'}${extension}`
+function renameWithJpegExtension(name: string) {
+  const baseName = name.replace(/\.[^/.]+$/, '')
+  return `${baseName || 'insurance-document'}.jpg`
 }
 
-async function uploadInsuranceDocument(file: File) {
-  const supabase = createSupabaseBrowserClient()
-  const bucket = isImageFile(file) ? 'images' : 'documents'
-  const path = createUploadPath(file)
+function loadImage(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const image = new Image()
 
-  const { error } = await supabase.storage.from(bucket).upload(path, file)
-  if (error) {
-    throw new Error(error.message)
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(image)
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Unable to read the selected image.'))
+    }
+
+    image.src = objectUrl
+  })
+}
+
+async function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality)
+  })
+}
+
+async function compressInsuranceImage(file: File) {
+  const image = await loadImage(file)
+  const scale = Math.min(
+    1,
+    MAX_IMAGE_DIMENSION / Math.max(image.width, image.height)
+  )
+  const width = Math.max(1, Math.round(image.width * scale))
+  const height = Math.max(1, Math.round(image.height * scale))
+  const canvas = document.createElement('canvas')
+
+  canvas.width = width
+  canvas.height = height
+
+  const context = canvas.getContext('2d')
+
+  if (!context) {
+    throw new Error('Unable to prepare the image for upload.')
   }
 
-  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+  context.fillStyle = '#ffffff'
+  context.fillRect(0, 0, width, height)
+  context.drawImage(image, 0, 0, width, height)
+
+  for (const quality of IMAGE_COMPRESSION_QUALITY_STEPS) {
+    const blob = await canvasToBlob(canvas, quality)
+
+    if (!blob) {
+      continue
+    }
+
+    if (blob.size <= MAX_INSURANCE_FILE_SIZE) {
+      return new File([blob], renameWithJpegExtension(file.name), {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      })
+    }
+  }
+
+  return null
+}
+
+async function prepareInsuranceDocument(file: File, t: (typeof content)['en']) {
+  if (file.size <= MAX_INSURANCE_FILE_SIZE) {
+    return file
+  }
+
+  if (!isCompressibleImage(file)) {
+    throw new Error(t.insuranceDocumentTooLarge)
+  }
+
+  const compressed = await compressInsuranceImage(file)
+
+  if (!compressed) {
+    throw new Error(t.insuranceDocumentCompressionFailed)
+  }
+
+  return compressed
+}
+
+async function uploadInsuranceDocument(file: File, eventId: string) {
+  const formData = new FormData()
+  formData.set('event_id', eventId)
+  formData.set('file', file)
+
+  const response = await fetch('/api/registrations/upload-insurance', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const payload = (await response.json().catch(() => null)) as
+    | { data?: { url?: string }; error?: string }
+    | null
+
+  if (!response.ok || !payload?.data?.url) {
+    throw new Error(payload?.error || 'Unable to upload the insurance document.')
+  }
+
+  return payload.data.url
 }
 
 export default function EventRegistrationForm({
@@ -525,11 +622,13 @@ export default function EventRegistrationForm({
   const [submitting, setSubmitting] = useState(false)
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [insuranceUploading, setInsuranceUploading] = useState(false)
+  const [insuranceDragging, setInsuranceDragging] = useState(false)
   const [invalidFields, setInvalidFields] = useState<string[]>([])
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle')
   const [submissionMessage, setSubmissionMessage] = useState<string>('')
   const [createdRegistrationId, setCreatedRegistrationId] = useState<string | null>(null)
   const [activeLegalModal, setActiveLegalModal] = useState<LegalModalKey | null>(null)
+  const insuranceInputRef = useRef<HTMLInputElement>(null)
   const hydratedRef = useRef(false)
 
   useEffect(() => {
@@ -671,7 +770,10 @@ export default function EventRegistrationForm({
 
     try {
       const uploadedUrls = await Promise.all(
-        Array.from(files).map((file) => uploadInsuranceDocument(file))
+        Array.from(files).map(async (file) => {
+          const preparedFile = await prepareInsuranceDocument(file, t)
+          return uploadInsuranceDocument(preparedFile, eventId)
+        })
       )
 
       setInvalidFields((current) =>
@@ -832,14 +934,6 @@ export default function EventRegistrationForm({
 
   return (
     <div className="space-y-6">
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            borderRadius: '16px',
-          },
-        }}
-      />
 
       {activeLegalModal ? (
         <LegalInfoModal
@@ -1271,17 +1365,6 @@ export default function EventRegistrationForm({
             ))}
           </div>
 
-          {form.crew_insurance || form.third_party_insurance ? (
-            <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-100 px-4 py-4  leading-7 text-amber-950">
-              {t.insuranceBanner}{' '}
-              <a
-                href={`mailto:${REGATTA_EMAIL}`}
-                className="font-semibold underline decoration-amber-700 underline-offset-2 hover:text-amber-700"
-              >
-                {REGATTA_EMAIL}
-              </a>
-            </div>
-          ) : null}
 
           <div
             id="insurance_documents"
@@ -1298,9 +1381,11 @@ export default function EventRegistrationForm({
                 </p>
 
                 <input
+                  ref={insuranceInputRef}
                   id="insurance_documents_input"
                   type="file"
                   multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp"
                   onChange={(event) => {
                     void handleInsuranceFiles(event.target.files)
                     event.currentTarget.value = ''
@@ -1308,18 +1393,50 @@ export default function EventRegistrationForm({
                   className="hidden"
                 />
 
-                <Button
+                <button
                   type="button"
-                  onClick={() =>
-                    document.getElementById('insurance_documents_input')?.click()
-                  }
+                  onClick={() => {
+                    if (!insuranceUploading) {
+                      insuranceInputRef.current?.click()
+                    }
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault()
+                    if (!insuranceUploading) {
+                      setInsuranceDragging(true)
+                    }
+                  }}
+                  onDragLeave={() => setInsuranceDragging(false)}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    setInsuranceDragging(false)
+                    if (!insuranceUploading) {
+                      void handleInsuranceFiles(event.dataTransfer.files)
+                    }
+                  }}
                   disabled={insuranceUploading}
-                  className="rounded-xl px-5 text-white"
+                  className={`w-full rounded-[1.5rem] border-2 border-dashed px-6 py-8 text-left transition-all ${
+                    insuranceDragging
+                      ? 'border-primary bg-primary/5 shadow-lg'
+                      : 'border-black/10 bg-white/90 dark:border-white/10 dark:bg-black/20'
+                  } ${insuranceUploading ? 'cursor-progress' : 'cursor-pointer hover:border-primary/50'}`}
                 >
-                  {insuranceUploading
-                    ? t.uploadingInsuranceDocuments
-                    : t.addInsuranceDocuments}
-                </Button>
+                  <div className="flex w-full items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Icon icon="ph:upload-simple-bold" width={22} height={22} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-dark dark:text-white">
+                        {insuranceUploading
+                          ? t.uploadingInsuranceDocuments
+                          : t.addInsuranceDocuments}
+                      </p>
+                      <p className="mt-1 leading-7 text-dark/60 dark:text-white/65">
+                        {t.insuranceDocumentsDropzone}
+                      </p>
+                    </div>
+                  </div>
+                </button>
 
                 {form.insurance_documents.length > 0 ? (
                   <div className="space-y-3">

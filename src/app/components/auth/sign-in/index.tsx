@@ -58,7 +58,6 @@ const Signin = () => {
         <span className="text-body-secondary relative z-10 inline-block bg-white px-3 text-base dark:bg-black">
           OR
         </span>
-        <Toaster />
       </span>
 
       <form onSubmit={handleSubmit}>
