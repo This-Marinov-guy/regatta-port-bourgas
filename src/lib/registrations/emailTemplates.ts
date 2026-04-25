@@ -29,6 +29,9 @@ type HtmlSection = {
 
 type TemplateLocale = AppLocale
 
+const EVENT_EMAIL_LOGO_URL =
+  'https://rrzdfnbaqpotytofgrsi.supabase.co/storage/v1/object/public/internal/logo.jpg'
+
 const registrationEmailCopy = {
   en: {
     eventFallback: 'International Regatta Bulstrad Port Bourgas ',
@@ -350,13 +353,27 @@ function renderEmailShell(args: {
         <td align="center" style="padding:28px 14px;">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:720px;background:#ffffff;border:1px solid #dbe4ee;border-radius:28px;overflow:hidden;">
             <tr>
-              <td style="padding:26px 30px;background:linear-gradient(135deg,#0057b8 0%,#2b86de 100%);">
-                <p style="margin:0 0 8px;font-size:12px;line-height:1.4;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.78);">
-                  ${escapeHtml(args.eyebrow)}
-                </p>
-                <h1 style="margin:0;font-size:32px;line-height:1.2;font-weight:800;color:#ffffff;">
-                  ${escapeHtml(args.title)}
-                </h1>
+              <td style="padding:26px 30px;background:#3435aa;color:#ffffff;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="width:104px;vertical-align:middle;">
+                      <img
+                        src="${EVENT_EMAIL_LOGO_URL}"
+                        alt="Event logo"
+                        width="69"
+                        style="display:block;width:88px;height:88px;max-width:100%;border-radius:50%;object-fit:cover;"
+                      />
+                    </td>
+                    <td style="vertical-align:middle;">
+                      <p style="margin:0 0 8px;font-size:12px;line-height:1.4;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;">
+                        ${escapeHtml(args.eyebrow)}
+                      </p>
+                      <h1 style="margin:0;font-size:32px;line-height:1.2;font-weight:800;color:#ffffff;">
+                        ${escapeHtml(args.title)}
+                      </h1>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
