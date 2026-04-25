@@ -287,7 +287,7 @@ function documentToForm(item: AdminDocumentRecord): DocumentFormState {
 }
 
 function formatTimestamp(value: string) {
-  return new Date(value).toLocaleString()
+  return moment(value).format('DD-MM-YYYY');
 }
 
 function isImageFile(file: File) {
@@ -2655,6 +2655,49 @@ export default function AdminDashboard({
     }
   }
 
+  async function handleDownloadInsuranceDocuments(registration: RegistrationRecord) {
+    const busyKey = `${registration.id}:insurance`
+    setRegistrationActionBusyKey(busyKey)
+
+    try {
+      if (registration.insurance_documents.length === 0) {
+        toast.error('No insurance documents were uploaded.')
+        return
+      }
+
+      for (let index = 0; index < registration.insurance_documents.length; index += 1) {
+        const url = registration.insurance_documents[index]
+        const response = await fetch(url)
+
+        if (!response.ok) {
+          throw new Error('Unable to download one of the insurance documents.')
+        }
+
+        const blob = await response.blob()
+        const objectUrl = window.URL.createObjectURL(blob)
+        const anchor = document.createElement('a')
+        anchor.href = objectUrl
+        anchor.download = getFileLabelFromUrl(url)
+        document.body.appendChild(anchor)
+        anchor.click()
+        document.body.removeChild(anchor)
+        window.URL.revokeObjectURL(objectUrl)
+
+        if (index < registration.insurance_documents.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 300))
+        }
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to download the insurance documents.'
+      )
+    } finally {
+      setRegistrationActionBusyKey(null)
+    }
+  }
+
   function getRegistrationBlankUrl(registration: RegistrationRecord) {    
     return registration.blank_link ?? registration.generated_form_url ?? null
   }
@@ -3595,6 +3638,8 @@ export default function AdminDashboard({
                     registrationActionBusyKey === `${registration.id}:invoice`;
                   const isMarkPaidActionBusy =
                     registrationActionBusyKey === `${registration.id}:mark-paid`;
+                  const isInsuranceActionBusy =
+                    registrationActionBusyKey === `${registration.id}:insurance`;
                   const hasInvoice = Boolean(
                     registration.payment_data?.stripe?.invoice_id,
                   );
@@ -3692,7 +3737,8 @@ export default function AdminDashboard({
                                 !getRegistrationBlankUrl(registration) ||
                                 isPaymentActionBusy ||
                                 isInvoiceActionBusy ||
-                                isMarkPaidActionBusy
+                                isMarkPaidActionBusy ||
+                                isInsuranceActionBusy
                               }
                               onClick={() => downloadRegistrationForm(registration)}
                               className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
@@ -3703,10 +3749,30 @@ export default function AdminDashboard({
                             <button
                               type="button"
                               disabled={
+                                registration.insurance_documents.length === 0 ||
+                                isPaymentActionBusy ||
+                                isInvoiceActionBusy ||
+                                isMarkPaidActionBusy ||
+                                isInsuranceActionBusy
+                              }
+                              onClick={() => {
+                                void handleDownloadInsuranceDocuments(registration)
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Icon icon="ph:shield-check-bold" width={15} height={15} />
+                              {isInsuranceActionBusy
+                                ? "Downloading insurance..."
+                                : "Download insurance"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={
                                 isUnpaid === false ||
                                 isPaymentActionBusy ||
                                 isInvoiceActionBusy ||
-                                isMarkPaidActionBusy
+                                isMarkPaidActionBusy ||
+                                isInsuranceActionBusy
                               }
                               onClick={() => {
                                 void handleGeneratePaymentLink(registration)
@@ -3724,7 +3790,8 @@ export default function AdminDashboard({
                                 disabled={
                                   isPaymentActionBusy ||
                                   isInvoiceActionBusy ||
-                                  isMarkPaidActionBusy
+                                  isMarkPaidActionBusy ||
+                                  isInsuranceActionBusy
                                 }
                                 onClick={() => {
                                   void handleMarkRegistrationPaid(registration.id)
@@ -3743,7 +3810,8 @@ export default function AdminDashboard({
                                 disabled={
                                   isPaymentActionBusy ||
                                   isInvoiceActionBusy ||
-                                  isMarkPaidActionBusy
+                                  isMarkPaidActionBusy ||
+                                  isInsuranceActionBusy
                                 }
                                 onClick={() => {
                                   void handleGenerateInvoice(registration)
@@ -3861,30 +3929,7 @@ export default function AdminDashboard({
                               label="Contact email"
                               value={registration.contact_email}
                             />
-                            <RegistrationDetailRow
-                              label="Generated form"
-                              value={
-                                registration.generated_form_url ? (
-                                  <a
-                                    href={registration.generated_form_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
-                                  >
-                                    <Icon
-                                      icon="ph:file-pdf-bold"
-                                      width={16}
-                                      height={16}
-                                    />
-                                    Download PDF
-                                  </a>
-                                ) : (
-                                  <span className="text-dark/40">
-                                    Processing…
-                                  </span>
-                                )
-                              }
-                            />
+                            
                             <RegistrationDetailRow
                               label="Payment status"
                               value={formatOptionalValue(
@@ -3892,19 +3937,8 @@ export default function AdminDashboard({
                                   ?.payment_status,
                               )}
                             />
-                            <RegistrationDetailRow
-                              label="Stripe checkout session"
-                              value={formatOptionalValue(
-                                registration.payment_data?.stripe
-                                  ?.checkout_session_id,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Stripe checkout URL"
-                              value={formatOptionalValue(
-                                registration.payment_data?.stripe?.checkout_url,
-                              )}
-                            />
+                            
+                           
                             <RegistrationDetailRow
                               label="Receive documents by email"
                               value={formatBooleanValue(
