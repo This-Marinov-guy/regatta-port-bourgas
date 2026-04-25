@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import LocalePersistence from '@/app/components/layout/LocalePersistence'
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+const googleAnalyticsId = 'G-ZY60CQ9H68'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -109,6 +111,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="site-page-bg antialiased" suppressHydrationWarning>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${googleAnalyticsId}');
+          `}
+        </Script>
         <LocalePersistence />
         <Toaster position="top-center" />
         {children}
