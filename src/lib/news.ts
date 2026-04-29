@@ -10,6 +10,7 @@ export type DbNews = {
   description_bg: string | null
   body_en: string
   body_bg: string | null
+  status: 1 | 2 | 3
   attachments: string[]
   created_at: string
   updated_at: string
@@ -20,6 +21,7 @@ export async function getNews(): Promise<DbNews[]> {
   const { data, error } = await supabase
     .from('news')
     .select('*')
+    .neq('status', 3)
     .order('created_at', { ascending: false })
 
   if (error) {

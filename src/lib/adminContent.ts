@@ -11,6 +11,7 @@ import type {
   AdminNewsPayload,
   AdminNewsRecord,
   EventStatus,
+  NewsStatus,
   RegistrationPaymentData,
   RegistrationRecord
 } from '@/types/admin'
@@ -114,6 +115,10 @@ function normalizeStatus(value: unknown): EventStatus {
   return status
 }
 
+function normalizeNewsStatus(value: unknown): NewsStatus {
+  return normalizeStatus(value)
+}
+
 export function parseEventPayload(input: Record<string, unknown>): AdminEventPayload {
   const startDate = normalizeDate(input.start_date, 'Start date')
   const endDate = normalizeDate(input.end_date, 'End date')
@@ -151,6 +156,7 @@ export function parseNewsPayload(input: Record<string, unknown>): AdminNewsPaylo
     description_bg: bodyBg ? buildNewsExcerptFromBody(bodyBg) : null,
     body_en: bodyEn,
     body_bg: bodyBg,
+    status: normalizeNewsStatus(input.status),
     attachments: extractNewsAttachmentUrls(bodyEn, bodyBg ?? bodyEn)
   }
 }

@@ -1,6 +1,7 @@
 import type { AppLocale } from '@/lib/locale'
 
 export type EventStatus = 1 | 2 | 3
+export type NewsStatus = 1 | 2 | 3
 
 export type AdminEventRecord = {
   id: string
@@ -31,6 +32,7 @@ export type AdminNewsRecord = {
   description_bg: string | null
   body_en: string
   body_bg: string | null
+  status: NewsStatus
   attachments: string[]
   created_at: string
   updated_at: string

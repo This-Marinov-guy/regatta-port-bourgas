@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
+import { format } from "date-fns";
+import { enUS } from "date-fns/locale";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import LinkExtension from "@tiptap/extension-link";
@@ -12,6 +14,7 @@ import ImageExtension from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import DatePicker from "react-datepicker";
 import toast from "react-hot-toast";
 import {
   Tabs,
@@ -46,6 +49,9 @@ type AdminDashboardProps = {
   initialDocuments: AdminDocumentRecord[];
 };
 
+type PublishStatus = 1 | 2 | 3;
+type PublishStatusValue = "1" | "2" | "3";
+
 type EventFormState = {
   id: string | null;
   slug: string;
@@ -54,7 +60,7 @@ type EventFormState = {
   description_en: string;
   description_bg: string;
   thumbnail_img: string;
-  status: "1" | "2" | "3";
+  status: PublishStatusValue;
   start_date: string;
   end_date: string;
   documents: string[];
@@ -70,6 +76,7 @@ type NewsFormState = {
   name_bg: string;
   body_en: string;
   body_bg: string;
+  status: PublishStatusValue;
   attachments: string[];
 };
 
@@ -137,14 +144,14 @@ const RichImageExtension = ImageExtension.extend({
   },
 });
 
-function getStatusLabel(status: AdminEventRecord["status"]) {
+function getStatusLabel(status: PublishStatus) {
   return (
     statusOptions.find((option) => option.value === String(status))?.label ??
     String(status)
   );
 }
 
-function getEventStatusCardClasses(status: AdminEventRecord["status"]) {
+function getEventStatusCardClasses(status: PublishStatus) {
   switch (status) {
     case 1:
       return "border-emerald-200 bg-emerald-50/90";
@@ -159,7 +166,7 @@ function getEventStatusCardClasses(status: AdminEventRecord["status"]) {
 
 function getEventStatusButtonClasses(
   buttonValue: string,
-  activeValue: AdminEventRecord["status"],
+  activeValue: PublishStatus,
 ) {
   const isActive = buttonValue === String(activeValue);
 
@@ -207,6 +214,7 @@ function emptyNewsForm(): NewsFormState {
     name_bg: "",
     body_en: "",
     body_bg: "",
+    status: "1",
     attachments: [],
   };
 }
@@ -248,6 +256,7 @@ function newsToForm(item: AdminNewsRecord): NewsFormState {
     name_bg: item.name_bg ?? "",
     body_en: item.body_en,
     body_bg: item.body_bg ?? "",
+    status: String(item.status) as NewsFormState["status"],
     attachments: item.attachments,
   };
 }
@@ -605,6 +614,32 @@ function SectionHeading({
   );
 }
 
+const adminFieldInputClassName =
+  "w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-black/5 disabled:text-dark/55";
+
+function parseAdminDateValue(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const normalizedValue = value.slice(0, 10);
+  const [year, month, day] = normalizedValue.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function formatAdminDateValue(value: Date | null) {
+  if (!value) {
+    return "";
+  }
+
+  return format(value, "yyyy-MM-dd");
+}
+
 function AdminField({
   label,
   value,
@@ -632,8 +667,54 @@ function AdminField({
         required={required}
         disabled={disabled}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-black/5 disabled:text-dark/55"
+        className={adminFieldInputClassName}
       />
+    </label>
+  );
+}
+
+function AdminDateField({
+  label,
+  value,
+  onChange,
+  placeholder = "Select date",
+  required = false,
+  disabled = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block font-medium text-dark">{label}</span>
+      <div className="relative">
+        <DatePicker
+          selected={parseAdminDateValue(value)}
+          onChange={(date) => onChange(formatAdminDateValue(date))}
+          required={required}
+          disabled={disabled}
+          shouldCloseOnSelect
+          dateFormat="dd-MM-yyyy"
+          placeholderText={placeholder}
+          locale={enUS}
+          className={`${adminFieldInputClassName} pr-12`}
+          calendarClassName="event-registration-datepicker"
+          popperClassName="event-registration-datepicker-popper"
+          popperProps={{ strategy: "fixed" }}
+          portalId="event-registration-datepicker-portal"
+          wrapperClassName="w-full"
+          showMonthDropdown
+          showYearDropdown
+          dropdownMode="select"
+        />
+        <span className="pointer-events-none absolute right-4 top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-primary">
+          <Icon icon="ph:calendar-blank-bold" width={18} height={18} />
+        </span>
+      </div>
     </label>
   );
 }
@@ -944,6 +1025,10 @@ function HtmlEditor({
       return;
     }
 
+    if (editor.isActive("link")) {
+      editor.chain().focus().extendMarkRange("link").run();
+    }
+
     const previousUrl = editor.getAttributes("link").href ?? "";
     const url = window.prompt("Enter a URL", previousUrl);
 
@@ -951,16 +1036,35 @@ function HtmlEditor({
       return;
     }
 
-    if (!url.trim()) {
+    const normalizedUrl = url.trim();
+
+    if (!normalizedUrl) {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
 
+    if (!isSafeHref(normalizedUrl)) {
+      onError("Enter a valid URL starting with https://, http://, mailto:, tel:, or /.");
+      return;
+    }
+
+    const label = window.prompt(
+      "Enter link text",
+      normalizedUrl,
+    );
+
+    if (label === null) {
+      return;
+    }
+
+    const normalizedLabel = label.trim() || normalizedUrl;
+    const safeUrl = escapeHtml(normalizedUrl);
+    const safeLabel = escapeHtml(normalizedLabel);
+
     editor
       .chain()
       .focus()
-      .extendMarkRange("link")
-      .setLink({ href: url.trim() })
+      .insertContent(`<a href="${safeUrl}">${safeLabel}</a>`)
       .run();
   }
 
@@ -2084,6 +2188,50 @@ export default function AdminDashboard({
     }
   }
 
+  async function handleNewsStatusChange(
+    item: AdminNewsRecord,
+    nextStatus: NewsFormState["status"],
+  ) {
+    if (String(item.status) === nextStatus) {
+      return;
+    }
+
+    setNewsBusy(true);
+
+    try {
+      const payload = {
+        ...newsToForm(item),
+        status: nextStatus,
+      };
+
+      await readJson(`/api/admin/news/${item.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      await refreshNews();
+
+      if (newsForm.id === item.id) {
+        setNewsForm((current) => ({
+          ...current,
+          status: nextStatus,
+        }));
+      }
+
+      toast.success(
+        `News item marked as ${getStatusLabel(Number(nextStatus) as PublishStatus).toLowerCase()}.`,
+      );
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to change news status.",
+      );
+    } finally {
+      setNewsBusy(false);
+    }
+  }
+
   async function handleDocumentDelete(id: string) {
     if (!window.confirm("Delete this document?")) {
       return;
@@ -2582,19 +2730,33 @@ export default function AdminDashboard({
               {news.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-[1.5rem] border border-black/10 bg-white/90 p-5 shadow-sm"
+                  className={`rounded-[1.5rem] border p-5 shadow-sm transition-colors ${getEventStatusCardClasses(item.status)}`}
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-2xl font-semibold">{item.name_en}</h3>
-                      <p className="mt-1  text-dark/60">
+                      <h3 className="flex items-center gap-2 text-2xl font-semibold">
+                        {item.name_en}
+                        <a
+                          href={`/en/news/${item.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-dark/30 transition-colors hover:text-dark/70"
+                          title="Open post in new tab"
+                        >
+                          <ExternalLink className="h-6 w-6 text-blue-400" />
+                        </a>
+                      </h3>
+
+                      <p className="mt-1 text-dark/60">
                         {localizeText("bg", item.name_en, item.name_bg)}
                       </p>
-                      <p className="mt-2  font-medium uppercase tracking-[0.18em] text-dark/45">
-                        /news/{item.slug}
-                      </p>
-                      <div className="mt-3 inline-flex rounded-full bg-black/5 px-3 py-1  text-dark/60">
-                        {item.attachments.length} attachments
+                      <div className="mt-3 flex flex-wrap gap-2 text-dark/60">
+                        <span className="rounded-full bg-white/70 px-3 py-1">
+                          {item.attachments.length} attachments
+                        </span>
+                        <span className="rounded-full bg-white/70 px-3 py-1">
+                          {getStatusLabel(item.status)}
+                        </span>
                       </div>
                     </div>
 
@@ -2607,6 +2769,23 @@ export default function AdminDashboard({
                         Edit
                       </Button>
                     </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {statusOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        disabled={newsBusy}
+                        onClick={() => handleNewsStatusChange(item, option.value)}
+                        className={`rounded-full border px-3 py-1 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getEventStatusButtonClasses(
+                          option.value,
+                          item.status,
+                        )}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
                   </div>
 
                   <div className="mt-4  text-dark/50">
@@ -2941,18 +3120,16 @@ export default function AdminDashboard({
                   ))}
                 </select>
               </label>
-              <AdminField
+              <AdminDateField
                 label="Start date"
-                type="date"
                 value={eventForm.start_date}
                 onChange={(value) =>
                   setEventForm((current) => ({ ...current, start_date: value }))
                 }
                 required
               />
-              <AdminField
+              <AdminDateField
                 label="End date"
-                type="date"
                 value={eventForm.end_date}
                 onChange={(value) =>
                   setEventForm((current) => ({ ...current, end_date: value }))
@@ -3090,6 +3267,29 @@ export default function AdminDashboard({
                   disabled={Boolean(newsForm.id)}
                 />
               </div>
+              <label className="block md:col-span-2">
+                <span className="mb-2 block font-medium text-dark">Status</span>
+                <select
+                  value={newsForm.status}
+                  onChange={(event) =>
+                    setNewsForm((current) => ({
+                      ...current,
+                      status: event.target.value as NewsFormState["status"],
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary"
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-sm text-dark/55">
+                  Hidden news stays in admin but is removed from public news
+                  listings and the homepage.
+                </p>
+              </label>
             </div>
 
             <div className="mt-4 grid gap-4">
