@@ -185,6 +185,10 @@ button {
   @apply font-bold dark:text-white;
 }
 
+.blog-details a {
+  @apply font-medium text-primary underline decoration-primary underline-offset-2 transition-colors hover:text-primary/80;
+}
+
 .blog-details ul {
   @apply list-none space-y-3 mb-10;
 }
@@ -232,6 +236,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .blog-details p {
   @apply text-dark dark:text-white text-xm leading-[1.2]
+}
+
+.blog-details.news-article-body p,
+.blog-details.news-article-body ul li,
+.blog-details.news-article-body ol li {
+  @apply text-[1.125rem] leading-8 md:text-[1.2rem] md:leading-9;
 }
 
 .logo {

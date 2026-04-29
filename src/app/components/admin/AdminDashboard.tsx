@@ -894,10 +894,15 @@ function HtmlEditor({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkUrlDraft, setLinkUrlDraft] = useState("");
+  const [linkLabelDraft, setLinkLabelDraft] = useState("");
+  const [linkCanRemove, setLinkCanRemove] = useState(false);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [filePickerOpen, setFilePickerOpen] = useState(false);
   const [selectedImageSize, setSelectedImageSize] =
     useState<EditorImageSize | null>(null);
+  const linkSelectionRef = useRef<{ from: number; to: number } | null>(null);
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -1020,7 +1025,30 @@ function HtmlEditor({
     editor?.chain().focus().insertContent(html).run();
   }
 
-  function promptForLink() {
+  function closeLinkModal() {
+    setLinkModalOpen(false);
+    setLinkUrlDraft("");
+    setLinkLabelDraft("");
+    setLinkCanRemove(false);
+    linkSelectionRef.current = null;
+  }
+
+  function getSavedSelectionChain() {
+    if (!editor) {
+      return null;
+    }
+
+    const selection = linkSelectionRef.current;
+    let chain = editor.chain().focus();
+
+    if (selection) {
+      chain = chain.setTextSelection(selection);
+    }
+
+    return chain;
+  }
+
+  function openLinkModal() {
     if (!editor) {
       return;
     }
@@ -1030,16 +1058,28 @@ function HtmlEditor({
     }
 
     const previousUrl = editor.getAttributes("link").href ?? "";
-    const url = window.prompt("Enter a URL", previousUrl);
+    const { from, to } = editor.state.selection;
+    const currentText = editor.state.doc.textBetween(from, to, " ").trim();
 
-    if (url === null) {
+    linkSelectionRef.current = { from, to };
+    setLinkUrlDraft(previousUrl);
+    setLinkLabelDraft(currentText || previousUrl);
+    setLinkCanRemove(Boolean(previousUrl));
+    setLinkModalOpen(true);
+  }
+
+  function handleLinkSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const chain = getSavedSelectionChain();
+    if (!chain) {
       return;
     }
 
-    const normalizedUrl = url.trim();
+    const normalizedUrl = linkUrlDraft.trim();
 
     if (!normalizedUrl) {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      onError("Enter a URL.");
       return;
     }
 
@@ -1048,24 +1088,26 @@ function HtmlEditor({
       return;
     }
 
-    const label = window.prompt(
-      "Enter link text",
-      normalizedUrl,
-    );
-
-    if (label === null) {
-      return;
-    }
-
-    const normalizedLabel = label.trim() || normalizedUrl;
+    const normalizedLabel = linkLabelDraft.trim() || normalizedUrl;
     const safeUrl = escapeHtml(normalizedUrl);
     const safeLabel = escapeHtml(normalizedLabel);
 
-    editor
-      .chain()
-      .focus()
-      .insertContent(`<a href="${safeUrl}">${safeLabel}</a>`)
-      .run();
+    if (!chain.insertContent(`<a href="${safeUrl}">${safeLabel}</a>`).run()) {
+      onError("Unable to insert link.");
+      return;
+    }
+
+    closeLinkModal();
+  }
+
+  function handleLinkRemove() {
+    const chain = getSavedSelectionChain();
+    if (!chain) {
+      return;
+    }
+
+    chain.extendMarkRange("link").unsetLink().run();
+    closeLinkModal();
   }
 
   async function handleImageUpload(file: File) {
@@ -1204,7 +1246,7 @@ function HtmlEditor({
             className={getIconToolButtonClass(
               editor?.isActive("link") ?? false,
             )}
-            onClick={promptForLink}
+            onClick={openLinkModal}
             aria-label="Link"
             title="Link"
           >
@@ -1379,6 +1421,58 @@ function HtmlEditor({
           insertHtml(`<p><a href="${url}">${getFileLabelFromUrl(url)}</a></p>`)
         }
       />
+
+      <AdminModal
+        open={linkModalOpen}
+        title="Insert link"
+        description="Add the destination URL and the text that should appear in the news article."
+        onClose={closeLinkModal}
+      >
+        <form onSubmit={handleLinkSave}>
+          <div className="grid gap-4">
+            <AdminField
+              label="URL"
+              value={linkUrlDraft}
+              onChange={setLinkUrlDraft}
+              placeholder="https://example.com"
+              required
+            />
+            <AdminField
+              label="Link text"
+              value={linkLabelDraft}
+              onChange={setLinkLabelDraft}
+              placeholder={linkUrlDraft || "Displayed text"}
+            />
+            <p className="text-sm text-dark/55">
+              If link text is left empty, the URL itself will be shown.
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Button type="submit" className="rounded-xl px-5 text-white">
+              Save link
+            </Button>
+            {linkCanRemove ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleLinkRemove}
+                className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+              >
+                Remove link
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeLinkModal}
+              className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </AdminModal>
     </div>
   );
 }
