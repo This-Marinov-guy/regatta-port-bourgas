@@ -2428,6 +2428,7 @@ export default function AdminDashboard({
               variant="outline"
               onClick={handleSignOut}
               disabled={authBusy}
+              style={{ color: "white", backgroundColor: "#dc2626" }}
               className="h-11 rounded-xl border-black/10 px-5 text-dark"
             >
               {authBusy ? "Signing out..." : "Sign out"}
@@ -2624,11 +2625,11 @@ export default function AdminDashboard({
             />
             <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
               <div className="space-y-4">
-                <AddCardButton
+                {/* <AddCardButton
                   title="Add document"
                   description="Upload a reusable file with bilingual labels for the public site."
                   onClick={() => setDocumentForm(emptyDocumentForm())}
-                />
+                /> */}
 
                 {documents.length === 0 ? (
                   <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-8  text-dark/60">
