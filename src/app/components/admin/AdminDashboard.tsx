@@ -1,231 +1,224 @@
-'use client'
+"use client";
 
-import type { DragEvent, FormEvent, ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { Icon } from '@iconify/react'
-import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import LinkExtension from '@tiptap/extension-link'
-import ImageExtension from '@tiptap/extension-image'
-import Placeholder from '@tiptap/extension-placeholder'
-import Underline from '@tiptap/extension-underline'
-import TextAlign from '@tiptap/extension-text-align'
-import toast, { Toaster } from 'react-hot-toast'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { Button } from '@/app/components/ui/button'
+import type { FormEvent, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Icon } from "@iconify/react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import LinkExtension from "@tiptap/extension-link";
+import ImageExtension from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import toast from "react-hot-toast";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import { Button } from "@/app/components/ui/button";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger
-} from '@/app/components/ui/accordion'
-import { ExternalLink } from 'lucide-react'
-import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
-import { localizeText } from '@/lib/localizedContent'
-import { slugify } from '@/lib/slug'
+  AccordionTrigger,
+} from "@/app/components/ui/accordion";
+import EventDocumentReferenceField from "@/app/components/admin/EventDocumentReferenceField";
+import { ExternalLink } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { localizeText } from "@/lib/localizedContent";
+import { slugify } from "@/lib/slug";
 import type {
   AdminDocumentRecord,
   AdminEventRecord,
-  AdminNewsRecord
-} from '@/types/admin'
-import type { RegistrationRecord, RegistrationStatus } from '@/types/admin'
-import moment from 'moment'
+  AdminNewsRecord,
+} from "@/types/admin";
+import type { RegistrationRecord, RegistrationStatus } from "@/types/admin";
+import moment from "moment";
 
 type AdminDashboardProps = {
-  userEmail: string
-  initialEvents: AdminEventRecord[]
-  initialNews: AdminNewsRecord[]
-  initialDocuments: AdminDocumentRecord[]
-}
+  userEmail: string;
+  initialEvents: AdminEventRecord[];
+  initialNews: AdminNewsRecord[];
+  initialDocuments: AdminDocumentRecord[];
+};
 
 type EventFormState = {
-  id: string | null
-  slug: string
-  name_en: string
-  name_bg: string
-  description_en: string
-  description_bg: string
-  thumbnail_img: string
-  status: '1' | '2' | '3'
-  start_date: string
-  end_date: string
-  documents: string[]
-  notice_board: string[]
-  results: string[]
-  register_form: string[]
-}
+  id: string | null;
+  slug: string;
+  name_en: string;
+  name_bg: string;
+  description_en: string;
+  description_bg: string;
+  thumbnail_img: string;
+  status: "1" | "2" | "3";
+  start_date: string;
+  end_date: string;
+  documents: string[];
+  notice_board: string[];
+  results: string[];
+  register_form: string[];
+};
 
 type NewsFormState = {
-  id: string | null
-  slug: string
-  name_en: string
-  name_bg: string
-  body_en: string
-  body_bg: string
-  attachments: string[]
-}
+  id: string | null;
+  slug: string;
+  name_en: string;
+  name_bg: string;
+  body_en: string;
+  body_bg: string;
+  attachments: string[];
+};
 
 type DocumentFormState = {
-  id: string | null
-  name_en: string
-  name_bg: string
-  source: string
-  general_use: boolean
-}
+  id: string | null;
+  name_en: string;
+  name_bg: string;
+  source: string;
+  general_use: boolean;
+};
 
-type AssetBucket = 'images' | 'documents'
+type AssetBucket = "images" | "documents";
 
 type StorageAsset = {
-  bucket: AssetBucket
-  path: string
-  name: string
-  url: string
-}
+  bucket: AssetBucket;
+  path: string;
+  name: string;
+  url: string;
+};
 
 const statusOptions = [
-  { value: '1', label: 'Active' },
-  { value: '2', label: 'Archived' },
-  { value: '3', label: 'Hidden' }
-] as const
+  { value: "1", label: "Active" },
+  { value: "2", label: "Archived" },
+  { value: "3", label: "Hidden" },
+] as const;
 
 const interactiveButtonClass =
-  'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md'
+  "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md";
 
-const imageUrlPattern =
-  /\.(avif|bmp|gif|ico|jpe?g|png|svg|webp)(?:[?#].*)?$/i
+const imageUrlPattern = /\.(avif|bmp|gif|ico|jpe?g|png|svg|webp)(?:[?#].*)?$/i;
 
 const editorImageSizes = {
-  small: '35%',
-  medium: '55%',
-  large: '75%',
-  full: '100%'
-} as const
+  small: "35%",
+  medium: "55%",
+  large: "75%",
+  full: "100%",
+} as const;
 
-type EditorImageSize = keyof typeof editorImageSizes
+type EditorImageSize = keyof typeof editorImageSizes;
 
 const RichImageExtension = ImageExtension.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
       size: {
-        default: 'full',
+        default: "full",
         parseHTML: (element) => {
-          const size = element.getAttribute('data-size')
-          return size && size in editorImageSizes ? size : 'full'
+          const size = element.getAttribute("data-size");
+          return size && size in editorImageSizes ? size : "full";
         },
         renderHTML: (attributes) => {
           const size =
-            typeof attributes.size === 'string' && attributes.size in editorImageSizes
+            typeof attributes.size === "string" &&
+            attributes.size in editorImageSizes
               ? (attributes.size as EditorImageSize)
-              : 'full'
+              : "full";
 
           return {
-            'data-size': size,
-            style: `width:${editorImageSizes[size]};max-width:100%;height:auto;display:block;margin:1rem auto;`
-          }
-        }
-      }
-    }
-  }
-})
+            "data-size": size,
+            style: `width:${editorImageSizes[size]};max-width:100%;height:auto;display:block;margin:1rem auto;`,
+          };
+        },
+      },
+    };
+  },
+});
 
-function getStatusLabel(status: AdminEventRecord['status']) {
+function getStatusLabel(status: AdminEventRecord["status"]) {
   return (
     statusOptions.find((option) => option.value === String(status))?.label ??
     String(status)
-  )
+  );
 }
 
-function getEventStatusCardClasses(status: AdminEventRecord['status']) {
+function getEventStatusCardClasses(status: AdminEventRecord["status"]) {
   switch (status) {
     case 1:
-      return 'border-emerald-200 bg-emerald-50/90'
+      return "border-emerald-200 bg-emerald-50/90";
     case 2:
-      return 'border-slate-300 bg-slate-100/90'
+      return "border-slate-300 bg-slate-100/90";
     case 3:
-      return 'border-amber-200 bg-amber-50/90'
+      return "border-amber-200 bg-amber-50/90";
     default:
-      return 'border-black/10 bg-white/90'
-  }
-}
-
-function getEventStatusBadgeClasses(status: AdminEventRecord['status']) {
-  switch (status) {
-    case 1:
-      return 'bg-emerald-100 text-emerald-800'
-    case 2:
-      return 'bg-slate-200 text-slate-700'
-    case 3:
-      return 'bg-amber-100 text-amber-800'
-    default:
-      return 'bg-black/5 text-dark/60'
+      return "border-black/10 bg-white/90";
   }
 }
 
 function getEventStatusButtonClasses(
   buttonValue: string,
-  activeValue: AdminEventRecord['status']
+  activeValue: AdminEventRecord["status"],
 ) {
-  const isActive = buttonValue === String(activeValue)
+  const isActive = buttonValue === String(activeValue);
 
-  if (buttonValue === '1') {
+  if (buttonValue === "1") {
     return isActive
-      ? 'border-emerald-600 bg-emerald-600 text-white'
-      : 'border-emerald-200 bg-white/70 text-emerald-700 hover:bg-emerald-50'
+      ? "border-emerald-600 bg-emerald-600 text-white"
+      : "border-emerald-200 bg-white/70 text-emerald-700 hover:bg-emerald-50";
   }
 
-  if (buttonValue === '2') {
+  if (buttonValue === "2") {
     return isActive
-      ? 'border-slate-600 bg-slate-600 text-white'
-      : 'border-slate-300 bg-white/70 text-slate-700 hover:bg-slate-50'
+      ? "border-slate-600 bg-slate-600 text-white"
+      : "border-slate-300 bg-white/70 text-slate-700 hover:bg-slate-50";
   }
 
   return isActive
-    ? 'border-amber-500 bg-amber-500 text-white'
-    : 'border-amber-200 bg-white/70 text-amber-700 hover:bg-amber-50'
+    ? "border-amber-500 bg-amber-500 text-white"
+    : "border-amber-200 bg-white/70 text-amber-700 hover:bg-amber-50";
 }
 
 function emptyEventForm(): EventFormState {
   return {
     id: null,
-    slug: '',
-    name_en: '',
-    name_bg: '',
-    description_en: '',
-    description_bg: '',
-    thumbnail_img: '',
-    status: '1',
-    start_date: '',
-    end_date: '',
+    slug: "",
+    name_en: "",
+    name_bg: "",
+    description_en: "",
+    description_bg: "",
+    thumbnail_img: "",
+    status: "1",
+    start_date: "",
+    end_date: "",
     documents: [],
     notice_board: [],
     results: [],
-    register_form: []
-  }
+    register_form: [],
+  };
 }
 
 function emptyNewsForm(): NewsFormState {
   return {
     id: null,
-    slug: '',
-    name_en: '',
-    name_bg: '',
-    body_en: '',
-    body_bg: '',
-    attachments: []
-  }
+    slug: "",
+    name_en: "",
+    name_bg: "",
+    body_en: "",
+    body_bg: "",
+    attachments: [],
+  };
 }
 
 function emptyDocumentForm(): DocumentFormState {
   return {
     id: null,
-    name_en: '',
-    name_bg: '',
-    source: '',
-    general_use: false
-  }
+    name_en: "",
+    name_bg: "",
+    source: "",
+    general_use: false,
+  };
 }
 
 function eventToForm(event: AdminEventRecord): EventFormState {
@@ -233,35 +226,18 @@ function eventToForm(event: AdminEventRecord): EventFormState {
     id: event.id,
     slug: event.slug,
     name_en: event.name_en,
-    name_bg: event.name_bg ?? '',
-    description_en: event.description_en ?? '',
-    description_bg: event.description_bg ?? '',
-    thumbnail_img: event.thumbnail_img ?? '',
-    status: String(event.status) as EventFormState['status'],
+    name_bg: event.name_bg ?? "",
+    description_en: event.description_en ?? "",
+    description_bg: event.description_bg ?? "",
+    thumbnail_img: event.thumbnail_img ?? "",
+    status: String(event.status) as EventFormState["status"],
     start_date: event.start_date,
     end_date: event.end_date,
     documents: event.documents ?? [],
     notice_board: event.notice_board ?? [],
     results: event.results ?? [],
-    register_form: event.register_form ?? []
-  }
-}
-
-function reorderStringValues(values: string[], fromIndex: number, toIndex: number) {
-  if (
-    fromIndex < 0 ||
-    toIndex < 0 ||
-    fromIndex >= values.length ||
-    toIndex >= values.length ||
-    fromIndex === toIndex
-  ) {
-    return values
-  }
-
-  const next = [...values]
-  const [moved] = next.splice(fromIndex, 1)
-  next.splice(toIndex, 0, moved)
-  return next
+    register_form: event.register_form ?? [],
+  };
 }
 
 function newsToForm(item: AdminNewsRecord): NewsFormState {
@@ -269,240 +245,253 @@ function newsToForm(item: AdminNewsRecord): NewsFormState {
     id: item.id,
     slug: item.slug,
     name_en: item.name_en,
-    name_bg: item.name_bg ?? '',
+    name_bg: item.name_bg ?? "",
     body_en: item.body_en,
-    body_bg: item.body_bg ?? '',
-    attachments: item.attachments
-  }
+    body_bg: item.body_bg ?? "",
+    attachments: item.attachments,
+  };
 }
 
 function documentToForm(item: AdminDocumentRecord): DocumentFormState {
   return {
     id: item.id,
     name_en: item.name_en,
-    name_bg: item.name_bg ?? '',
+    name_bg: item.name_bg ?? "",
     source: item.source,
-    general_use: item.general_use
-  }
+    general_use: item.general_use,
+  };
 }
 
 function formatTimestamp(value: string) {
-  return moment(value).format('DD-MM-YYYY');
+  return moment(value).format("DD-MM-YYYY");
 }
 
 function isImageFile(file: File) {
-  return file.type.startsWith('image/')
+  return file.type.startsWith("image/");
 }
 
 function isImageUrl(url: string) {
-  return imageUrlPattern.test(url) || url.includes('/storage/v1/object/public/images/')
+  return (
+    imageUrlPattern.test(url) ||
+    url.includes("/storage/v1/object/public/images/")
+  );
 }
 
 function getFileLabelFromUrl(url: string) {
-  const label = url.split('/').pop()?.split('?')[0] || url
-  return decodeURIComponent(label)
+  const label = url.split("/").pop()?.split("?")[0] || url;
+  return decodeURIComponent(label);
 }
 
 function getDocumentNameFromFileName(fileName: string) {
-  const withoutExtension = fileName.replace(/\.[^.]+$/, '')
-  return withoutExtension
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  const withoutExtension = fileName.replace(/\.[^.]+$/, "");
+  return withoutExtension.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function createUploadPath(file: File) {
-  const ext = file.name.includes('.') ? file.name.split('.').pop() : ''
-  const baseName = file.name.replace(/\.[^.]+$/, '')
-  const safeName = slugify(baseName) || 'file'
+  const ext = file.name.includes(".") ? file.name.split(".").pop() : "";
+  const baseName = file.name.replace(/\.[^.]+$/, "");
+  const safeName = slugify(baseName) || "file";
 
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName}${ext ? `.${ext}` : ''}`
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName}${ext ? `.${ext}` : ""}`;
 }
 
 function escapeHtml(value: string) {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function isSafeHref(value: string) {
-  return /^(https?:|mailto:|tel:|\/)/i.test(value.trim())
+  return /^(https?:|mailto:|tel:|\/)/i.test(value.trim());
 }
 
 function isSafeImageSrc(value: string) {
-  return /^(https?:|data:image\/|\/)/i.test(value.trim())
+  return /^(https?:|data:image\/|\/)/i.test(value.trim());
 }
 
-function applyImagePresentation(image: HTMLImageElement, size: EditorImageSize = 'full') {
-  image.dataset.size = size
-  image.removeAttribute('width')
-  image.removeAttribute('height')
-  image.style.width = editorImageSizes[size]
-  image.style.maxWidth = '100%'
-  image.style.height = 'auto'
-  image.style.display = 'block'
-  image.style.margin = '1rem auto'
+function applyImagePresentation(
+  image: HTMLImageElement,
+  size: EditorImageSize = "full",
+) {
+  image.dataset.size = size;
+  image.removeAttribute("width");
+  image.removeAttribute("height");
+  image.style.width = editorImageSizes[size];
+  image.style.maxWidth = "100%";
+  image.style.height = "auto";
+  image.style.display = "block";
+  image.style.margin = "1rem auto";
 }
 
-function createImageMarkup(url: string, alt: string, size: EditorImageSize = 'full') {
-  const safeAlt = escapeHtml(alt.trim() || 'Image')
-  const safeUrl = escapeHtml(url)
+function createImageMarkup(
+  url: string,
+  alt: string,
+  size: EditorImageSize = "full",
+) {
+  const safeAlt = escapeHtml(alt.trim() || "Image");
+  const safeUrl = escapeHtml(url);
 
-  return `<p><img src="${safeUrl}" alt="${safeAlt}" data-size="${size}" style="width:${editorImageSizes[size]};max-width:100%;height:auto;display:block;margin:1rem auto;" /></p>`
+  return `<p><img src="${safeUrl}" alt="${safeAlt}" data-size="${size}" style="width:${editorImageSizes[size]};max-width:100%;height:auto;display:block;margin:1rem auto;" /></p>`;
 }
 
 function unwrapElement(element: HTMLElement) {
-  element.replaceWith(...Array.from(element.childNodes))
+  element.replaceWith(...Array.from(element.childNodes));
 }
 
 function sanitizePastedHtml(html: string) {
-  if (typeof window === 'undefined') {
-    return html
+  if (typeof window === "undefined") {
+    return html;
   }
 
-  const parser = new window.DOMParser()
-  const documentFragment = parser.parseFromString(`<body>${html}</body>`, 'text/html')
+  const parser = new window.DOMParser();
+  const documentFragment = parser.parseFromString(
+    `<body>${html}</body>`,
+    "text/html",
+  );
   const allowedTags = new Set([
-    'a',
-    'blockquote',
-    'br',
-    'em',
-    'figcaption',
-    'figure',
-    'h2',
-    'h3',
-    'h4',
-    'img',
-    'li',
-    'ol',
-    'p',
-    'strong',
-    'u',
-    'ul'
-  ])
+    "a",
+    "blockquote",
+    "br",
+    "em",
+    "figcaption",
+    "figure",
+    "h2",
+    "h3",
+    "h4",
+    "img",
+    "li",
+    "ol",
+    "p",
+    "strong",
+    "u",
+    "ul",
+  ]);
   const unwrapTags = new Set([
-    'article',
-    'div',
-    'font',
-    'header',
-    'main',
-    'section',
-    'span'
-  ])
+    "article",
+    "div",
+    "font",
+    "header",
+    "main",
+    "section",
+    "span",
+  ]);
   const removeTags = new Set([
-    'button',
-    'form',
-    'iframe',
-    'input',
-    'link',
-    'meta',
-    'object',
-    'script',
-    'select',
-    'style',
-    'svg',
-    'textarea'
-  ])
+    "button",
+    "form",
+    "iframe",
+    "input",
+    "link",
+    "meta",
+    "object",
+    "script",
+    "select",
+    "style",
+    "svg",
+    "textarea",
+  ]);
 
   function cleanNode(node: Node) {
     Array.from(node.childNodes).forEach((child) => {
       if (child.nodeType === window.Node.COMMENT_NODE) {
-        child.remove()
-        return
+        child.remove();
+        return;
       }
 
       if (child.nodeType !== window.Node.ELEMENT_NODE) {
-        return
+        return;
       }
 
-      const element = child as HTMLElement
-      const tag = element.tagName.toLowerCase()
+      const element = child as HTMLElement;
+      const tag = element.tagName.toLowerCase();
 
-      cleanNode(element)
+      cleanNode(element);
 
-      if (tag === 'b') {
-        const strong = documentFragment.createElement('strong')
-        strong.innerHTML = element.innerHTML
-        element.replaceWith(strong)
-        return
+      if (tag === "b") {
+        const strong = documentFragment.createElement("strong");
+        strong.innerHTML = element.innerHTML;
+        element.replaceWith(strong);
+        return;
       }
 
-      if (tag === 'i') {
-        const em = documentFragment.createElement('em')
-        em.innerHTML = element.innerHTML
-        element.replaceWith(em)
-        return
+      if (tag === "i") {
+        const em = documentFragment.createElement("em");
+        em.innerHTML = element.innerHTML;
+        element.replaceWith(em);
+        return;
       }
 
       if (removeTags.has(tag)) {
-        element.remove()
-        return
+        element.remove();
+        return;
       }
 
       if (unwrapTags.has(tag) || !allowedTags.has(tag)) {
-        unwrapElement(element)
-        return
+        unwrapElement(element);
+        return;
       }
 
       Array.from(element.attributes).forEach((attribute) => {
-        const name = attribute.name.toLowerCase()
-        if (name.startsWith('on') || name === 'class' || name === 'id') {
-          element.removeAttribute(attribute.name)
+        const name = attribute.name.toLowerCase();
+        if (name.startsWith("on") || name === "class" || name === "id") {
+          element.removeAttribute(attribute.name);
         }
-      })
+      });
 
-      if (tag === 'a') {
-        const href = element.getAttribute('href')?.trim() ?? ''
+      if (tag === "a") {
+        const href = element.getAttribute("href")?.trim() ?? "";
         if (!isSafeHref(href)) {
-          unwrapElement(element)
-          return
+          unwrapElement(element);
+          return;
         }
 
-        element.setAttribute('href', href)
-        element.setAttribute('target', '_blank')
-        element.setAttribute('rel', 'noopener noreferrer')
+        element.setAttribute("href", href);
+        element.setAttribute("target", "_blank");
+        element.setAttribute("rel", "noopener noreferrer");
 
         Array.from(element.attributes).forEach((attribute) => {
-          if (!['href', 'target', 'rel'].includes(attribute.name.toLowerCase())) {
-            element.removeAttribute(attribute.name)
+          if (
+            !["href", "target", "rel"].includes(attribute.name.toLowerCase())
+          ) {
+            element.removeAttribute(attribute.name);
           }
-        })
+        });
       }
 
-      if (tag === 'img') {
-        const image = element as HTMLImageElement
-        const src = image.getAttribute('src')?.trim() ?? ''
+      if (tag === "img") {
+        const image = element as HTMLImageElement;
+        const src = image.getAttribute("src")?.trim() ?? "";
         if (!isSafeImageSrc(src)) {
-          image.remove()
-          return
+          image.remove();
+          return;
         }
 
-        const alt = image.getAttribute('alt')?.trim() ?? 'Image'
+        const alt = image.getAttribute("alt")?.trim() ?? "Image";
         const size =
-          (image.getAttribute('data-size') as EditorImageSize | null) ?? 'full'
+          (image.getAttribute("data-size") as EditorImageSize | null) ?? "full";
 
-        image.setAttribute('src', src)
-        image.setAttribute('alt', alt)
-        image.setAttribute('loading', 'lazy')
+        image.setAttribute("src", src);
+        image.setAttribute("alt", alt);
+        image.setAttribute("loading", "lazy");
         Array.from(image.attributes).forEach((attribute) => {
-          if (!['src', 'alt', 'loading', 'data-size', 'style'].includes(attribute.name.toLowerCase())) {
-            image.removeAttribute(attribute.name)
+          if (
+            !["src", "alt", "loading", "data-size", "style"].includes(
+              attribute.name.toLowerCase(),
+            )
+          ) {
+            image.removeAttribute(attribute.name);
           }
-        })
-        applyImagePresentation(
-          image,
-          size in editorImageSizes ? size : 'full'
-        )
+        });
+        applyImagePresentation(image, size in editorImageSizes ? size : "full");
       }
-    })
+    });
   }
 
-  cleanNode(documentFragment.body)
+  cleanNode(documentFragment.body);
 
-  return documentFragment.body.innerHTML
+  return documentFragment.body.innerHTML;
 }
 
 function plainTextToHtml(text: string) {
@@ -510,106 +499,110 @@ function plainTextToHtml(text: string) {
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean)
-    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br />')}</p>`)
-    .join('')
+    .map(
+      (paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br />")}</p>`,
+    )
+    .join("");
 }
 
 function normalizeEditorHtml(value: string) {
-  const normalized = value.trim()
+  const normalized = value.trim();
 
-  if (!normalized || normalized === '<p></p>') {
-    return ''
+  if (!normalized || normalized === "<p></p>") {
+    return "";
   }
 
-  return normalized
+  return normalized;
 }
 
 async function readJson<T>(input: RequestInfo, init?: RequestInit) {
-  const response = await fetch(input, init)
-  const payload = await response.json().catch(() => null)
+  const response = await fetch(input, init);
+  const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(payload?.error || 'Request failed.')
+    throw new Error(payload?.error || "Request failed.");
   }
 
-  return payload as T
+  return payload as T;
 }
 
 async function uploadFile(
   file: File,
-  options: { bucket?: AssetBucket; requireImage?: boolean } = {}
+  options: { bucket?: AssetBucket; requireImage?: boolean } = {},
 ): Promise<string> {
   if (options.requireImage && !isImageFile(file)) {
-    throw new Error('Please upload an image file.')
+    throw new Error("Please upload an image file.");
   }
 
-  const supabase = createSupabaseBrowserClient()
-  const bucket = options.bucket ?? (isImageFile(file) ? 'images' : 'documents')
-  const path = createUploadPath(file)
+  const supabase = createSupabaseBrowserClient();
+  const bucket = options.bucket ?? (isImageFile(file) ? "images" : "documents");
+  const path = createUploadPath(file);
 
-  const { error } = await supabase.storage.from(bucket).upload(path, file)
-  if (error) throw new Error(error.message)
+  const { error } = await supabase.storage.from(bucket).upload(path, file);
+  if (error) throw new Error(error.message);
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
-  return data.publicUrl
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 async function createAdminDocument(args: {
-  file: File
-  generalUse?: boolean
+  file: File;
+  generalUse?: boolean;
 }): Promise<AdminDocumentRecord> {
-  const source = await uploadFile(args.file)
-  const fallbackName = getDocumentNameFromFileName(args.file.name) || args.file.name
-  const payload = await readJson<{ data: AdminDocumentRecord }>('/api/admin/documents', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      name_en: fallbackName,
-      name_bg: '',
-      source,
-      general_use: Boolean(args.generalUse),
-    }),
-  })
+  const source = await uploadFile(args.file);
+  const fallbackName =
+    getDocumentNameFromFileName(args.file.name) || args.file.name;
+  const payload = await readJson<{ data: AdminDocumentRecord }>(
+    "/api/admin/documents",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name_en: fallbackName,
+        name_bg: "",
+        source,
+        general_use: Boolean(args.generalUse),
+      }),
+    },
+  );
 
-  return payload.data
+  return payload.data;
 }
 
 async function listStorageAssets(bucket: AssetBucket): Promise<StorageAsset[]> {
-  const supabase = createSupabaseBrowserClient()
-  const { data, error } = await supabase.storage.from(bucket).list('', {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.storage.from(bucket).list("", {
     limit: 100,
-    sortBy: { column: 'created_at', order: 'desc' }
-  })
+    sortBy: { column: "created_at", order: "desc" },
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
   return (data ?? [])
-    .filter((item) => item.name && !item.name.endsWith('/'))
+    .filter((item) => item.name && !item.name.endsWith("/"))
     .map((item) => ({
       bucket,
       path: item.name,
       name: item.name,
-      url: supabase.storage.from(bucket).getPublicUrl(item.name).data.publicUrl
-    }))
+      url: supabase.storage.from(bucket).getPublicUrl(item.name).data.publicUrl,
+    }));
 }
 
 function SectionHeading({
   title,
-  description
+  description,
 }: {
-  title: string
-  description: string
+  title: string;
+  description: string;
 }) {
   return (
     <div className="mb-6">
       <h2 className="text-2xl font-semibold text-dark">{title}</h2>
-      <p className="mt-2 max-w-3xl  leading-6 text-dark/60">
-        {description}
-      </p>
+      <p className="mt-2 max-w-3xl  leading-6 text-dark/60">{description}</p>
     </div>
-  )
+  );
 }
 
 function AdminField({
@@ -617,17 +610,17 @@ function AdminField({
   value,
   onChange,
   placeholder,
-  type = 'text',
+  type = "text",
   required = false,
-  disabled = false
+  disabled = false,
 }: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  type?: string
-  required?: boolean
-  disabled?: boolean
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+  required?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <label className="block">
@@ -642,7 +635,7 @@ function AdminField({
         className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-black/5 disabled:text-dark/55"
       />
     </label>
-  )
+  );
 }
 
 function AdminTextarea({
@@ -650,13 +643,13 @@ function AdminTextarea({
   value,
   onChange,
   placeholder,
-  rows = 4
+  rows = 4,
 }: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  rows?: number
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
 }) {
   return (
     <label className="block">
@@ -669,61 +662,61 @@ function AdminTextarea({
         className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary"
       />
     </label>
-  )
+  );
 }
 
 function formatOptionalValue(value: string | number | null | undefined) {
-  if (value === null || value === undefined || value === '') {
-    return 'Not provided'
+  if (value === null || value === undefined || value === "") {
+    return "Not provided";
   }
 
-  return String(value)
+  return String(value);
 }
 
 function formatBooleanValue(value: boolean) {
-  return value ? 'Yes' : 'No'
+  return value ? "Yes" : "No";
 }
 
 function getRegistrationStatusBadgeClasses(status: RegistrationStatus) {
   switch (status) {
-    case 'approved':
-      return 'bg-emerald-100 text-emerald-800'
-    case 'rejected':
-      return 'bg-red-100 text-red-700'
+    case "approved":
+      return "bg-emerald-100 text-emerald-800";
+    case "rejected":
+      return "bg-red-100 text-red-700";
     default:
-      return 'bg-amber-100 text-amber-800'
+      return "bg-amber-100 text-amber-800";
   }
 }
 
 function getRegistrationStatusButtonClasses(
   buttonValue: RegistrationStatus,
-  activeValue: RegistrationStatus
+  activeValue: RegistrationStatus,
 ) {
-  const isActive = buttonValue === activeValue
+  const isActive = buttonValue === activeValue;
 
-  if (buttonValue === 'approved') {
+  if (buttonValue === "approved") {
     return isActive
-      ? 'border-emerald-600 bg-emerald-600 text-white'
-      : 'border-emerald-200 bg-white/70 text-emerald-700 hover:bg-emerald-50'
+      ? "border-emerald-600 bg-emerald-600 text-white"
+      : "border-emerald-200 bg-white/70 text-emerald-700 hover:bg-emerald-50";
   }
 
-  if (buttonValue === 'rejected') {
+  if (buttonValue === "rejected") {
     return isActive
-      ? 'border-red-600 bg-red-600 text-white'
-      : 'border-red-200 bg-white/70 text-red-700 hover:bg-red-50'
+      ? "border-red-600 bg-red-600 text-white"
+      : "border-red-200 bg-white/70 text-red-700 hover:bg-red-50";
   }
 
   return isActive
-    ? 'border-amber-500 bg-amber-500 text-white'
-    : 'border-amber-200 bg-white/70 text-amber-700 hover:bg-amber-50'
+    ? "border-amber-500 bg-amber-500 text-white"
+    : "border-amber-200 bg-white/70 text-amber-700 hover:bg-amber-50";
 }
 
 function RegistrationDetailRow({
   label,
-  value
+  value,
 }: {
-  label: string
-  value: ReactNode
+  label: string;
+  value: ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-black/10 bg-white/70 p-4">
@@ -732,17 +725,17 @@ function RegistrationDetailRow({
       </p>
       <div className="mt-2  leading-6 text-dark/75">{value}</div>
     </div>
-  )
+  );
 }
 
 function AddCardButton({
   title,
   description,
-  onClick
+  onClick,
 }: {
-  title: string
-  description: string
-  onClick: () => void
+  title: string;
+  description: string;
+  onClick: () => void;
 }) {
   return (
     <button
@@ -760,7 +753,7 @@ function AddCardButton({
         </div>
       </div>
     </button>
-  )
+  );
 }
 
 function AdminModal({
@@ -768,16 +761,16 @@ function AdminModal({
   title,
   description,
   onClose,
-  children
+  children,
 }: {
-  open: boolean
-  title: string
-  description: string
-  onClose: () => void
-  children: ReactNode
+  open: boolean;
+  title: string;
+  description: string;
+  onClose: () => void;
+  children: ReactNode;
 }) {
   if (!open) {
-    return null
+    return null;
   }
 
   return (
@@ -802,224 +795,231 @@ function AdminModal({
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 function HtmlEditor({
   label,
   value,
   onChange,
-  onError
+  onError,
 }: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  onError: (message: string) => void
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onError: (message: string) => void;
 }) {
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [uploadingFile, setUploadingFile] = useState(false)
-  const [imagePickerOpen, setImagePickerOpen] = useState(false)
-  const [filePickerOpen, setFilePickerOpen] = useState(false)
-  const [selectedImageSize, setSelectedImageSize] = useState<EditorImageSize | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [filePickerOpen, setFilePickerOpen] = useState(false);
+  const [selectedImageSize, setSelectedImageSize] =
+    useState<EditorImageSize | null>(null);
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [2, 3]
-        }
+          levels: [2, 3],
+        },
       }),
       Underline,
       LinkExtension.configure({
         autolink: true,
         openOnClick: false,
         HTMLAttributes: {
-          target: '_blank',
-          rel: 'noopener noreferrer'
-        }
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
       }),
       TextAlign.configure({
-        types: ['heading', 'paragraph']
+        types: ["heading", "paragraph"],
       }),
       RichImageExtension,
       Placeholder.configure({
-        placeholder: 'Start writing here...'
-      })
+        placeholder: "Start writing here...",
+      }),
     ],
-    content: normalizeEditorHtml(value) || '<p></p>',
+    content: normalizeEditorHtml(value) || "<p></p>",
     editorProps: {
       attributes: {
-        class: 'blog-details admin-rich-editor__content prose prose-lg prose-zinc max-w-none'
+        class:
+          "blog-details admin-rich-editor__content prose prose-lg prose-zinc max-w-none",
       },
       transformPastedHTML: (html) => sanitizePastedHtml(html),
       handlePaste: (_view, event) => {
-        const clipboard = event.clipboardData
+        const clipboard = event.clipboardData;
         const imageItem = Array.from(clipboard?.items ?? []).find((item) =>
-          item.type.startsWith('image/')
-        )
+          item.type.startsWith("image/"),
+        );
 
         if (imageItem) {
-          const file = imageItem.getAsFile()
+          const file = imageItem.getAsFile();
           if (!file) {
-            return false
+            return false;
           }
 
-          event.preventDefault()
-          void handleImageUpload(file)
-          return true
+          event.preventDefault();
+          void handleImageUpload(file);
+          return true;
         }
 
-        const html = clipboard?.getData('text/html')
+        const html = clipboard?.getData("text/html");
         if (html) {
-          event.preventDefault()
-          const cleanHtml = sanitizePastedHtml(html)
+          event.preventDefault();
+          const cleanHtml = sanitizePastedHtml(html);
           if (cleanHtml.trim()) {
-            insertHtml(cleanHtml)
+            insertHtml(cleanHtml);
           }
-          return true
+          return true;
         }
 
-        const text = clipboard?.getData('text/plain')
+        const text = clipboard?.getData("text/plain");
         if (text) {
-          event.preventDefault()
-          insertHtml(plainTextToHtml(text))
-          return true
+          event.preventDefault();
+          insertHtml(plainTextToHtml(text));
+          return true;
         }
 
-        return false
-      }
+        return false;
+      },
     },
     onUpdate: ({ editor: activeEditor }) => {
-      onChange(normalizeEditorHtml(activeEditor.getHTML()))
-    }
-  })
+      onChange(normalizeEditorHtml(activeEditor.getHTML()));
+    },
+  });
 
   useEffect(() => {
     if (!editor) {
-      return
+      return;
     }
 
-    const incomingHtml = normalizeEditorHtml(value)
-    const currentHtml = normalizeEditorHtml(editor.getHTML())
+    const incomingHtml = normalizeEditorHtml(value);
+    const currentHtml = normalizeEditorHtml(editor.getHTML());
 
     if (incomingHtml !== currentHtml) {
-      editor.commands.setContent(incomingHtml || '<p></p>', {
-        emitUpdate: false
-      })
+      editor.commands.setContent(incomingHtml || "<p></p>", {
+        emitUpdate: false,
+      });
     }
-  }, [editor, value])
+  }, [editor, value]);
 
   useEffect(() => {
     if (!editor) {
-      return
+      return;
     }
 
     const updateSelectedImageState = () => {
-      if (!editor.isActive('image')) {
-        setSelectedImageSize(null)
-        return
+      if (!editor.isActive("image")) {
+        setSelectedImageSize(null);
+        return;
       }
 
-      const size = editor.getAttributes('image').size
+      const size = editor.getAttributes("image").size;
       setSelectedImageSize(
-        typeof size === 'string' && size in editorImageSizes
+        typeof size === "string" && size in editorImageSizes
           ? (size as EditorImageSize)
-          : 'full'
-      )
-    }
+          : "full",
+      );
+    };
 
-    updateSelectedImageState()
-    editor.on('selectionUpdate', updateSelectedImageState)
-    editor.on('update', updateSelectedImageState)
+    updateSelectedImageState();
+    editor.on("selectionUpdate", updateSelectedImageState);
+    editor.on("update", updateSelectedImageState);
 
     return () => {
-      editor.off('selectionUpdate', updateSelectedImageState)
-      editor.off('update', updateSelectedImageState)
-    }
-  }, [editor])
+      editor.off("selectionUpdate", updateSelectedImageState);
+      editor.off("update", updateSelectedImageState);
+    };
+  }, [editor]);
 
   function insertHtml(html: string) {
-    editor?.chain().focus().insertContent(html).run()
+    editor?.chain().focus().insertContent(html).run();
   }
 
   function promptForLink() {
     if (!editor) {
-      return
+      return;
     }
 
-    const previousUrl = editor.getAttributes('link').href ?? ''
-    const url = window.prompt('Enter a URL', previousUrl)
+    const previousUrl = editor.getAttributes("link").href ?? "";
+    const url = window.prompt("Enter a URL", previousUrl);
 
     if (url === null) {
-      return
+      return;
     }
 
     if (!url.trim()) {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
     }
 
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run()
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({ href: url.trim() })
+      .run();
   }
 
   async function handleImageUpload(file: File) {
-    setUploadingImage(true)
+    setUploadingImage(true);
 
     try {
       const url = await uploadFile(file, {
-        bucket: 'images',
-        requireImage: true
-      })
-      insertHtml(createImageMarkup(url, file.name))
+        bucket: "images",
+        requireImage: true,
+      });
+      insertHtml(createImageMarkup(url, file.name));
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Image upload failed.')
+      onError(error instanceof Error ? error.message : "Image upload failed.");
     } finally {
-      setUploadingImage(false)
+      setUploadingImage(false);
       if (imageInputRef.current) {
-        imageInputRef.current.value = ''
+        imageInputRef.current.value = "";
       }
     }
   }
 
   async function handleFileUpload(file: File) {
-    setUploadingFile(true)
+    setUploadingFile(true);
 
     try {
-      const url = await uploadFile(file)
-      const label = file.name.replace(/\]/g, '').trim() || 'Download file'
-      insertHtml(`<p><a href="${url}">${label}</a></p>`)
+      const url = await uploadFile(file);
+      const label = file.name.replace(/\]/g, "").trim() || "Download file";
+      insertHtml(`<p><a href="${url}">${label}</a></p>`);
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'File upload failed.')
+      onError(error instanceof Error ? error.message : "File upload failed.");
     } finally {
-      setUploadingFile(false)
+      setUploadingFile(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+        fileInputRef.current.value = "";
       }
     }
   }
 
   function resizeSelectedImage(size: EditorImageSize) {
-    if (!editor?.isActive('image')) {
-      onError('Select an image in the editor first.')
-      return
+    if (!editor?.isActive("image")) {
+      onError("Select an image in the editor first.");
+      return;
     }
 
-    editor.chain().focus().updateAttributes('image', { size }).run()
-    setSelectedImageSize(size)
+    editor.chain().focus().updateAttributes("image", { size }).run();
+    setSelectedImageSize(size);
   }
 
   function getToolButtonClass(active = false) {
     return `inline-flex w-auto items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-semibold leading-none transition-all duration-200 ${
       active
-        ? 'border-primary bg-primary text-white shadow-md hover:bg-primary hover:text-white'
-        : 'border-black/10 bg-white text-dark hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md'
-    }`
+        ? "border-primary bg-primary text-white shadow-md hover:bg-primary hover:text-white"
+        : "border-black/10 bg-white text-dark hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md"
+    }`;
   }
 
   function getIconToolButtonClass(active = false) {
-    return `${getToolButtonClass(active)} h-11 min-w-11 px-0`
+    return `${getToolButtonClass(active)} h-11 min-w-11 px-0`;
   }
 
   return (
@@ -1031,7 +1031,8 @@ function HtmlEditor({
               {label}
             </span>
             <p className="mt-1 text-sm leading-6 text-dark/60">
-              Write comfortably, paste from other sources, and use the toolbar to format content.
+              Write comfortably, paste from other sources, and use the toolbar
+              to format content.
             </p>
           </div>
         </div>
@@ -1039,187 +1040,219 @@ function HtmlEditor({
 
       <div className="border-b border-black/10 bg-white/90 px-4 py-3 backdrop-blur-sm">
         <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          className={getToolButtonClass(editor?.isActive('heading', { level: 2 }) ?? false)}
-          onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-        >
-          H2
-        </button>
-        <button
-          type="button"
-          className={getToolButtonClass(editor?.isActive('heading', { level: 3 }) ?? false)}
-          onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-        >
-          H3
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive('bold') ?? false)}
-          onClick={() => editor?.chain().focus().toggleBold().run()}
-          aria-label="Bold"
-          title="Bold"
-        >
-          <Icon icon="mdi:format-bold" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive('italic') ?? false)}
-          onClick={() => editor?.chain().focus().toggleItalic().run()}
-          aria-label="Italic"
-          title="Italic"
-        >
-          <Icon icon="mdi:format-italic" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive('underline') ?? false)}
-          onClick={() => editor?.chain().focus().toggleUnderline().run()}
-          aria-label="Underline"
-          title="Underline"
-        >
-          <Icon icon="mdi:format-underline" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive('link') ?? false)}
-          onClick={promptForLink}
-          aria-label="Link"
-          title="Link"
-        >
-          <Icon icon="mdi:link-variant" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive('bulletList') ?? false)}
-          onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          aria-label="Bulleted list"
-          title="Bulleted list"
-        >
-          <Icon icon="mdi:format-list-bulleted" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive('blockquote') ?? false)}
-          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-          aria-label="Quote"
-          title="Quote"
-        >
-          <Icon icon="mdi:format-quote-open" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'left' }) ?? false)}
-          onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-          aria-label="Align left"
-          title="Align left"
-        >
-          <Icon icon="mdi:format-align-left" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'center' }) ?? false)}
-          onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-          aria-label="Align center"
-          title="Align center"
-        >
-          <Icon icon="mdi:format-align-center" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'right' }) ?? false)}
-          onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-          aria-label="Align right"
-          title="Align right"
-        >
-          <Icon icon="mdi:format-align-right" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(editor?.isActive({ textAlign: 'justify' }) ?? false)}
-          onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-          aria-label="Justify"
-          title="Justify"
-        >
-          <Icon icon="mdi:format-align-justify" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getIconToolButtonClass(false)}
-          onClick={() => {
-            editor?.chain().focus().unsetAllMarks().clearNodes().run()
-          }}
-          aria-label="Clear formatting"
-          title="Clear formatting"
-        >
-          <Icon icon="mdi:format-clear" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className={getToolButtonClass(false)}
-          onClick={() => imageInputRef.current?.click()}
-        >
-          <Icon icon="mdi:image-plus" className="h-5 w-5" />
-          {uploadingImage ? 'Uploading image...' : 'Add image'}
-        </button>
-        <button
-          type="button"
-          className={getToolButtonClass(false)}
-          onClick={() => setImagePickerOpen(true)}
-        >
-          <Icon icon="mdi:image-search-outline" className="h-5 w-5" />
-          Reuse image
-        </button>
-        <button
-          type="button"
-          className={getToolButtonClass(false)}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Icon icon="mdi:file-plus-outline" className="h-5 w-5" />
-          {uploadingFile ? 'Uploading file...' : 'Add file'}
-        </button>
-        <button
-          type="button"
-          className={getToolButtonClass(false)}
-          onClick={() => setFilePickerOpen(true)}
-        >
-          <Icon icon="mdi:file-search-outline" className="h-5 w-5" />
-          Reuse file
-        </button>
-        {(['small', 'medium', 'large', 'full'] as EditorImageSize[]).map((size) => (
           <button
-            key={size}
             type="button"
-            className={getToolButtonClass(selectedImageSize === size)}
-            onClick={() => resizeSelectedImage(size)}
+            className={getToolButtonClass(
+              editor?.isActive("heading", { level: 2 }) ?? false,
+            )}
+            onClick={() =>
+              editor?.chain().focus().toggleHeading({ level: 2 }).run()
+            }
           >
-            Img {size.charAt(0).toUpperCase()}
+            H2
           </button>
-        ))}
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (file) {
-              handleImageUpload(file)
+          <button
+            type="button"
+            className={getToolButtonClass(
+              editor?.isActive("heading", { level: 3 }) ?? false,
+            )}
+            onClick={() =>
+              editor?.chain().focus().toggleHeading({ level: 3 }).run()
             }
-          }}
-        />
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-        onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (file) {
-              handleFileUpload(file)
+          >
+            H3
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive("bold") ?? false,
+            )}
+            onClick={() => editor?.chain().focus().toggleBold().run()}
+            aria-label="Bold"
+            title="Bold"
+          >
+            <Icon icon="mdi:format-bold" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive("italic") ?? false,
+            )}
+            onClick={() => editor?.chain().focus().toggleItalic().run()}
+            aria-label="Italic"
+            title="Italic"
+          >
+            <Icon icon="mdi:format-italic" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive("underline") ?? false,
+            )}
+            onClick={() => editor?.chain().focus().toggleUnderline().run()}
+            aria-label="Underline"
+            title="Underline"
+          >
+            <Icon icon="mdi:format-underline" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive("link") ?? false,
+            )}
+            onClick={promptForLink}
+            aria-label="Link"
+            title="Link"
+          >
+            <Icon icon="mdi:link-variant" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive("bulletList") ?? false,
+            )}
+            onClick={() => editor?.chain().focus().toggleBulletList().run()}
+            aria-label="Bulleted list"
+            title="Bulleted list"
+          >
+            <Icon icon="mdi:format-list-bulleted" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive("blockquote") ?? false,
+            )}
+            onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+            aria-label="Quote"
+            title="Quote"
+          >
+            <Icon icon="mdi:format-quote-open" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive({ textAlign: "left" }) ?? false,
+            )}
+            onClick={() => editor?.chain().focus().setTextAlign("left").run()}
+            aria-label="Align left"
+            title="Align left"
+          >
+            <Icon icon="mdi:format-align-left" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive({ textAlign: "center" }) ?? false,
+            )}
+            onClick={() => editor?.chain().focus().setTextAlign("center").run()}
+            aria-label="Align center"
+            title="Align center"
+          >
+            <Icon icon="mdi:format-align-center" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive({ textAlign: "right" }) ?? false,
+            )}
+            onClick={() => editor?.chain().focus().setTextAlign("right").run()}
+            aria-label="Align right"
+            title="Align right"
+          >
+            <Icon icon="mdi:format-align-right" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(
+              editor?.isActive({ textAlign: "justify" }) ?? false,
+            )}
+            onClick={() =>
+              editor?.chain().focus().setTextAlign("justify").run()
             }
-          }}
-        />
-      </div>
+            aria-label="Justify"
+            title="Justify"
+          >
+            <Icon icon="mdi:format-align-justify" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getIconToolButtonClass(false)}
+            onClick={() => {
+              editor?.chain().focus().unsetAllMarks().clearNodes().run();
+            }}
+            aria-label="Clear formatting"
+            title="Clear formatting"
+          >
+            <Icon icon="mdi:format-clear" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            className={getToolButtonClass(false)}
+            onClick={() => imageInputRef.current?.click()}
+          >
+            <Icon icon="mdi:image-plus" className="h-5 w-5" />
+            {uploadingImage ? "Uploading image..." : "Add image"}
+          </button>
+          <button
+            type="button"
+            className={getToolButtonClass(false)}
+            onClick={() => setImagePickerOpen(true)}
+          >
+            <Icon icon="mdi:image-search-outline" className="h-5 w-5" />
+            Reuse image
+          </button>
+          <button
+            type="button"
+            className={getToolButtonClass(false)}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Icon icon="mdi:file-plus-outline" className="h-5 w-5" />
+            {uploadingFile ? "Uploading file..." : "Add file"}
+          </button>
+          <button
+            type="button"
+            className={getToolButtonClass(false)}
+            onClick={() => setFilePickerOpen(true)}
+          >
+            <Icon icon="mdi:file-search-outline" className="h-5 w-5" />
+            Reuse file
+          </button>
+          {(["small", "medium", "large", "full"] as EditorImageSize[]).map(
+            (size) => (
+              <button
+                key={size}
+                type="button"
+                className={getToolButtonClass(selectedImageSize === size)}
+                onClick={() => resizeSelectedImage(size)}
+              >
+                Img {size.charAt(0).toUpperCase()}
+              </button>
+            ),
+          )}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                handleImageUpload(file);
+              }
+            }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                handleFileUpload(file);
+              }
+            }}
+          />
+        </div>
       </div>
 
       <div className="bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,243,232,0.72))] p-4 sm:p-5">
@@ -1230,7 +1263,7 @@ function HtmlEditor({
         title="Image library"
         bucket="images"
         onClose={() => setImagePickerOpen(false)}
-        onSelect={(url) => insertHtml(createImageMarkup(url, 'Image'))}
+        onSelect={(url) => insertHtml(createImageMarkup(url, "Image"))}
       />
 
       <AssetPickerModal
@@ -1239,28 +1272,26 @@ function HtmlEditor({
         bucket="documents"
         onClose={() => setFilePickerOpen(false)}
         onSelect={(url) =>
-          insertHtml(
-            `<p><a href="${url}">${getFileLabelFromUrl(url)}</a></p>`
-          )
+          insertHtml(`<p><a href="${url}">${getFileLabelFromUrl(url)}</a></p>`)
         }
       />
     </div>
-  )
+  );
 }
 
 function AssetPreviewCard({
   url,
   onRemove,
-  showActions = true
+  showActions = true,
 }: {
-  url: string
-  onRemove?: () => void
-  showActions?: boolean
+  url: string;
+  onRemove?: () => void;
+  showActions?: boolean;
 }) {
-  const image = isImageUrl(url)
+  const image = isImageUrl(url);
 
   return (
-    <div className="rounded-[1.25rem] border border-black/10 bg-white/90 p-3 shadow-sm">
+    <div className="rounded-[1.25rem] border-none p-3">
       {image ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1309,7 +1340,7 @@ function AssetPreviewCard({
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
 function AssetPickerModal({
@@ -1317,49 +1348,49 @@ function AssetPickerModal({
   title,
   bucket,
   onClose,
-  onSelect
+  onSelect,
 }: {
-  open: boolean
-  title: string
-  bucket: AssetBucket
-  onClose: () => void
-  onSelect: (url: string) => void
+  open: boolean;
+  title: string;
+  bucket: AssetBucket;
+  onClose: () => void;
+  onSelect: (url: string) => void;
 }) {
-  const [assets, setAssets] = useState<StorageAsset[]>([])
-  const [loading, setLoading] = useState(false)
+  const [assets, setAssets] = useState<StorageAsset[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      return
+      return;
     }
 
-    let cancelled = false
+    let cancelled = false;
 
     async function loadAssets() {
-      setLoading(true)
+      setLoading(true);
 
       try {
-        const nextAssets = await listStorageAssets(bucket)
+        const nextAssets = await listStorageAssets(bucket);
         if (!cancelled) {
-          setAssets(nextAssets)
+          setAssets(nextAssets);
         }
       } catch {
         if (!cancelled) {
-          setAssets([])
+          setAssets([]);
         }
       } finally {
         if (!cancelled) {
-          setLoading(false)
+          setLoading(false);
         }
       }
     }
 
-    void loadAssets()
+    void loadAssets();
 
     return () => {
-      cancelled = true
-    }
-  }, [bucket, open])
+      cancelled = true;
+    };
+  }, [bucket, open]);
 
   return (
     <AdminModal
@@ -1383,8 +1414,8 @@ function AssetPickerModal({
               key={`${asset.bucket}:${asset.path}`}
               type="button"
               onClick={() => {
-                onSelect(asset.url)
-                onClose()
+                onSelect(asset.url);
+                onClose();
               }}
               className={`rounded-[1.25rem] border border-black/10 bg-white/90 p-3 text-left shadow-sm ${interactiveButtonClass}`}
             >
@@ -1394,7 +1425,7 @@ function AssetPickerModal({
         </div>
       )}
     </AdminModal>
-  )
+  );
 }
 
 function FileDropPanel({
@@ -1405,26 +1436,26 @@ function FileDropPanel({
   uploading = false,
   helperText,
   onOpenLibrary,
-  libraryLabel
+  libraryLabel,
 }: {
-  label: string
-  onFiles: (files: File[]) => void
-  accept?: string
-  multiple?: boolean
-  uploading?: boolean
-  helperText?: string
-  onOpenLibrary?: () => void
-  libraryLabel?: string
+  label: string;
+  onFiles: (files: File[]) => void;
+  accept?: string;
+  multiple?: boolean;
+  uploading?: boolean;
+  helperText?: string;
+  onOpenLibrary?: () => void;
+  libraryLabel?: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [dragging, setDragging] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
 
   function handleFiles(fileList: FileList | null) {
     if (!fileList?.length) {
-      return
+      return;
     }
 
-    onFiles(Array.from(fileList))
+    onFiles(Array.from(fileList));
   }
 
   return (
@@ -1433,24 +1464,24 @@ function FileDropPanel({
       <div
         onClick={() => {
           if (!uploading) {
-            inputRef.current?.click()
+            inputRef.current?.click();
           }
         }}
         onDragOver={(event) => {
-          event.preventDefault()
-          setDragging(true)
+          event.preventDefault();
+          setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={(event) => {
-          event.preventDefault()
-          setDragging(false)
-          handleFiles(event.dataTransfer.files)
+          event.preventDefault();
+          setDragging(false);
+          handleFiles(event.dataTransfer.files);
         }}
         className={`rounded-[1.5rem] border-2 border-dashed px-5 py-6 transition-all ${
           dragging
-            ? 'border-primary bg-primary/5 shadow-lg'
-            : 'border-black/10 bg-white/80'
-        } ${uploading ? 'cursor-progress' : 'cursor-pointer'}`}
+            ? "border-primary bg-primary/5 shadow-lg"
+            : "border-black/10 bg-white/80"
+        } ${uploading ? "cursor-progress" : "cursor-pointer"}`}
       >
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -1458,22 +1489,22 @@ function FileDropPanel({
           </div>
           <div>
             <p className=" font-semibold text-dark">
-              {uploading ? 'Uploading files...' : 'Drag and drop files here'}
+              {uploading ? "Uploading files..." : "Upload files"}
             </p>
             <p className="mt-1  text-dark/60">
               {helperText ??
-                'Or click anywhere in this area to browse files. Images are stored in images, other files in documents.'}
+                "Drag and drop files or click the input to start selecting."}
             </p>
             {onOpenLibrary ? (
               <button
                 type="button"
                 onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenLibrary()
+                  event.stopPropagation();
+                  onOpenLibrary();
                 }}
                 className="mt-3  font-semibold text-primary hover:underline"
               >
-                {libraryLabel ?? 'Reuse uploaded'}
+                {libraryLabel ?? "Reuse uploaded"}
               </button>
             ) : null}
           </div>
@@ -1487,48 +1518,48 @@ function FileDropPanel({
           className="hidden"
           disabled={uploading}
           onChange={(event) => {
-            handleFiles(event.target.files)
-            event.target.value = ''
+            handleFiles(event.target.files);
+            event.target.value = "";
           }}
         />
       </div>
     </div>
-  )
+  );
 }
 
 function ImageUploadField({
   label,
   value,
   onChange,
-  onError
+  onError,
 }: {
-  label: string
-  value: string
-  onChange: (url: string) => void
-  onError: (msg: string) => void
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  onError: (msg: string) => void;
 }) {
-  const [uploading, setUploading] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   async function handleFiles(files: File[]) {
-    const file = files[0]
+    const file = files[0];
 
     if (!file) {
-      return
+      return;
     }
 
-    setUploading(true)
+    setUploading(true);
 
     try {
       const url = await uploadFile(file, {
-        bucket: 'images',
-        requireImage: true
-      })
-      onChange(url)
+        bucket: "images",
+        requireImage: true,
+      });
+      onChange(url);
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Upload failed.')
+      onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
   }
 
@@ -1546,7 +1577,7 @@ function ImageUploadField({
 
       {value ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <AssetPreviewCard url={value} onRemove={() => onChange('')} />
+          <AssetPreviewCard url={value} onRemove={() => onChange("")} />
         </div>
       ) : null}
 
@@ -1558,7 +1589,7 @@ function ImageUploadField({
         onSelect={onChange}
       />
     </div>
-  )
+  );
 }
 
 function SingleFileUploadField({
@@ -1566,33 +1597,33 @@ function SingleFileUploadField({
   value,
   onChange,
   onError,
-  required = false
+  required = false,
 }: {
-  label: string
-  value: string
-  onChange: (url: string) => void
-  onError: (msg: string) => void
-  required?: boolean
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  onError: (msg: string) => void;
+  required?: boolean;
 }) {
-  const [uploading, setUploading] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   async function handleFiles(files: File[]) {
-    const file = files[0]
+    const file = files[0];
 
     if (!file) {
-      return
+      return;
     }
 
-    setUploading(true)
+    setUploading(true);
 
     try {
-      const url = await uploadFile(file)
-      onChange(url)
+      const url = await uploadFile(file);
+      onChange(url);
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Upload failed.')
+      onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
   }
 
@@ -1621,7 +1652,7 @@ function SingleFileUploadField({
 
       {value ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <AssetPreviewCard url={value} onRemove={() => onChange('')} />
+          <AssetPreviewCard url={value} onRemove={() => onChange("")} />
         </div>
       ) : null}
 
@@ -1633,956 +1664,555 @@ function SingleFileUploadField({
         onSelect={onChange}
       />
     </div>
-  )
-}
-
-function MultiFileUploadField({
-  label,
-  values,
-  onChange,
-  onError
-}: {
-  label: string
-  values: string[]
-  onChange: (urls: string[]) => void
-  onError: (msg: string) => void
-}) {
-  const [uploading, setUploading] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
-
-  async function handleFiles(files: File[]) {
-    setUploading(true)
-
-    try {
-      const urls = await Promise.all(files.map((file) => uploadFile(file)))
-      onChange([...values, ...urls.filter((url) => !values.includes(url))])
-    } catch (err) {
-      onError(err instanceof Error ? err.message : 'Upload failed.')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  function addExisting(url: string) {
-    if (values.includes(url)) {
-      return
-    }
-
-    onChange([...values, url])
-  }
-
-  function remove(index: number) {
-    onChange(values.filter((_, i) => i !== index))
-  }
-
-  return (
-    <div>
-      <FileDropPanel
-        label={label}
-        multiple
-        uploading={uploading}
-        onFiles={handleFiles}
-        helperText="Drop one or more files here. Images are stored in images, everything else in documents."
-        onOpenLibrary={() => setPickerOpen(true)}
-        libraryLabel="Reuse uploaded"
-      />
-
-      {values.length > 0 ? (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {values.map((url, index) => (
-            <AssetPreviewCard
-              key={`${url}-${index}`}
-              url={url}
-              onRemove={() => remove(index)}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      <AssetPickerModal
-        open={pickerOpen}
-        title="Document library"
-        bucket="documents"
-        onClose={() => setPickerOpen(false)}
-        onSelect={addExisting}
-      />
-    </div>
-  )
-}
-
-function EventDocumentPickerModal({
-  open,
-  title,
-  documents,
-  onClose,
-  onSelect
-}: {
-  open: boolean
-  title: string
-  documents: AdminDocumentRecord[]
-  onClose: () => void
-  onSelect: (id: string) => void
-}) {
-  return (
-    <AdminModal
-      open={open}
-      title={title}
-      description="Select a document from the shared document library."
-      onClose={onClose}
-    >
-      {documents.length === 0 ? (
-        <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10  text-dark/60">
-          No documents in the library yet.
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {documents.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                onSelect(item.id)
-                onClose()
-              }}
-              className={`rounded-[1.25rem] border border-black/10 bg-white/90 p-4 text-left shadow-sm ${interactiveButtonClass}`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Icon icon="ph:file-text-bold" width={20} height={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-semibold text-dark">{item.name_en}</p>
-                    {item.general_use ? (
-                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700">
-                        General use
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-1 truncate text-dark/55">
-                    {item.name_bg || 'No Bulgarian label'}
-                  </p>
-                  <p className="mt-2 truncate text-sm text-primary">
-                    {getFileLabelFromUrl(item.source)}
-                  </p>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </AdminModal>
-  )
-}
-
-function EventDocumentReferenceField({
-  label,
-  values,
-  documents,
-  onChange,
-  onReorder,
-  onError,
-  onDocumentsCreated,
-  onDocumentUpdated
-}: {
-  label: string
-  values: string[]
-  documents: AdminDocumentRecord[]
-  onChange: (values: string[]) => void
-  onReorder?: (values: string[]) => void | Promise<void>
-  onError: (msg: string) => void
-  onDocumentsCreated: (docs: AdminDocumentRecord[]) => void
-  onDocumentUpdated: (doc: AdminDocumentRecord) => void
-}) {
-  const [uploading, setUploading] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [generalUseUploads, setGeneralUseUploads] = useState(false)
-  const [draggedValue, setDraggedValue] = useState<string | null>(null)
-  const [dragOverValue, setDragOverValue] = useState<string | null>(null)
-
-  const documentsById = new Map(documents.map((item) => [item.id, item]))
-
-  async function handleFiles(files: File[]) {
-    setUploading(true)
-
-    try {
-      const createdDocs = await Promise.all(
-        files.map((file) =>
-          createAdminDocument({ file, generalUse: generalUseUploads })
-        )
-      )
-      onDocumentsCreated(createdDocs)
-      onChange([
-        ...values,
-        ...createdDocs
-          .map((item) => item.id)
-          .filter((id) => !values.includes(id)),
-      ])
-    } catch (err) {
-      onError(err instanceof Error ? err.message : 'Upload failed.')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  function addExisting(id: string) {
-    if (values.includes(id)) {
-      return
-    }
-
-    onChange([...values, id])
-  }
-
-  function remove(index: number) {
-    onChange(values.filter((_, itemIndex) => itemIndex !== index))
-  }
-
-  function handleDragStart(value: string) {
-    setDraggedValue(value)
-    setDragOverValue(value)
-  }
-
-  function handleDragOver(event: DragEvent<HTMLDivElement>, value: string) {
-    if (!draggedValue) {
-      return
-    }
-
-    event.preventDefault()
-
-    if (dragOverValue !== value) {
-      setDragOverValue(value)
-    }
-  }
-
-  function handleDrop(value: string) {
-    if (!draggedValue) {
-      return
-    }
-
-    const fromIndex = values.indexOf(draggedValue)
-    const toIndex = values.indexOf(value)
-    const next = reorderStringValues(values, fromIndex, toIndex)
-
-    if (next !== values) {
-      onChange(next)
-      void onReorder?.(next)
-    }
-
-    setDraggedValue(null)
-    setDragOverValue(null)
-  }
-
-  function handleDragEnd() {
-    setDraggedValue(null)
-    setDragOverValue(null)
-  }
-
-  return (
-    <div>
-      <FileDropPanel
-        label={label}
-        multiple
-        uploading={uploading}
-        onFiles={handleFiles}
-        helperText="Drop files here to create document records and attach them to this event, or reuse documents from the library."
-        onOpenLibrary={() => setPickerOpen(true)}
-        libraryLabel="Choose from library"
-      />
-      {/* <label className="mt-3 inline-flex items-center gap-2 text-sm text-dark/70">
-        <input
-          type="checkbox"
-          checked={generalUseUploads}
-          onChange={(event) => setGeneralUseUploads(event.target.checked)}
-          className="h-4 w-4 rounded border-black/20 text-primary focus:ring-primary"
-        />
-        Mark uploaded documents as general use
-      </label> */}
-
-      <p className="mt-3 text-sm text-dark/60">
-        Drag attached documents to reorder them. The saved order is used on the
-        event details page.
-      </p>
-      <p className="my-4 font-semibold">Current documents</p>
-
-      {values.length > 0 ? (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {values.map((value, index) => {
-            const document = documentsById.get(value);
-
-            if (document) {
-              return (
-                <div
-                  key={`${value}-${index}`}
-                  onDragOver={(event) => handleDragOver(event, value)}
-                  onDrop={() => handleDrop(value)}
-                  className={`rounded-[1.35rem] transition-all ${
-                    dragOverValue === value && draggedValue !== value
-                      ? 'ring-2 ring-primary/40 ring-offset-2'
-                      : ''
-                  } ${
-                    draggedValue === value ? 'opacity-80' : ''
-                  }`}
-                >
-                  <EventAttachedDocumentCard
-                    document={document}
-                    onRemove={() => remove(index)}
-                    onError={onError}
-                    onUpdated={onDocumentUpdated}
-                    onDragStart={() => handleDragStart(value)}
-                    onDragEnd={handleDragEnd}
-                    isDragging={draggedValue === value}
-                  />
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={`${value}-${index}`}
-                className="rounded-[1.25rem] border border-amber-200 bg-amber-50/70 p-4 shadow-sm"
-              >
-                <p className="font-semibold text-amber-800">
-                  Legacy file reference
-                </p>
-                <p className="mt-1 break-all text-sm text-amber-700">{value}</p>
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="mt-3 font-semibold text-red-500 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <p>No documents for this section currently</p>
-      )}
-      <EventDocumentPickerModal
-        open={pickerOpen}
-        title="Document library"
-        documents={documents}
-        onClose={() => setPickerOpen(false)}
-        onSelect={addExisting}
-      />
-    </div>
   );
-}
-
-function EventAttachedDocumentCard({
-  document,
-  onRemove,
-  onError,
-  onUpdated,
-  onDragStart,
-  onDragEnd,
-  isDragging = false
-}: {
-  document: AdminDocumentRecord
-  onRemove: () => void
-  onError: (msg: string) => void
-  onUpdated: (doc: AdminDocumentRecord) => void
-  onDragStart?: () => void
-  onDragEnd?: () => void
-  isDragging?: boolean
-}) {
-  const [nameEn, setNameEn] = useState(document.name_en)
-  const [nameBg, setNameBg] = useState(document.name_bg ?? '')
-  const [generalUse, setGeneralUse] = useState(document.general_use)
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    setNameEn(document.name_en)
-    setNameBg(document.name_bg ?? '')
-    setGeneralUse(document.general_use)
-  }, [document.id, document.name_en, document.name_bg, document.general_use])
-
-  const dirty =
-    nameEn !== document.name_en ||
-    nameBg !== (document.name_bg ?? '') ||
-    generalUse !== document.general_use
-
-  async function handleSave() {
-    setSaving(true)
-
-    try {
-      const payload = await readJson<{ data: AdminDocumentRecord }>(
-        `/api/admin/documents/${document.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            name_en: nameEn,
-            name_bg: nameBg,
-            source: document.source,
-            general_use: generalUse
-          })
-        }
-      )
-
-      onUpdated(payload.data)
-    } catch (error) {
-      onError(
-        error instanceof Error ? error.message : 'Unable to update document.'
-      )
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div
-      className={`rounded-[1.25rem] border border-black/10 bg-white/90 p-4 shadow-sm transition-all ${
-        isDragging ? 'border-primary/30 bg-primary/[0.03] shadow-md' : ''
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon icon="ph:file-text-bold" width={20} height={20} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <a
-            href={document.source}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block truncate font-semibold text-primary hover:underline"
-          >
-            {/* {getFileLabelFromUrl(document.source)} */}
-            Click to open
-          </a>
-          <p className="mt-1 text-sm text-dark/50">
-            Uploaded {formatTimestamp(document.updated_at)}
-          </p>
-        </div>
-        <button
-          type="button"
-          draggable
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          className="inline-flex cursor-grab items-center gap-2 rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-sm font-medium text-dark/70 active:cursor-grabbing"
-          aria-label={`Drag to reorder ${document.name_en}`}
-          title="Drag to reorder"
-        >
-          <Icon icon="ph:dots-six-vertical-bold" width={16} height={16} />
-          Move
-        </button>
-      </div>
-
-      <div className="mt-4 grid gap-3">
-        <AdminField
-          label="Name (EN)"
-          value={nameEn}
-          onChange={setNameEn}
-          required
-        />
-        <AdminField
-          label="Name (BG, optional)"
-          value={nameBg}
-          onChange={setNameBg}
-        />
-        <label className="inline-flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark">
-          <input
-            type="checkbox"
-            checked={generalUse}
-            onChange={(event) => setGeneralUse(event.target.checked)}
-            className="h-4 w-4 rounded border-black/20 text-primary focus:ring-primary"
-          />
-          <div>
-            <p className="font-medium">General use document</p>
-            <p className="text-sm text-dark/60">
-              Make this reusable outside this event too.
-            </p>
-          </div>
-        </label>
-      </div>
-
-      <div className="mt-4 flex items-center gap-3">
-        <Button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={saving || !dirty || !nameEn.trim()}
-          className="rounded-xl px-4 text-white"
-        >
-          {saving ? 'Saving...' : 'Apply'}
-        </Button>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="font-semibold text-red-500 hover:underline"
-        >
-          Remove
-        </button>
-      </div>
-    </div>
-  )
 }
 
 export default function AdminDashboard({
   userEmail,
   initialEvents,
   initialNews,
-  initialDocuments
+  initialDocuments,
 }: AdminDashboardProps) {
-  const router = useRouter()
-  const [events, setEvents] = useState(initialEvents)
-  const [news, setNews] = useState(initialNews)
-  const [documents, setDocuments] = useState(initialDocuments)
-  const [eventForm, setEventForm] = useState<EventFormState>(emptyEventForm())
-  const [newsForm, setNewsForm] = useState<NewsFormState>(emptyNewsForm())
-  const [documentForm, setDocumentForm] = useState<DocumentFormState>(
-    emptyDocumentForm()
-  )
-  const [eventsBusy, setEventsBusy] = useState(false)
-  const [newsBusy, setNewsBusy] = useState(false)
-  const [documentsBusy, setDocumentsBusy] = useState(false)
-  const [authBusy, setAuthBusy] = useState(false)
-  const [eventModalOpen, setEventModalOpen] = useState(false)
-  const [newsModalOpen, setNewsModalOpen] = useState(false)
-  const [entriesModalOpen, setEntriesModalOpen] = useState(false)
-  const [eventDocumentsModalOpen, setEventDocumentsModalOpen] = useState(false)
-  const [eventDocumentsForm, setEventDocumentsForm] = useState<EventFormState | null>(null)
-  const [activeEntriesEvent, setActiveEntriesEvent] = useState<AdminEventRecord | null>(null)
-  const [activeEventDocumentsEvent, setActiveEventDocumentsEvent] = useState<AdminEventRecord | null>(null)
-  const [registrations, setRegistrations] = useState<RegistrationRecord[]>([])
-  const [registrationsLoading, setRegistrationsLoading] = useState(false)
-  const [registrationStatusBusyId, setRegistrationStatusBusyId] = useState<string | null>(null)
-  const [registrationActionBusyKey, setRegistrationActionBusyKey] = useState<string | null>(null)
-  const [registrationStatusFilter, setRegistrationStatusFilter] = useState<RegistrationStatus | null>(null)
-  const [downloadingBlanks, setDownloadingBlanks] = useState(false)
-  const [downloadingPaidBlanks, setDownloadingPaidBlanks] = useState(false)
-  const [rejectionModal, setRejectionModal] = useState<{ registrationId: string; boatName: string } | null>(null)
-  const [rejectionFeedback, setRejectionFeedback] = useState('')
+  const router = useRouter();
+  const [events, setEvents] = useState(initialEvents);
+  const [news, setNews] = useState(initialNews);
+  const [documents, setDocuments] = useState(initialDocuments);
+  const [eventForm, setEventForm] = useState<EventFormState>(emptyEventForm());
+  const [newsForm, setNewsForm] = useState<NewsFormState>(emptyNewsForm());
+  const [documentForm, setDocumentForm] =
+    useState<DocumentFormState>(emptyDocumentForm());
+  const [eventsBusy, setEventsBusy] = useState(false);
+  const [newsBusy, setNewsBusy] = useState(false);
+  const [documentsBusy, setDocumentsBusy] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [newsModalOpen, setNewsModalOpen] = useState(false);
+  const [entriesModalOpen, setEntriesModalOpen] = useState(false);
+  const [eventDocumentsModalOpen, setEventDocumentsModalOpen] = useState(false);
+  const [eventDocumentsForm, setEventDocumentsForm] =
+    useState<EventFormState | null>(null);
+  const [activeEntriesEvent, setActiveEntriesEvent] =
+    useState<AdminEventRecord | null>(null);
+  const [activeEventDocumentsEvent, setActiveEventDocumentsEvent] =
+    useState<AdminEventRecord | null>(null);
+  const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
+  const [registrationsLoading, setRegistrationsLoading] = useState(false);
+  const [registrationStatusBusyId, setRegistrationStatusBusyId] = useState<
+    string | null
+  >(null);
+  const [registrationActionBusyKey, setRegistrationActionBusyKey] = useState<
+    string | null
+  >(null);
+  const [registrationStatusFilter, setRegistrationStatusFilter] =
+    useState<RegistrationStatus | null>(null);
+  const [downloadingBlanks, setDownloadingBlanks] = useState(false);
+  const [downloadingPaidBlanks, setDownloadingPaidBlanks] = useState(false);
+  const [rejectionModal, setRejectionModal] = useState<{
+    registrationId: string;
+    boatName: string;
+  } | null>(null);
+  const [rejectionFeedback, setRejectionFeedback] = useState("");
 
   function openEventEditor(form = emptyEventForm()) {
-    setEventForm(form)
-    setEventModalOpen(true)
+    setEventForm(form);
+    setEventModalOpen(true);
   }
 
   function closeEventEditor() {
-    setEventModalOpen(false)
-    setEventForm(emptyEventForm())
+    setEventModalOpen(false);
+    setEventForm(emptyEventForm());
   }
 
   function openNewsEditor(form = emptyNewsForm()) {
-    setNewsForm(form)
-    setNewsModalOpen(true)
+    setNewsForm(form);
+    setNewsModalOpen(true);
   }
 
   function closeNewsEditor() {
-    setNewsModalOpen(false)
-    setNewsForm(emptyNewsForm())
+    setNewsModalOpen(false);
+    setNewsForm(emptyNewsForm());
   }
 
   function closeEntriesModal() {
-    setEntriesModalOpen(false)
-    setActiveEntriesEvent(null)
-    setRegistrations([])
-    setRegistrationsLoading(false)
-    setRegistrationStatusBusyId(null)
-    setRegistrationActionBusyKey(null)
-    setRegistrationStatusFilter(null)
-    setRejectionModal(null)
-    setRejectionFeedback('')
-    setDownloadingBlanks(false)
-    setDownloadingPaidBlanks(false)
+    setEntriesModalOpen(false);
+    setActiveEntriesEvent(null);
+    setRegistrations([]);
+    setRegistrationsLoading(false);
+    setRegistrationStatusBusyId(null);
+    setRegistrationActionBusyKey(null);
+    setRegistrationStatusFilter(null);
+    setRejectionModal(null);
+    setRejectionFeedback("");
+    setDownloadingBlanks(false);
+    setDownloadingPaidBlanks(false);
   }
 
   function addDocumentsToLibrary(createdDocs: AdminDocumentRecord[]) {
     setDocuments((current) => {
-      const next = [...current]
+      const next = [...current];
       createdDocs.forEach((item) => {
         if (!next.some((existing) => existing.id === item.id)) {
-          next.unshift(item)
+          next.unshift(item);
         }
-      })
-      return next
-    })
+      });
+      return next;
+    });
   }
 
   function updateDocumentInLibrary(document: AdminDocumentRecord) {
     setDocuments((current) =>
-      current.map((item) => (item.id === document.id ? document : item))
-    )
+      current.map((item) => (item.id === document.id ? document : item)),
+    );
+  }
+
+  async function createEventDocuments(args: {
+    files: File[];
+    generalUse?: boolean;
+  }) {
+    return Promise.all(
+      args.files.map((file) =>
+        createAdminDocument({ file, generalUse: args.generalUse }),
+      ),
+    );
+  }
+
+  async function saveDocumentRecord(args: {
+    id: string;
+    name_en: string;
+    name_bg: string;
+    source: string;
+    general_use: boolean;
+  }) {
+    const payload = await readJson<{ data: AdminDocumentRecord }>(
+      `/api/admin/documents/${args.id}`,
+      {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name_en: args.name_en,
+          name_bg: args.name_bg,
+          source: args.source,
+          general_use: args.general_use,
+        }),
+      },
+    );
+
+    return payload.data;
   }
 
   function openEventDocumentsEditor(item: AdminEventRecord) {
-    setActiveEventDocumentsEvent(item)
-    setEventDocumentsForm(eventToForm(item))
-    setEventDocumentsModalOpen(true)
+    setActiveEventDocumentsEvent(item);
+    setEventDocumentsForm(eventToForm(item));
+    setEventDocumentsModalOpen(true);
   }
 
   function closeEventDocumentsEditor() {
-    setEventDocumentsModalOpen(false)
-    setActiveEventDocumentsEvent(null)
-    setEventDocumentsForm(null)
+    setEventDocumentsModalOpen(false);
+    setActiveEventDocumentsEvent(null);
+    setEventDocumentsForm(null);
   }
 
   async function refreshEvents() {
-    const payload = await readJson<{ data: AdminEventRecord[] }>('/api/admin/events')
-    setEvents(payload.data)
+    const payload = await readJson<{ data: AdminEventRecord[] }>(
+      "/api/admin/events",
+    );
+    setEvents(payload.data);
   }
 
   async function refreshNews() {
-    const payload = await readJson<{ data: AdminNewsRecord[] }>('/api/admin/news')
-    setNews(payload.data)
+    const payload = await readJson<{ data: AdminNewsRecord[] }>(
+      "/api/admin/news",
+    );
+    setNews(payload.data);
   }
 
   async function refreshDocuments() {
     const payload = await readJson<{ data: AdminDocumentRecord[] }>(
-      '/api/admin/documents'
-    )
-    setDocuments(payload.data)
+      "/api/admin/documents",
+    );
+    setDocuments(payload.data);
   }
 
   async function loadRegistrations(eventId: string) {
-    setRegistrationsLoading(true)
+    setRegistrationsLoading(true);
 
     try {
       const payload = await readJson<{ data: RegistrationRecord[] }>(
-        `/api/admin/registrations?event_id=${encodeURIComponent(eventId)}`
-      )
-      setRegistrations(payload.data)
+        `/api/admin/registrations?event_id=${encodeURIComponent(eventId)}`,
+      );
+      setRegistrations(payload.data);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to load registrations.'
-      )
-      setRegistrations([])
+        error instanceof Error
+          ? error.message
+          : "Unable to load registrations.",
+      );
+      setRegistrations([]);
     } finally {
-      setRegistrationsLoading(false)
+      setRegistrationsLoading(false);
     }
   }
 
   async function openEventEntries(item: AdminEventRecord) {
-    setActiveEntriesEvent(item)
-    setEntriesModalOpen(true)
-    await loadRegistrations(item.id)
+    setActiveEntriesEvent(item);
+    setEntriesModalOpen(true);
+    await loadRegistrations(item.id);
   }
 
   async function handleEventDocumentsSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!eventDocumentsForm?.id) {
-      return
+      return;
     }
 
-    setEventsBusy(true)
+    setEventsBusy(true);
 
     try {
       await readJson(`/api/admin/events/${eventDocumentsForm.id}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(eventDocumentsForm)
-      })
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(eventDocumentsForm),
+      });
 
-      await refreshEvents()
-      toast.success('Event documents updated.')
-      closeEventDocumentsEditor()
-      router.refresh()
+      await refreshEvents();
+      toast.success("Event documents updated.");
+      closeEventDocumentsEditor();
+      router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to update event documents.'
-      )
+        error instanceof Error
+          ? error.message
+          : "Unable to update event documents.",
+      );
     } finally {
-      setEventsBusy(false)
+      setEventsBusy(false);
     }
   }
 
   async function autosaveEventDocumentOrder(
-    key: 'notice_board' | 'results',
-    values: string[]
+    key: "notice_board" | "results",
+    values: string[],
   ) {
     setEventDocumentsForm((current) => {
       if (!current) {
-        return current
+        return current;
       }
 
       return {
         ...current,
         [key]: values,
-      }
-    })
+      };
+    });
 
     if (!eventDocumentsForm?.id) {
-      return
+      return;
     }
 
-    setEventsBusy(true)
+    setEventsBusy(true);
 
     try {
       const nextForm = {
         ...eventDocumentsForm,
         [key]: values,
-      }
+      };
 
       await readJson(`/api/admin/events/${eventDocumentsForm.id}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
         body: JSON.stringify(nextForm),
-      })
+      });
 
-      await refreshEvents()
+      await refreshEvents();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to autosave document order.'
-      )
+        error instanceof Error
+          ? error.message
+          : "Unable to autosave document order.",
+      );
     } finally {
-      setEventsBusy(false)
+      setEventsBusy(false);
     }
   }
 
   async function handleSignOut() {
-    setAuthBusy(true)
+    setAuthBusy(true);
 
-    const supabase = createSupabaseBrowserClient()
-    const { error } = await supabase.auth.signOut()
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
-      toast.error(error.message)
-      setAuthBusy(false)
-      return
+      toast.error(error.message);
+      setAuthBusy(false);
+      return;
     }
 
-    router.replace('/admin/login')
-    router.refresh()
+    router.replace("/admin/login");
+    router.refresh();
   }
 
   async function handleEventSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setEventsBusy(true)
+    event.preventDefault();
+    setEventsBusy(true);
 
     try {
       await readJson(
-        eventForm.id ? `/api/admin/events/${eventForm.id}` : '/api/admin/events',
+        eventForm.id
+          ? `/api/admin/events/${eventForm.id}`
+          : "/api/admin/events",
         {
-          method: eventForm.id ? 'PATCH' : 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(eventForm)
-        }
-      )
+          method: eventForm.id ? "PATCH" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(eventForm),
+        },
+      );
 
-      await refreshEvents()
-      toast.success(eventForm.id ? 'Event updated.' : 'Event created.')
-      closeEventEditor()
-      router.refresh()
+      await refreshEvents();
+      toast.success(eventForm.id ? "Event updated." : "Event created.");
+      closeEventEditor();
+      router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to save event.')
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save event.",
+      );
     } finally {
-      setEventsBusy(false)
+      setEventsBusy(false);
     }
   }
 
   async function handleNewsSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setNewsBusy(true)
+    event.preventDefault();
+    setNewsBusy(true);
 
     try {
       await readJson(
-        newsForm.id ? `/api/admin/news/${newsForm.id}` : '/api/admin/news',
+        newsForm.id ? `/api/admin/news/${newsForm.id}` : "/api/admin/news",
         {
-          method: newsForm.id ? 'PATCH' : 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(newsForm)
-        }
-      )
+          method: newsForm.id ? "PATCH" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(newsForm),
+        },
+      );
 
-      await refreshNews()
-      toast.success(newsForm.id ? 'News item updated.' : 'News item created.')
-      closeNewsEditor()
-      router.refresh()
+      await refreshNews();
+      toast.success(newsForm.id ? "News item updated." : "News item created.");
+      closeNewsEditor();
+      router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to save news item.')
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save news item.",
+      );
     } finally {
-      setNewsBusy(false)
+      setNewsBusy(false);
     }
   }
 
   async function handleDocumentSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setDocumentsBusy(true)
+    event.preventDefault();
+    setDocumentsBusy(true);
 
     try {
       await readJson(
         documentForm.id
           ? `/api/admin/documents/${documentForm.id}`
-          : '/api/admin/documents',
+          : "/api/admin/documents",
         {
-          method: documentForm.id ? 'PATCH' : 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(documentForm)
-        }
-      )
+          method: documentForm.id ? "PATCH" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(documentForm),
+        },
+      );
 
-      await refreshDocuments()
-      toast.success(documentForm.id ? 'Document updated.' : 'Document created.')
-      setDocumentForm(emptyDocumentForm())
-      router.refresh()
+      await refreshDocuments();
+      toast.success(
+        documentForm.id ? "Document updated." : "Document created.",
+      );
+      setDocumentForm(emptyDocumentForm());
+      router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to save document.')
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save document.",
+      );
     } finally {
-      setDocumentsBusy(false)
+      setDocumentsBusy(false);
     }
   }
 
   async function handleEventStatusChange(
     item: AdminEventRecord,
-    nextStatus: EventFormState['status']
+    nextStatus: EventFormState["status"],
   ) {
     if (String(item.status) === nextStatus) {
-      return
+      return;
     }
 
-    setEventsBusy(true)
+    setEventsBusy(true);
 
     try {
       const payload = {
         ...eventToForm(item),
-        status: nextStatus
-      }
+        status: nextStatus,
+      };
 
       await readJson(`/api/admin/events/${item.id}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      await refreshEvents()
+      await refreshEvents();
 
       if (eventForm.id === item.id) {
         setEventForm((current) => ({
           ...current,
-          status: nextStatus
-        }))
+          status: nextStatus,
+        }));
       }
 
-      toast.success(`Event marked as ${getStatusLabel(Number(nextStatus) as AdminEventRecord['status']).toLowerCase()}.`)
-      router.refresh()
+      toast.success(
+        `Event marked as ${getStatusLabel(Number(nextStatus) as AdminEventRecord["status"]).toLowerCase()}.`,
+      );
+      router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to change event status.')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to change event status.",
+      );
     } finally {
-      setEventsBusy(false)
+      setEventsBusy(false);
     }
   }
 
   async function handleDocumentDelete(id: string) {
-    if (!window.confirm('Delete this document?')) {
-      return
+    if (!window.confirm("Delete this document?")) {
+      return;
     }
 
-    setDocumentsBusy(true)
+    setDocumentsBusy(true);
 
     try {
-      await readJson(`/api/admin/documents/${id}`, { method: 'DELETE' })
-      await refreshDocuments()
+      await readJson(`/api/admin/documents/${id}`, { method: "DELETE" });
+      await refreshDocuments();
       if (documentForm.id === id) {
-        setDocumentForm(emptyDocumentForm())
+        setDocumentForm(emptyDocumentForm());
       }
-      toast.success('Document deleted.')
-      router.refresh()
+      toast.success("Document deleted.");
+      router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to delete document.')
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete document.",
+      );
     } finally {
-      setDocumentsBusy(false)
+      setDocumentsBusy(false);
     }
   }
 
   async function handleRegistrationStatusChange(
     registrationId: string,
     status: RegistrationStatus,
-    feedback?: string
+    feedback?: string,
   ) {
-    setRegistrationStatusBusyId(registrationId)
+    setRegistrationStatusBusyId(registrationId);
 
     try {
       const payload = await readJson<{ data: RegistrationRecord }>(
         `/api/admin/registrations/${registrationId}`,
         {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ status, feedback: feedback ?? null })
-        }
-      )
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ status, feedback: feedback ?? null }),
+        },
+      );
 
       setRegistrations((current) =>
-        current.map((item) => (item.id === registrationId ? payload.data : item))
-      )
-      toast.success('Registration status updated.')
+        current.map((item) =>
+          item.id === registrationId ? payload.data : item,
+        ),
+      );
+      toast.success("Registration status updated.");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to update registration status.'
-      )
+        error instanceof Error
+          ? error.message
+          : "Unable to update registration status.",
+      );
     } finally {
-      setRegistrationStatusBusyId(null)
+      setRegistrationStatusBusyId(null);
     }
   }
 
   async function handleMarkRegistrationPaid(registrationId: string) {
-    setRegistrationActionBusyKey(`${registrationId}:mark-paid`)
+    setRegistrationActionBusyKey(`${registrationId}:mark-paid`);
 
     try {
       const payload = await readJson<{ data: RegistrationRecord }>(
         `/api/admin/registrations/${registrationId}`,
         {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ paymentStatus: 'paid' }),
-        }
-      )
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ paymentStatus: "paid" }),
+        },
+      );
 
       setRegistrations((current) =>
-        current.map((item) => (item.id === registrationId ? payload.data : item))
-      )
-      toast.success('Payment marked as paid.')
+        current.map((item) =>
+          item.id === registrationId ? payload.data : item,
+        ),
+      );
+      toast.success("Payment marked as paid.");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to update payment status.'
-      )
+        error instanceof Error
+          ? error.message
+          : "Unable to update payment status.",
+      );
     } finally {
-      setRegistrationActionBusyKey(null)
+      setRegistrationActionBusyKey(null);
     }
   }
 
   function openExternalUrl(url: string) {
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.target = '_blank'
-    anchor.rel = 'noopener noreferrer'
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
   }
 
   function downloadRegistrationForm(registration: RegistrationRecord) {
-    const blankUrl = getRegistrationBlankUrl(registration)
+    const blankUrl = getRegistrationBlankUrl(registration);
 
     if (!blankUrl) {
-      toast.error('This form is still being generated.')
-      return
+      toast.error("This form is still being generated.");
+      return;
     }
 
-    const anchor = document.createElement('a')
-    anchor.href = blankUrl
-    anchor.download = `${registration.boat_name ?? 'entry'}.pdf`
-    anchor.target = '_blank'
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
+    const anchor = document.createElement("a");
+    anchor.href = blankUrl;
+    anchor.download = `${registration.boat_name ?? "entry"}.pdf`;
+    anchor.target = "_blank";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
   }
 
   async function handleGeneratePaymentLink(registration: RegistrationRecord) {
-    const busyKey = `${registration.id}:payment`
-    setRegistrationActionBusyKey(busyKey)
+    const busyKey = `${registration.id}:payment`;
+    setRegistrationActionBusyKey(busyKey);
 
     try {
       const payload = await readJson<{
-        data: { checkoutUrl: string; sessionId: string }
+        data: { checkoutUrl: string; sessionId: string };
       }>(`/api/registrations/${registration.id}/checkout`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        method: "POST",
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          locale: registration.preferred_language ?? 'en',
+          locale: registration.preferred_language ?? "en",
         }),
-      })
+      });
 
       setRegistrations((current) =>
         current.map((item) =>
@@ -2590,7 +2220,7 @@ export default function AdminDashboard({
             ? {
                 ...item,
                 payment_data: {
-                  ...(item.payment_data && typeof item.payment_data === 'object'
+                  ...(item.payment_data && typeof item.payment_data === "object"
                     ? item.payment_data
                     : {}),
                   stripe: {
@@ -2600,170 +2230,179 @@ export default function AdminDashboard({
                   },
                 },
               }
-            : item
-        )
-      )
+            : item,
+        ),
+      );
 
-      openExternalUrl(payload.data.checkoutUrl)
-      toast.success('Payment link generated.')
+      openExternalUrl(payload.data.checkoutUrl);
+      toast.success("Payment link generated.");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to generate payment link.'
-      )
+        error instanceof Error
+          ? error.message
+          : "Unable to generate payment link.",
+      );
     } finally {
-      setRegistrationActionBusyKey(null)
+      setRegistrationActionBusyKey(null);
     }
   }
 
   async function handleGenerateInvoice(registration: RegistrationRecord) {
-    const busyKey = `${registration.id}:invoice`
-    setRegistrationActionBusyKey(busyKey)
+    const busyKey = `${registration.id}:invoice`;
+    setRegistrationActionBusyKey(busyKey);
 
     try {
       const payload = await readJson<{
         data: {
-          registration?: RegistrationRecord
-          hostedInvoiceUrl?: string | null
-          invoicePdf?: string | null
-        }
+          registration?: RegistrationRecord;
+          hostedInvoiceUrl?: string | null;
+          invoicePdf?: string | null;
+        };
       }>(`/api/admin/registrations/${registration.id}/invoice`, {
-        method: 'POST',
-      })
+        method: "POST",
+      });
 
       if (payload.data.registration) {
         setRegistrations((current) =>
           current.map((item) =>
-            item.id === registration.id ? payload.data.registration! : item
-          )
-        )
+            item.id === registration.id ? payload.data.registration! : item,
+          ),
+        );
       }
 
       const invoiceUrl =
-        payload.data.invoicePdf ?? payload.data.hostedInvoiceUrl ?? null
+        payload.data.invoicePdf ?? payload.data.hostedInvoiceUrl ?? null;
 
       if (invoiceUrl) {
-        openExternalUrl(invoiceUrl)
+        openExternalUrl(invoiceUrl);
       }
 
-      toast.success('Invoice ready.')
+      toast.success("Invoice ready.");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Unable to generate invoice.'
-      )
+        error instanceof Error ? error.message : "Unable to generate invoice.",
+      );
     } finally {
-      setRegistrationActionBusyKey(null)
+      setRegistrationActionBusyKey(null);
     }
   }
 
-  async function handleDownloadInsuranceDocuments(registration: RegistrationRecord) {
-    const busyKey = `${registration.id}:insurance`
-    setRegistrationActionBusyKey(busyKey)
+  async function handleDownloadInsuranceDocuments(
+    registration: RegistrationRecord,
+  ) {
+    const busyKey = `${registration.id}:insurance`;
+    setRegistrationActionBusyKey(busyKey);
 
     try {
       if (registration.insurance_documents.length === 0) {
-        toast.error('No insurance documents were uploaded.')
-        return
+        toast.error("No insurance documents were uploaded.");
+        return;
       }
 
-      for (let index = 0; index < registration.insurance_documents.length; index += 1) {
-        const url = registration.insurance_documents[index]
-        const response = await fetch(url)
+      for (
+        let index = 0;
+        index < registration.insurance_documents.length;
+        index += 1
+      ) {
+        const url = registration.insurance_documents[index];
+        const response = await fetch(url);
 
         if (!response.ok) {
-          throw new Error('Unable to download one of the insurance documents.')
+          throw new Error("Unable to download one of the insurance documents.");
         }
 
-        const blob = await response.blob()
-        const objectUrl = window.URL.createObjectURL(blob)
-        const anchor = document.createElement('a')
-        anchor.href = objectUrl
-        anchor.download = getFileLabelFromUrl(url)
-        document.body.appendChild(anchor)
-        anchor.click()
-        document.body.removeChild(anchor)
-        window.URL.revokeObjectURL(objectUrl)
+        const blob = await response.blob();
+        const objectUrl = window.URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = getFileLabelFromUrl(url);
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        window.URL.revokeObjectURL(objectUrl);
 
         if (index < registration.insurance_documents.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 300))
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
       }
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : 'Unable to download the insurance documents.'
-      )
+          : "Unable to download the insurance documents.",
+      );
     } finally {
-      setRegistrationActionBusyKey(null)
+      setRegistrationActionBusyKey(null);
     }
   }
 
-  function getRegistrationBlankUrl(registration: RegistrationRecord) {    
-    return registration.blank_link ?? registration.generated_form_url ?? null
+  function getRegistrationBlankUrl(registration: RegistrationRecord) {
+    return registration.blank_link ?? registration.generated_form_url ?? null;
   }
 
   const approvedRegistrations = registrations.filter(
-    (registration) => registration.status === 'approved'
-  )
+    (registration) => registration.status === "approved",
+  );
   const paidRegistrations = registrations.filter(
-    (registration) => registration.payment_data?.stripe?.payment_status === 'paid'
-  )
+    (registration) =>
+      registration.payment_data?.stripe?.payment_status === "paid",
+  );
 
   function startBlankDownloads(
     targets: RegistrationRecord[],
-    setDownloading: (value: boolean) => void
+    setDownloading: (value: boolean) => void,
   ) {
     const blankTargets = targets.filter((registration) =>
-      Boolean(getRegistrationBlankUrl(registration))
-    )
+      Boolean(getRegistrationBlankUrl(registration)),
+    );
 
     if (blankTargets.length === 0) {
-      toast.error('No generated blanks are ready to download yet.')
-      return
+      toast.error("No generated blanks are ready to download yet.");
+      return;
     }
 
-    setDownloading(true)
+    setDownloading(true);
 
     void (async () => {
       try {
         for (let index = 0; index < blankTargets.length; index += 1) {
-          const registration = blankTargets[index]
-          const blankUrl = getRegistrationBlankUrl(registration)
+          const registration = blankTargets[index];
+          const blankUrl = getRegistrationBlankUrl(registration);
 
           if (!blankUrl) {
-            continue
+            continue;
           }
 
-          const response = await fetch(blankUrl)
+          const response = await fetch(blankUrl);
 
           if (!response.ok) {
-            throw new Error('Unable to download one of the blank forms.')
+            throw new Error("Unable to download one of the blank forms.");
           }
 
-          const blob = await response.blob()
-          const objectUrl = window.URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = objectUrl
-          a.download = `${registration.boat_name ?? 'entry'}.pdf`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          window.URL.revokeObjectURL(objectUrl)
+          const blob = await response.blob();
+          const objectUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = objectUrl;
+          a.download = `${registration.boat_name ?? "entry"}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(objectUrl);
 
           if (index < blankTargets.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 300))
+            await new Promise((resolve) => setTimeout(resolve, 300));
           }
         }
       } catch (error) {
         toast.error(
           error instanceof Error
             ? error.message
-            : 'Unable to download the blank forms.'
-        )
+            : "Unable to download the blank forms.",
+        );
       } finally {
-        setDownloading(false)
+        setDownloading(false);
       }
-    })()
+    })();
   }
 
   return (
@@ -2854,7 +2493,8 @@ export default function AdminDashboard({
                           {moment(item.end_date).format("DD-MM-YYYY")}
                         </span>
                         <span className="rounded-full bg-white/70 px-3 py-1">
-                          {item.total_entries} total entr{item.total_entries === 1 ? 'y' : 'ies'}
+                          {item.total_entries} total entr
+                          {item.total_entries === 1 ? "y" : "ies"}
                         </span>
                         {/* <span
                           className={`rounded-full px-3 py-1 font-semibold ${getEventStatusBadgeClasses(item.status)}`}
@@ -3040,6 +2680,7 @@ export default function AdminDashboard({
                         </Button>
                         <Button
                           variant="destructive"
+                          style={{ color: "white", backgroundColor: "#dc2626" }}
                           onClick={() => handleDocumentDelete(item.id)}
                           disabled={documentsBusy}
                           className={`rounded-xl ${interactiveButtonClass}`}
@@ -3341,18 +2982,11 @@ export default function AdminDashboard({
                 }
               />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <MultiFileUploadField
-                  label="Documents"
-                  values={eventForm.documents}
-                  onChange={(urls) =>
-                    setEventForm((current) => ({ ...current, documents: urls }))
-                  }
-                  onError={(msg) => toast.error(msg)}
-                />
                 <EventDocumentReferenceField
                   label="Notice board"
                   values={eventForm.notice_board}
                   documents={documents}
+                  allowSelectExistingDocuments
                   onChange={(urls) =>
                     setEventForm((current) => ({
                       ...current,
@@ -3362,28 +2996,22 @@ export default function AdminDashboard({
                   onError={(msg) => toast.error(msg)}
                   onDocumentsCreated={addDocumentsToLibrary}
                   onDocumentUpdated={updateDocumentInLibrary}
+                  onCreateDocuments={createEventDocuments}
+                  onSaveDocument={saveDocumentRecord}
                 />
                 <EventDocumentReferenceField
                   label="Results"
                   values={eventForm.results}
                   documents={documents}
+                  allowSelectExistingDocuments
                   onChange={(values) =>
                     setEventForm((current) => ({ ...current, results: values }))
                   }
                   onError={(msg) => toast.error(msg)}
                   onDocumentsCreated={addDocumentsToLibrary}
                   onDocumentUpdated={updateDocumentInLibrary}
-                />
-                <MultiFileUploadField
-                  label="Register form"
-                  values={eventForm.register_form}
-                  onChange={(urls) =>
-                    setEventForm((current) => ({
-                      ...current,
-                      register_form: urls,
-                    }))
-                  }
-                  onError={(msg) => toast.error(msg)}
+                  onCreateDocuments={createEventDocuments}
+                  onSaveDocument={saveDocumentRecord}
                 />
               </div>
             </div>
@@ -3592,8 +3220,8 @@ export default function AdminDashboard({
                   onClick={() => {
                     startBlankDownloads(
                       approvedRegistrations,
-                      setDownloadingBlanks
-                    )
+                      setDownloadingBlanks,
+                    );
                   }}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -3609,8 +3237,8 @@ export default function AdminDashboard({
                   onClick={() => {
                     startBlankDownloads(
                       paidRegistrations,
-                      setDownloadingPaidBlanks
-                    )
+                      setDownloadingPaidBlanks,
+                    );
                   }}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -3637,9 +3265,11 @@ export default function AdminDashboard({
                   const isInvoiceActionBusy =
                     registrationActionBusyKey === `${registration.id}:invoice`;
                   const isMarkPaidActionBusy =
-                    registrationActionBusyKey === `${registration.id}:mark-paid`;
+                    registrationActionBusyKey ===
+                    `${registration.id}:mark-paid`;
                   const isInsuranceActionBusy =
-                    registrationActionBusyKey === `${registration.id}:insurance`;
+                    registrationActionBusyKey ===
+                    `${registration.id}:insurance`;
                   const hasInvoice = Boolean(
                     registration.payment_data?.stripe?.invoice_id,
                   );
@@ -3714,10 +3344,16 @@ export default function AdminDashboard({
                                 }
                                 onClick={() => {
                                   if (status === "rejected") {
-                                    setRejectionModal({ registrationId: registration.id, boatName: registration.boat_name })
-                                    setRejectionFeedback('')
+                                    setRejectionModal({
+                                      registrationId: registration.id,
+                                      boatName: registration.boat_name,
+                                    });
+                                    setRejectionFeedback("");
                                   } else {
-                                    void handleRegistrationStatusChange(registration.id, status)
+                                    void handleRegistrationStatusChange(
+                                      registration.id,
+                                      status,
+                                    );
                                   }
                                 }}
                                 className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
@@ -3740,10 +3376,16 @@ export default function AdminDashboard({
                                 isMarkPaidActionBusy ||
                                 isInsuranceActionBusy
                               }
-                              onClick={() => downloadRegistrationForm(registration)}
+                              onClick={() =>
+                                downloadRegistrationForm(registration)
+                              }
                               className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              <Icon icon="ph:file-pdf-bold" width={15} height={15} />
+                              <Icon
+                                icon="ph:file-pdf-bold"
+                                width={15}
+                                height={15}
+                              />
                               Download form
                             </button>
                             <button
@@ -3756,11 +3398,17 @@ export default function AdminDashboard({
                                 isInsuranceActionBusy
                               }
                               onClick={() => {
-                                void handleDownloadInsuranceDocuments(registration)
+                                void handleDownloadInsuranceDocuments(
+                                  registration,
+                                );
                               }}
                               className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              <Icon icon="ph:shield-check-bold" width={15} height={15} />
+                              <Icon
+                                icon="ph:shield-check-bold"
+                                width={15}
+                                height={15}
+                              />
                               {isInsuranceActionBusy
                                 ? "Downloading insurance..."
                                 : "Download insurance"}
@@ -3775,11 +3423,15 @@ export default function AdminDashboard({
                                 isInsuranceActionBusy
                               }
                               onClick={() => {
-                                void handleGeneratePaymentLink(registration)
+                                void handleGeneratePaymentLink(registration);
                               }}
                               className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              <Icon icon="ph:credit-card-bold" width={15} height={15} />
+                              <Icon
+                                icon="ph:credit-card-bold"
+                                width={15}
+                                height={15}
+                              />
                               {isPaymentActionBusy
                                 ? "Generating payment link..."
                                 : "Generate payment link"}
@@ -3794,11 +3446,17 @@ export default function AdminDashboard({
                                   isInsuranceActionBusy
                                 }
                                 onClick={() => {
-                                  void handleMarkRegistrationPaid(registration.id)
+                                  void handleMarkRegistrationPaid(
+                                    registration.id,
+                                  );
                                 }}
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                <Icon icon="ph:check-circle-bold" width={15} height={15} />
+                                <Icon
+                                  icon="ph:check-circle-bold"
+                                  width={15}
+                                  height={15}
+                                />
                                 {isMarkPaidActionBusy
                                   ? "Marking as paid..."
                                   : "Mark as paid"}
@@ -3814,11 +3472,15 @@ export default function AdminDashboard({
                                   isInsuranceActionBusy
                                 }
                                 onClick={() => {
-                                  void handleGenerateInvoice(registration)
+                                  void handleGenerateInvoice(registration);
                                 }}
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                <Icon icon="ph:receipt-bold" width={15} height={15} />
+                                <Icon
+                                  icon="ph:receipt-bold"
+                                  width={15}
+                                  height={15}
+                                />
                                 {isInvoiceActionBusy
                                   ? "Preparing invoice..."
                                   : hasInvoice
@@ -3929,7 +3591,7 @@ export default function AdminDashboard({
                               label="Contact email"
                               value={registration.contact_email}
                             />
-                            
+
                             <RegistrationDetailRow
                               label="Payment status"
                               value={formatOptionalValue(
@@ -3937,8 +3599,7 @@ export default function AdminDashboard({
                                   ?.payment_status,
                               )}
                             />
-                            
-                           
+
                             <RegistrationDetailRow
                               label="Receive documents by email"
                               value={formatBooleanValue(
@@ -3976,7 +3637,9 @@ export default function AdminDashboard({
                             {registration.status === "rejected" ? (
                               <RegistrationDetailRow
                                 label="Rejection feedback"
-                                value={formatOptionalValue(registration.rejection_feedback)}
+                                value={formatOptionalValue(
+                                  registration.rejection_feedback,
+                                )}
                               />
                             ) : null}
                           </div>
@@ -4056,12 +3719,12 @@ export default function AdminDashboard({
           title={
             activeEventDocumentsEvent
               ? `Documents for ${activeEventDocumentsEvent.name_en}`
-              : 'Event documents'
+              : "Event documents"
           }
           description={
             activeEventDocumentsEvent
-              ? 'Manage the notice board and result documents linked to this event.'
-              : 'Manage event documents.'
+              ? "Manage the notice board and result documents linked to this event."
+              : "Manage event documents."
           }
           onClose={closeEventDocumentsEditor}
         >
@@ -4078,6 +3741,7 @@ export default function AdminDashboard({
                     label="Notice board documents"
                     values={eventDocumentsForm.notice_board}
                     documents={documents}
+                    allowSelectExistingDocuments
                     onChange={(values) =>
                       setEventDocumentsForm((current) =>
                         current
@@ -4085,15 +3749,17 @@ export default function AdminDashboard({
                               ...current,
                               notice_board: values,
                             }
-                          : current
+                          : current,
                       )
                     }
                     onReorder={(values) =>
-                      autosaveEventDocumentOrder('notice_board', values)
+                      autosaveEventDocumentOrder("notice_board", values)
                     }
                     onError={(msg) => toast.error(msg)}
                     onDocumentsCreated={addDocumentsToLibrary}
                     onDocumentUpdated={updateDocumentInLibrary}
+                    onCreateDocuments={createEventDocuments}
+                    onSaveDocument={saveDocumentRecord}
                   />
                 </TabsContent>
 
@@ -4102,6 +3768,7 @@ export default function AdminDashboard({
                     label="Result documents"
                     values={eventDocumentsForm.results}
                     documents={documents}
+                    allowSelectExistingDocuments
                     onChange={(values) =>
                       setEventDocumentsForm((current) =>
                         current
@@ -4109,15 +3776,17 @@ export default function AdminDashboard({
                               ...current,
                               results: values,
                             }
-                          : current
+                          : current,
                       )
                     }
                     onReorder={(values) =>
-                      autosaveEventDocumentOrder('results', values)
+                      autosaveEventDocumentOrder("results", values)
                     }
                     onError={(msg) => toast.error(msg)}
                     onDocumentsCreated={addDocumentsToLibrary}
                     onDocumentUpdated={updateDocumentInLibrary}
+                    onCreateDocuments={createEventDocuments}
+                    onSaveDocument={saveDocumentRecord}
                   />
                 </TabsContent>
               </Tabs>
@@ -4128,7 +3797,7 @@ export default function AdminDashboard({
                   disabled={eventsBusy}
                   className="rounded-xl px-5 text-white"
                 >
-                  {eventsBusy ? 'Saving...' : 'Save document changes'}
+                  {eventsBusy ? "Saving..." : "Save document changes"}
                 </Button>
                 <Button
                   type="button"
@@ -4183,15 +3852,17 @@ export default function AdminDashboard({
                   Cancel
                 </Button>
                 <Button
-                  disabled={registrationStatusBusyId === rejectionModal.registrationId}
+                  disabled={
+                    registrationStatusBusyId === rejectionModal.registrationId
+                  }
                   onClick={() => {
-                    const { registrationId } = rejectionModal
-                    setRejectionModal(null)
+                    const { registrationId } = rejectionModal;
+                    setRejectionModal(null);
                     void handleRegistrationStatusChange(
                       registrationId,
                       "rejected",
-                      rejectionFeedback.trim() || undefined
-                    )
+                      rejectionFeedback.trim() || undefined,
+                    );
                   }}
                   className="flex-1 rounded-xl bg-red-600 text-white hover:bg-red-700"
                 >
