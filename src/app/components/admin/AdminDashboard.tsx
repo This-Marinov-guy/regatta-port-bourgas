@@ -49,6 +49,12 @@ type AdminDashboardProps = {
   initialDocuments: AdminDocumentRecord[];
 };
 
+type PaymentStatusResponse = {
+  data?: {
+    enabled?: boolean;
+  };
+};
+
 type PublishStatus = 1 | 2 | 3;
 type PublishStatusValue = "1" | "2" | "3";
 
@@ -1882,6 +1888,7 @@ export default function AdminDashboard({
   const [eventsBusy, setEventsBusy] = useState(false);
   const [newsBusy, setNewsBusy] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [newsModalOpen, setNewsModalOpen] = useState(false);
@@ -1910,6 +1917,35 @@ export default function AdminDashboard({
     boatName: string;
   } | null>(null);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPaymentStatus() {
+      try {
+        const response = await fetch("/api/payments/status", {
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | PaymentStatusResponse
+          | null;
+
+        if (!cancelled) {
+          setPaymentsEnabled(Boolean(response.ok && payload?.data?.enabled));
+        }
+      } catch {
+        if (!cancelled) {
+          setPaymentsEnabled(false);
+        }
+      }
+    }
+
+    void loadPaymentStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function openEventEditor(form = emptyEventForm()) {
     setEventForm(form);
@@ -2442,6 +2478,11 @@ export default function AdminDashboard({
   }
 
   async function handleGeneratePaymentLink(registration: RegistrationRecord) {
+    if (!paymentsEnabled) {
+      toast.error("Payments are unavailable because myPOS is not configured.");
+      return;
+    }
+
     const busyKey = `${registration.id}:payment`;
     setRegistrationActionBusyKey(busyKey);
 
@@ -2465,9 +2506,9 @@ export default function AdminDashboard({
                   ...(item.payment_data && typeof item.payment_data === "object"
                     ? item.payment_data
                     : {}),
-                  stripe: {
-                    ...(item.payment_data?.stripe ?? {}),
-                    checkout_session_id: payload.data.sessionId,
+                  mypos: {
+                    ...(item.payment_data?.mypos ?? {}),
+                    order_id: payload.data.sessionId,
                     checkout_url: payload.data.checkoutUrl,
                   },
                 },
@@ -2483,46 +2524,6 @@ export default function AdminDashboard({
         error instanceof Error
           ? error.message
           : "Unable to generate payment link.",
-      );
-    } finally {
-      setRegistrationActionBusyKey(null);
-    }
-  }
-
-  async function handleGenerateInvoice(registration: RegistrationRecord) {
-    const busyKey = `${registration.id}:invoice`;
-    setRegistrationActionBusyKey(busyKey);
-
-    try {
-      const payload = await readJson<{
-        data: {
-          registration?: RegistrationRecord;
-          hostedInvoiceUrl?: string | null;
-          invoicePdf?: string | null;
-        };
-      }>(`/api/admin/registrations/${registration.id}/invoice`, {
-        method: "POST",
-      });
-
-      if (payload.data.registration) {
-        setRegistrations((current) =>
-          current.map((item) =>
-            item.id === registration.id ? payload.data.registration! : item,
-          ),
-        );
-      }
-
-      const invoiceUrl =
-        payload.data.invoicePdf ?? payload.data.hostedInvoiceUrl ?? null;
-
-      if (invoiceUrl) {
-        openExternalUrl(invoiceUrl);
-      }
-
-      toast.success("Invoice ready.");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Unable to generate invoice.",
       );
     } finally {
       setRegistrationActionBusyKey(null);
@@ -2582,12 +2583,16 @@ export default function AdminDashboard({
     return registration.blank_link ?? registration.generated_form_url ?? null;
   }
 
+  function getRegistrationPayment(registration: RegistrationRecord) {
+    return registration.payment_data?.mypos ?? registration.payment_data?.stripe;
+  }
+
   const approvedRegistrations = registrations.filter(
     (registration) => registration.status === "approved",
   );
   const paidRegistrations = registrations.filter(
     (registration) =>
-      registration.payment_data?.stripe?.payment_status === "paid",
+      getRegistrationPayment(registration)?.payment_status === "paid",
   );
 
   function startBlankDownloads(
@@ -3552,9 +3557,8 @@ export default function AdminDashboard({
                     )
                   : registrations
                 ).map((registration) => {
-                  const stripePaymentStatus =
-                    registration.payment_data?.stripe?.payment_status;
-                  const isUnpaid = stripePaymentStatus !== "paid";
+                  const payment = getRegistrationPayment(registration);
+                  const isUnpaid = payment?.payment_status !== "paid";
                   const isPaymentActionBusy =
                     registrationActionBusyKey === `${registration.id}:payment`;
                   const isInvoiceActionBusy =
@@ -3565,10 +3569,6 @@ export default function AdminDashboard({
                   const isInsuranceActionBusy =
                     registrationActionBusyKey ===
                     `${registration.id}:insurance`;
-                  const hasInvoice = Boolean(
-                    registration.payment_data?.stripe?.invoice_id,
-                  );
-
                   return (
                     <AccordionItem
                       key={registration.id}
@@ -3712,6 +3712,7 @@ export default function AdminDashboard({
                               type="button"
                               disabled={
                                 isUnpaid === false ||
+                                !paymentsEnabled ||
                                 isPaymentActionBusy ||
                                 isInvoiceActionBusy ||
                                 isMarkPaidActionBusy ||
@@ -3729,7 +3730,9 @@ export default function AdminDashboard({
                               />
                               {isPaymentActionBusy
                                 ? "Generating payment link..."
-                                : "Generate payment link"}
+                                : paymentsEnabled
+                                  ? "Generate payment link"
+                                  : "Payments unavailable"}
                             </button>
                             {isUnpaid ? (
                               <button
@@ -3755,32 +3758,6 @@ export default function AdminDashboard({
                                 {isMarkPaidActionBusy
                                   ? "Marking as paid..."
                                   : "Mark as paid"}
-                              </button>
-                            ) : null}
-                            {!isUnpaid ? (
-                              <button
-                                type="button"
-                                disabled={
-                                  isPaymentActionBusy ||
-                                  isInvoiceActionBusy ||
-                                  isMarkPaidActionBusy ||
-                                  isInsuranceActionBusy
-                                }
-                                onClick={() => {
-                                  void handleGenerateInvoice(registration);
-                                }}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                <Icon
-                                  icon="ph:receipt-bold"
-                                  width={15}
-                                  height={15}
-                                />
-                                {isInvoiceActionBusy
-                                  ? "Preparing invoice..."
-                                  : hasInvoice
-                                    ? "Open invoice"
-                                    : "Generate invoice"}
                               </button>
                             ) : null}
                           </div>
@@ -3889,10 +3866,7 @@ export default function AdminDashboard({
 
                             <RegistrationDetailRow
                               label="Payment status"
-                              value={formatOptionalValue(
-                                registration.payment_data?.stripe
-                                  ?.payment_status,
-                              )}
+                              value={formatOptionalValue(payment?.payment_status)}
                             />
 
                             <RegistrationDetailRow

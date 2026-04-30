@@ -11,7 +11,7 @@ const navLinksStructure = [
   { labelKey: "navigation.news", href: "/news" },
   { labelKey: "navigation.gallery", href: "/gallery" },
   { labelKey: "navigation.contactUs", href: "/contact-us" },
-  { labelKey: "navigation.documents", href: "/documents" },
+  // { labelKey: "navigation.documents", href: "/documents" },
 ];
 
 const footerLinksStructure = [
@@ -20,7 +20,7 @@ const footerLinksStructure = [
   { labelKey: "navigation.news", href: "/news" },
   { labelKey: "navigation.gallery", href: "/gallery" },
   { labelKey: "navigation.contactUs", href: "/contact-us" },
-  { labelKey: "navigation.documents", href: "/documents" },
+  // { labelKey: "navigation.documents", href: "/documents" },
 ];
 
 export const GET = async (request: NextRequest) => {

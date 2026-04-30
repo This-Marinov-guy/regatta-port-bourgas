@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { getRegistrationWithEvent } from '@/lib/registrations/data'
-import { getStripeServerClient } from '@/lib/stripe/server'
+import {
+  assertMyposConfigured,
+  buildMyposPurchaseFields,
+  buildMyposReturnUrls,
+  centsToMyposAmount,
+  createMyposOrderId,
+  getMyposCheckoutEndpoint,
+} from '@/lib/mypos/server'
 import type { RegistrationPaymentData } from '@/types/admin'
 import { normalizeLocale, readLocaleFromRequest } from '@/lib/locale'
 
@@ -19,11 +26,140 @@ function getBaseUrl(request: Request) {
   return new URL(request.url).origin.replace(/\/$/, '')
 }
 
+function buildCheckoutAmount(registration: Awaited<ReturnType<typeof getRegistrationWithEvent>>) {
+  const crewCount = Math.max(registration.crew_list.length, 1)
+  const unitAmount = 5000
+
+  return {
+    crewCount,
+    unitAmount,
+    totalAmount: crewCount * unitAmount,
+    currency: 'eur',
+  }
+}
+
+function escapeHtml(value: string | number) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function renderMyposCheckoutForm(args: {
+  endpoint: string
+  fields: Record<string, string | number>
+}) {
+  const inputs = Object.entries(args.fields)
+    .map(
+      ([name, value]) =>
+        `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`
+    )
+    .join('\n')
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redirecting to myPOS Checkout</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: sans-serif; background: #f8f3e8; color: #10243e; }
+    main { max-width: 32rem; padding: 2rem; text-align: center; }
+    button { border: 0; border-radius: 999px; padding: 0.85rem 1.25rem; background: #0057b8; color: white; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Redirecting to secure payment...</h1>
+    <p>Please wait while we send you to myPOS Checkout.</p>
+    <form id="mypos-checkout" method="post" action="${escapeHtml(args.endpoint)}">
+      ${inputs}
+      <noscript><button type="submit">Continue to payment</button></noscript>
+    </form>
+  </main>
+  <script>document.getElementById('mypos-checkout').submit();</script>
+</body>
+</html>`
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    assertMyposConfigured()
+
+    const { id } = await params
+    const registration = await getRegistrationWithEvent(id)
+    const currentMypos = registration.payment_data?.mypos
+    const orderId = new URL(request.url).searchParams.get('orderId')
+
+    if (!registration.event) {
+      return new Response('Registration event not found.', { status: 400 })
+    }
+
+    if (!orderId || currentMypos?.order_id !== orderId) {
+      return new Response('Checkout session not found.', { status: 404 })
+    }
+
+    const baseUrl = getBaseUrl(request)
+    const locale = normalizeLocale(currentMypos.locale ?? readLocaleFromRequest(request))
+    const { crewCount, unitAmount, totalAmount, currency } =
+      buildCheckoutAmount(registration)
+    const urls = buildMyposReturnUrls({
+      baseUrl,
+      locale,
+      eventSlug: registration.event.slug,
+    })
+    const fields = buildMyposPurchaseFields({
+      amountCents: totalAmount,
+      currency,
+      orderId,
+      okUrl: urls.okUrl,
+      cancelUrl: urls.cancelUrl,
+      notifyUrl: urls.notifyUrl,
+      customerEmail: registration.contact_email,
+      customerPhone: registration.contact_phone,
+      customerName: registration.contact_name || registration.skipper_name,
+      customerCountry: registration.country,
+      itemName: `${registration.event.name_en} registration fee`,
+      itemQuantity: crewCount,
+      itemUnitAmountCents: unitAmount,
+      note: `${registration.boat_name} / ${registration.skipper_name}`,
+    })
+
+    return new Response(
+      renderMyposCheckoutForm({
+        endpoint: getMyposCheckoutEndpoint(),
+        fields,
+      }),
+      {
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-store',
+        },
+      }
+    )
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unable to open myPOS checkout.'
+
+    return new Response(
+      message,
+      { status: message.includes('Payments are disabled') ? 503 : 400 }
+    )
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    assertMyposConfigured()
+
     const body = (await request.json().catch(() => ({}))) as CheckoutPayload
     const locale = normalizeLocale(body.locale ?? readLocaleFromRequest(request))
     const { id } = await params
@@ -36,65 +172,27 @@ export async function POST(
       )
     }
 
-    const crewCount = Math.max(registration.crew_list.length, 1)
-    const unitAmount = 5000
-    const totalAmount = crewCount * unitAmount
+    const { crewCount, unitAmount, totalAmount, currency } =
+      buildCheckoutAmount(registration)
     const baseUrl = getBaseUrl(request)
-    const eventPath = `/${locale}/events/${registration.event.slug}`
-    const stripe = getStripeServerClient()
-
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      client_reference_id: registration.id,
-      customer_email: registration.contact_email,
-      success_url: `${baseUrl}${eventPath}?payment=success`,
-      cancel_url: `${baseUrl}${eventPath}?payment=cancelled`,
-      metadata: {
-        method: 'regatta-fee',
-        'registration-id': registration.id,
-        'event-id': registration.event_id,
-        'crew-count': String(crewCount),
-        locale,
-      },
-      payment_intent_data: {
-        metadata: {
-          method: 'regatta-fee',
-          'registration-id': registration.id,
-          'event-id': registration.event_id,
-          'crew-count': String(crewCount),
-          locale,
-        },
-      },
-      line_items: [
-        {
-          quantity: crewCount,
-          price_data: {
-            currency: 'eur',
-            unit_amount: unitAmount,
-            product_data: {
-              name: `${registration.event.name_en} registration fee`,
-              description: `${registration.boat_name} / ${registration.skipper_name}`,
-            },
-          },
-        },
-      ],
+    buildMyposReturnUrls({
+      baseUrl,
+      locale,
+      eventSlug: registration.event.slug,
     })
-
-    if (!session.url) {
-      throw new Error('Stripe did not return a checkout URL.')
-    }
+    const orderId = createMyposOrderId(registration.id)
+    const checkoutUrl = `${baseUrl}/api/registrations/${registration.id}/checkout?orderId=${encodeURIComponent(orderId)}`
 
     const nextPaymentData: RegistrationPaymentData = {
       ...(registration.payment_data && typeof registration.payment_data === 'object'
         ? registration.payment_data
         : {}),
-      stripe: {
-        checkout_session_id: session.id,
-        checkout_url: session.url,
-        status: session.status,
-        payment_status: session.payment_status,
-        payment_intent_id:
-          typeof session.payment_intent === 'string' ? session.payment_intent : null,
+      mypos: {
+        order_id: orderId,
+        checkout_url: checkoutUrl,
+        provider_url: getMyposCheckoutEndpoint(),
+        status: 'pending',
+        payment_status: 'unpaid',
         method: 'regatta-fee',
         registration_id: registration.id,
         event_id: registration.event_id,
@@ -103,7 +201,8 @@ export async function POST(
         crew_count: crewCount,
         unit_amount: unitAmount,
         total_amount: totalAmount,
-        currency: 'eur',
+        amount: centsToMyposAmount(totalAmount),
+        currency,
         created_at: new Date().toISOString(),
       },
     }
@@ -121,21 +220,22 @@ export async function POST(
     return NextResponse.json(
       {
         data: {
-          checkoutUrl: session.url,
-          sessionId: session.id,
+          checkoutUrl,
+          sessionId: orderId,
         },
       },
       { status: 201 }
     )
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unable to create myPOS checkout.'
+    const status = message.includes('Payments are disabled') ? 503 : 400
+
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Unable to create Stripe checkout.',
+        error: message,
       },
-      { status: 400 }
+      { status }
     )
   }
 }

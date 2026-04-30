@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
+import { getMyposConfigurationStatus, getMyposCheckoutEndpoint } from '@/lib/mypos/server'
 import { SNSClient, GetTopicAttributesCommand } from '@aws-sdk/client-sns'
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand } from '@aws-sdk/client-s3'
 import { LambdaClient, GetFunctionCommand } from '@aws-sdk/client-lambda'
@@ -112,17 +113,28 @@ async function checkGoogleDrive(): Promise<CheckResult> {
   })
 }
 
-async function checkStripe(): Promise<CheckResult> {
-  const secretKey = process.env.STRIPE_SECRET_KEY
-  if (!secretKey) return { status: 'error', detail: 'STRIPE_SECRET_KEY not set' }
+async function checkMypos(): Promise<CheckResult> {
+  const config = getMyposConfigurationStatus()
+
+  if (!config.enabled) {
+    return {
+      status: 'error',
+      detail: [
+        config.missing.length ? `${config.missing.join(', ')} not set` : null,
+        ...config.invalid,
+      ]
+        .filter(Boolean)
+        .join('; '),
+    }
+  }
 
   return timed(async () => {
-    const res = await fetch('https://api.stripe.com/v1/account', {
-      headers: { Authorization: `Bearer ${secretKey}` },
-    })
-    if (!res.ok) {
+    const checkoutUrl = getMyposCheckoutEndpoint()
+    const res = await fetch(checkoutUrl, { method: 'HEAD' })
+
+    if (res.status >= 500) {
       const body = await res.text()
-      throw new Error(`Stripe ${res.status}: ${body.slice(0, 120)}`)
+      throw new Error(`myPOS ${res.status}: ${body.slice(0, 120)}`)
     }
   })
 }
@@ -136,7 +148,7 @@ export async function GET() {
     lambdaNotifications,
     smtp,
     googleDrive,
-    stripe,
+    mypos,
   ] = await Promise.allSettled([
     checkSupabase(),
     checkSns(),
@@ -145,7 +157,7 @@ export async function GET() {
     checkLambda('registration-notifications'),
     checkSmtp(),
     checkGoogleDrive(),
-    checkStripe(),
+    checkMypos(),
   ])
 
   function settled(r: PromiseSettledResult<CheckResult>): CheckResult {
@@ -161,7 +173,7 @@ export async function GET() {
     lambda_notifications: settled(lambdaNotifications),
     smtp: settled(smtp),
     google_drive: settled(googleDrive),
-    stripe: settled(stripe),
+    mypos: settled(mypos),
   }
 
   const allOk = Object.values(checks).every((c) => c.status === 'ok')

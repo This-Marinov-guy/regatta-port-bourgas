@@ -355,31 +355,31 @@ export async function updateRegistrationPaymentStatus(
 ) {
   const registration = await getRegistrationWithEvent(id)
   const supabase = createSupabaseServiceClient()
-  const existingStripe =
-    registration.payment_data?.stripe &&
-    typeof registration.payment_data.stripe === 'object'
-      ? registration.payment_data.stripe
+  const existingPayment =
+    registration.payment_data?.mypos &&
+    typeof registration.payment_data.mypos === 'object'
+      ? registration.payment_data.mypos
       : {}
 
   const timestamp = new Date().toISOString()
-  const crewCount = Math.max(existingStripe.crew_count ?? registration.crew_list.length, 1)
+  const crewCount = Math.max(existingPayment.crew_count ?? registration.crew_list.length, 1)
 
   const nextPaymentData: RegistrationPaymentData = {
     ...(registration.payment_data && typeof registration.payment_data === 'object'
       ? registration.payment_data
       : {}),
-    stripe: {
-      ...existingStripe,
-      status: existingStripe.status ?? 'complete',
+    mypos: {
+      ...existingPayment,
+      status: existingPayment.status ?? 'complete',
       payment_status: paymentStatus,
-      method: existingStripe.method ?? 'manual-admin',
-      registration_id: existingStripe.registration_id ?? registration.id,
-      event_id: existingStripe.event_id ?? registration.event_id,
-      customer_email: existingStripe.customer_email ?? registration.contact_email,
-      locale: existingStripe.locale ?? registration.preferred_language,
+      method: existingPayment.method ?? 'manual-admin',
+      registration_id: existingPayment.registration_id ?? registration.id,
+      event_id: existingPayment.event_id ?? registration.event_id,
+      customer_email: existingPayment.customer_email ?? registration.contact_email,
+      locale: existingPayment.locale ?? registration.preferred_language,
       crew_count: crewCount,
-      created_at: existingStripe.created_at ?? timestamp,
-      completed_at: existingStripe.completed_at ?? timestamp,
+      created_at: existingPayment.created_at ?? timestamp,
+      completed_at: existingPayment.completed_at ?? timestamp,
     },
   }
 

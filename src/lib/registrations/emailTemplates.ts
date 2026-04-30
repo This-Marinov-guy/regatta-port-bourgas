@@ -61,7 +61,7 @@ const registrationEmailCopy = {
         'Your payment is still pending{payableAmount}. Complete the payment below to finalize the registration.',
       paymentAmountFragment: ' for <strong>{amount}</strong>',
       paymentNote:
-        'Your registration will be treated as complete once the Stripe payment has been successfully finished.',
+        'Your registration will be treated as complete once the myPOS payment has been successfully finished.',
       nextStepTitle: 'Next step',
       nextStepBody:
         'Your registration has been received and is currently being processed by the organizing team.',
@@ -127,7 +127,7 @@ const registrationEmailCopy = {
         'Вашето плащане все още е очаквано{payableAmount}. Завършете плащането по-долу, за да финализирате регистрацията.',
       paymentAmountFragment: ' за <strong>{amount}</strong>',
       paymentNote:
-        'Регистрацията ще се счита за завършена след успешно приключено плащане чрез Stripe.',
+        'Регистрацията ще се счита за завършена след успешно приключено плащане чрез myPOS.',
       nextStepTitle: 'Следваща стъпка',
       nextStepBody:
         'Вашата регистрация е получена и в момента се обработва от организаторския екип.',
@@ -204,23 +204,25 @@ function eventDates(registration: RegistrationWithEvent, locale: TemplateLocale)
 }
 
 function paymentSummary(registration: RegistrationWithEvent) {
-  const stripe = registration.payment_data?.stripe
+  const payment =
+    registration.payment_data?.mypos ?? registration.payment_data?.stripe
 
-  if (!stripe?.total_amount || !stripe.currency) {
+  if (!payment?.total_amount || !payment.currency) {
     return null
   }
 
-  return `${(stripe.total_amount / 100).toFixed(2)} ${stripe.currency.toUpperCase()}`
+  return `${(payment.total_amount / 100).toFixed(2)} ${payment.currency.toUpperCase()}`
 }
 
 function paymentUrl(registration: RegistrationWithEvent) {
-  const stripe = registration.payment_data?.stripe
+  const payment =
+    registration.payment_data?.mypos ?? registration.payment_data?.stripe
 
-  if (!stripe?.checkout_url || stripe.payment_status === 'paid') {
+  if (!payment?.checkout_url || payment.payment_status === 'paid') {
     return null
   }
 
-  return stripe.checkout_url
+  return payment.checkout_url
 }
 
 function prefillUrl(eventUrl: string, referenceId: string) {

@@ -95,6 +95,30 @@ export type RegistrationPaymentData = {
     created_at?: string
     completed_at?: string
   }
+  mypos?: {
+    order_id?: string
+    checkout_url?: string | null
+    provider_url?: string | null
+    status?: string | null
+    payment_status?: string | null
+    method?: string | null
+    registration_id?: string | null
+    event_id?: string | null
+    customer_email?: string | null
+    locale?: AppLocale
+    crew_count?: number
+    unit_amount?: number
+    total_amount?: number | null
+    amount?: string | null
+    currency?: string | null
+    transaction_ref?: string | null
+    request_stan?: string | null
+    request_datetime?: string | null
+    raw_status?: string | null
+    created_at?: string
+    completed_at?: string
+    rolled_back_at?: string
+  }
 } | null
 
 export type RegistrationRecord = {

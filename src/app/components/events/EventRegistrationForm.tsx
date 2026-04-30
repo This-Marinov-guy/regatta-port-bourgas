@@ -61,6 +61,12 @@ type RegistrationSubmitResponse = {
   error?: string
 }
 
+type PaymentStatusResponse = {
+  data?: {
+    enabled?: boolean
+  }
+}
+
 const MAX_INSURANCE_FILE_SIZE = 10 * 1024 * 1024
 const MAX_IMAGE_DIMENSION = 2400
 const IMAGE_COMPRESSION_QUALITY_STEPS = [0.82, 0.72, 0.62, 0.5, 0.4]
@@ -205,6 +211,7 @@ const content = {
       close: 'Close',
       paymentAction: 'Pay entry fee',
       paymentLoading: 'Opening checkout...',
+      paymentUnavailable: 'Payments unavailable',
       paymentError: 'We could not start the payment. Please try again.',
     },
     crewEmpty:
@@ -307,6 +314,7 @@ const content = {
       close: 'Затвори',
       paymentAction: 'Плати такса участие',
       paymentLoading: 'Отваряне на плащането...',
+      paymentUnavailable: 'Плащанията не са налични',
       paymentError: 'Не успяхме да стартираме плащането. Моля, опитайте отново.',
     },
     crewEmpty:
@@ -633,6 +641,7 @@ export default function EventRegistrationForm({
   const [form, setForm] = useState<RegistrationDraft>(() => defaultDraft())
   const [submitting, setSubmitting] = useState(false)
   const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false)
   const [insuranceUploading, setInsuranceUploading] = useState(false)
   const [insuranceDragging, setInsuranceDragging] = useState(false)
   const [invalidFields, setInvalidFields] = useState<string[]>([])
@@ -642,6 +651,35 @@ export default function EventRegistrationForm({
   const [activeLegalModal, setActiveLegalModal] = useState<LegalModalKey | null>(null)
   const insuranceInputRef = useRef<HTMLInputElement>(null)
   const hydratedRef = useRef(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPaymentStatus() {
+      try {
+        const response = await fetch('/api/payments/status', {
+          cache: 'no-store',
+        })
+        const payload = (await response.json().catch(() => null)) as
+          | PaymentStatusResponse
+          | null
+
+        if (!cancelled) {
+          setPaymentsEnabled(Boolean(response.ok && payload?.data?.enabled))
+        }
+      } catch {
+        if (!cancelled) {
+          setPaymentsEnabled(false)
+        }
+      }
+    }
+
+    void loadPaymentStatus()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -989,15 +1027,17 @@ export default function EventRegistrationForm({
             submissionState === 'success'
               ? paymentLoading
                 ? t.submissionStatus.paymentLoading
-                : t.submissionStatus.paymentAction
+                : paymentsEnabled
+                  ? t.submissionStatus.paymentAction
+                  : t.submissionStatus.paymentUnavailable
               : undefined
           }
           onAction={
-            submissionState === 'success' && createdRegistrationId
+            submissionState === 'success' && createdRegistrationId && paymentsEnabled
               ? handlePaymentCheckout
               : undefined
           }
-          actionDisabled={paymentLoading}
+          actionDisabled={paymentLoading || !paymentsEnabled}
         />
       ) : null}
 

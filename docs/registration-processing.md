@@ -18,6 +18,17 @@ App / API:
 
 - `AWS_REGION`
 - `AWS_REGISTRATION_EVENTS_TOPIC_ARN`
+- `NEXT_PUBLIC_SITE_URL` (must be a public HTTPS URL without a port for myPOS callbacks)
+- `MYPOS_ENVIRONMENT` (`sandbox` by default, set to `production` for live payments)
+- `MYPOS_SID`
+- `MYPOS_WALLET_NUMBER`
+- `MYPOS_KEY_INDEX` (optional, defaults to `1`)
+- `MYPOS_PRIVATE_KEY` (merchant private key, PEM; escaped `\n` line breaks are supported)
+- `MYPOS_PUBLIC_CERTIFICATE` (myPOS public certificate, PEM; escaped `\n` line breaks are supported)
+- `MYPOS_CHECKOUT_URL` (optional override for the hosted checkout endpoint)
+- `MYPOS_ALLOW_INSECURE_URLS` (optional local tunnel escape hatch; never enable in production)
+
+If any required myPOS variable is missing or `NEXT_PUBLIC_SITE_URL` is not valid for myPOS callbacks, payment actions are disabled in the public registration flow and admin dashboard. Registrations can still be submitted and admins can still mark payments manually.
 
 Lambda workers:
 

@@ -62,7 +62,7 @@ CHECKS_ORDER = [
   ("lambda_notifications", "Lambda: registration-notifications"),
   ("smtp",                 "Gmail SMTP"),
   ("google_drive",         "Google Drive API"),
-  ("stripe",               "Stripe API"),
+  ("mypos",                "myPOS Checkout"),
 ]
 
 GREEN  = '\033[0;32m'
