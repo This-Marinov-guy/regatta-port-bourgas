@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/usr/bin/head -5)",
+      "Bash(/usr/bin/head -3)"
+    ]
+  }
+}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Button } from '@/app/components/ui/button'
+import { X } from 'lucide-react'
 import EventRegistrationForm from '@/app/components/events/EventRegistrationForm'
 
 type Props = {
@@ -131,27 +131,27 @@ export default function EventRegistrationModal({
                 : 'translate-y-6 scale-[0.985] opacity-0'
             }`}
           >
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 rounded-t-[2rem] border-b border-black/10 bg-[#f8f6ef]/95 px-5 py-5 backdrop-blur dark:border-white/10 dark:bg-[#11110f]/95 sm:px-8">
-              <div>
-                <p className=" font-semibold uppercase tracking-[0.22em] text-primary/80">
+            <div className="sticky top-0 z-10 rounded-t-[2rem] border-b border-black/10 bg-[#f8f6ef]/95 px-5 py-5 pr-16 backdrop-blur dark:border-white/10 dark:bg-[#11110f]/95 sm:px-8 sm:pr-20">
+              <button
+                type="button"
+                onClick={closeModal}
+                aria-label={t('closeRegistration')}
+                className="absolute right-4 top-4 inline-flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:right-6 sm:top-6"
+              >
+                <X className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+
+              <div className="w-full">
+                <p className="font-semibold uppercase tracking-[0.22em] text-primary/80">
                   {t('registerModalEyebrow')}
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-dark dark:text-white sm:text-3xl">
+                <h2 className="mt-2 text-lg font-semibold text-dark dark:text-white sm:text-3xl">
                   {eventTitle}
                 </h2>
-                <p className="mt-2  font-medium text-dark/60 dark:text-white/60">
+                <p className="mt-2 font-medium text-dark/60 dark:text-white/60">
                   {eventDate}
                 </p>
               </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeModal}
-                className="rounded-xl border-black/10 bg-white text-dark dark:border-white/10 dark:bg-black/20 dark:text-white"
-              >
-                {t('closeRegistration')}
-              </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6">
