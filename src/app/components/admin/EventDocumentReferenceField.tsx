@@ -22,6 +22,11 @@ type EventDocumentReferenceFieldProps = {
     files: File[];
     generalUse?: boolean;
   }) => Promise<AdminDocumentRecord[]>;
+  onCreateDocumentFromUrl: (args: {
+    url: string;
+    name?: string;
+    generalUse?: boolean;
+  }) => Promise<AdminDocumentRecord>;
   onSaveDocument: (args: {
     id: string;
     name_en: string;
@@ -151,6 +156,87 @@ function FileDropPanel({
   );
 }
 
+function LinkInputPanel({
+  onSubmit,
+  busy = false,
+}: {
+  onSubmit: (args: { url: string; name: string }) => void;
+  busy?: boolean;
+}) {
+  const [url, setUrl] = useState("");
+  const [name, setName] = useState("");
+
+  function handleAdd() {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl || busy) {
+      return;
+    }
+
+    onSubmit({ url: trimmedUrl, name: name.trim() });
+    setUrl("");
+    setName("");
+  }
+
+  return (
+    <div className="mt-3 rounded-[1.5rem] border border-black/10 bg-white/80 px-5 py-5">
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Icon icon="ph:link-bold" width={22} height={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-dark">Or paste a direct link</p>
+          <p className="mt-1 text-dark/60">
+            Attach a document by URL instead of uploading a file.
+          </p>
+
+          <div className="mt-3 grid gap-2">
+            <input
+              type="url"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              placeholder="https://example.com/document.pdf"
+              disabled={busy}
+              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
+            />
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Display name (optional)"
+              disabled={busy}
+              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
+            />
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleAdd}
+                disabled={busy || !url.trim()}
+                className={`rounded-xl px-4 text-white ${interactiveButtonClass}`}
+              >
+                {busy ? "Adding..." : "Add link"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getDocumentNameFromUrl(rawUrl: string) {
+  try {
+    const parsed = new URL(rawUrl);
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    const last = segments[segments.length - 1] ?? parsed.hostname;
+    const decoded = decodeURIComponent(last);
+    const withoutExtension = decoded.replace(/\.[^.]+$/, "");
+    const cleaned = withoutExtension.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+    return cleaned || parsed.hostname;
+  } catch {
+    return "";
+  }
+}
+
 function ExistingDocumentsMultiSelect({
   documents,
   values,
@@ -168,11 +254,12 @@ function ExistingDocumentsMultiSelect({
   );
 
   useEffect(() => {
-    setSelectedIds((current) =>
-      current.filter((id) =>
+    setSelectedIds((current) => {
+      const filtered = current.filter((id) =>
         availableDocuments.some((document) => document.id === id),
-      ),
-    );
+      );
+      return filtered.length === current.length ? current : filtered;
+    });
   }, [availableDocuments]);
 
   function handleSelectionChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -478,10 +565,12 @@ export default function EventDocumentReferenceField({
   onDocumentsCreated,
   onDocumentUpdated,
   onCreateDocuments,
+  onCreateDocumentFromUrl,
   onSaveDocument,
   allowSelectExistingDocuments = false,
 }: EventDocumentReferenceFieldProps) {
   const [uploading, setUploading] = useState(false);
+  const [addingLink, setAddingLink] = useState(false);
   const [draggedValue, setDraggedValue] = useState<string | null>(null);
   const [dragOverValue, setDragOverValue] = useState<string | null>(null);
 
@@ -511,6 +600,40 @@ export default function EventDocumentReferenceField({
       onError(error instanceof Error ? error.message : "Upload failed.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleAddLink({ url, name }: { url: string; name: string }) {
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      onError("Please enter a valid URL (including https://).");
+      return;
+    }
+
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      onError("Links must start with http:// or https://.");
+      return;
+    }
+
+    setAddingLink(true);
+
+    try {
+      const fallbackName = name || getDocumentNameFromUrl(url) || url;
+      const created = await onCreateDocumentFromUrl({
+        url,
+        name: fallbackName,
+        generalUse: false,
+      });
+      onDocumentsCreated([created]);
+      if (!values.includes(created.id)) {
+        onChange([...values, created.id]);
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Unable to add link.");
+    } finally {
+      setAddingLink(false);
     }
   }
 
@@ -580,6 +703,8 @@ export default function EventDocumentReferenceField({
         onFiles={handleFiles}
         helperText="Drop files here to create document records and attach them to this event."
       />
+
+      <LinkInputPanel onSubmit={handleAddLink} busy={addingLink} />
 
       {allowSelectExistingDocuments ? (
         <ExistingDocumentsMultiSelect

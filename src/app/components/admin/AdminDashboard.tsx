@@ -584,6 +584,30 @@ async function createAdminDocument(args: {
   return payload.data;
 }
 
+async function createAdminDocumentFromUrl(args: {
+  url: string;
+  name?: string;
+  generalUse?: boolean;
+}): Promise<AdminDocumentRecord> {
+  const source = args.url.trim();
+  const fallbackName = args.name?.trim() || source;
+  const payload = await readJson<{ data: AdminDocumentRecord }>(
+    "/api/admin/documents",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name_en: fallbackName,
+        name_bg: "",
+        source,
+        general_use: Boolean(args.generalUse),
+      }),
+    },
+  );
+
+  return payload.data;
+}
+
 async function listStorageAssets(bucket: AssetBucket): Promise<StorageAsset[]> {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase.storage.from(bucket).list("", {
@@ -2010,6 +2034,14 @@ export default function AdminDashboard({
     );
   }
 
+  async function createEventDocumentFromUrl(args: {
+    url: string;
+    name?: string;
+    generalUse?: boolean;
+  }) {
+    return createAdminDocumentFromUrl(args);
+  }
+
   async function saveDocumentRecord(args: {
     id: string;
     name_en: string;
@@ -3274,6 +3306,7 @@ export default function AdminDashboard({
                   onDocumentsCreated={addDocumentsToLibrary}
                   onDocumentUpdated={updateDocumentInLibrary}
                   onCreateDocuments={createEventDocuments}
+                  onCreateDocumentFromUrl={createEventDocumentFromUrl}
                   onSaveDocument={saveDocumentRecord}
                 />
                 <EventDocumentReferenceField
@@ -3288,6 +3321,7 @@ export default function AdminDashboard({
                   onDocumentsCreated={addDocumentsToLibrary}
                   onDocumentUpdated={updateDocumentInLibrary}
                   onCreateDocuments={createEventDocuments}
+                  onCreateDocumentFromUrl={createEventDocumentFromUrl}
                   onSaveDocument={saveDocumentRecord}
                 />
               </div>
@@ -4028,6 +4062,7 @@ export default function AdminDashboard({
                     onDocumentsCreated={addDocumentsToLibrary}
                     onDocumentUpdated={updateDocumentInLibrary}
                     onCreateDocuments={createEventDocuments}
+                    onCreateDocumentFromUrl={createEventDocumentFromUrl}
                     onSaveDocument={saveDocumentRecord}
                   />
                 </TabsContent>
@@ -4055,6 +4090,7 @@ export default function AdminDashboard({
                     onDocumentsCreated={addDocumentsToLibrary}
                     onDocumentUpdated={updateDocumentInLibrary}
                     onCreateDocuments={createEventDocuments}
+                    onCreateDocumentFromUrl={createEventDocumentFromUrl}
                     onSaveDocument={saveDocumentRecord}
                   />
                 </TabsContent>
