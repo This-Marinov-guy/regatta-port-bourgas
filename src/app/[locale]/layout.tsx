@@ -171,7 +171,7 @@ export default async function LocaleLayout({
         '@type': 'WebSite',
         '@id': `${siteUrl}/#website`,
         url: siteUrl,
-        name: 'International Regatta Bulstrad Port Bourgas ',
+        name: 'International Regatta Port Bourgas Bulstrad Cup ',
         publisher: { '@id': `${siteUrl}/#organization` },
         inLanguage: [locale === 'bg' ? 'bg-BG' : 'en-US'],
         potentialAction: {

@@ -34,7 +34,7 @@ const EVENT_EMAIL_LOGO_URL =
 
 const registrationEmailCopy = {
   en: {
-    eventFallback: 'International Regatta Bulstrad Port Bourgas ',
+    eventFallback: 'International Regatta Port Bourgas Bulstrad Cup ',
     dateUnavailable: 'Date unavailable',
     labels: {
       event: 'Event',
@@ -100,7 +100,7 @@ const registrationEmailCopy = {
     },
   },
   bg: {
-    eventFallback: 'Международна Регата Булстрад Порт Бургас',
+    eventFallback: 'Международна Регата Порт Бургас Купа Булстрад ',
     dateUnavailable: 'Няма налична дата',
     labels: {
       event: 'Събитие',

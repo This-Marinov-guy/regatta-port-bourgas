@@ -291,7 +291,7 @@ async function generateRegistrationPdf(registration: RegistrationWithEvent) {
   const eventName =
     registration.event?.name_en ||
     registration.event?.name_bg ||
-    'International Regatta Bulstrad Port Bourgas '
+    'International Regatta Port Bourgas Bulstrad Cup '
   const eventDates = registration.event
     ? `${format(new Date(registration.event.start_date), 'dd.MM.yyyy')} - ${format(
         new Date(registration.event.end_date),
