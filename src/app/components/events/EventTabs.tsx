@@ -164,7 +164,7 @@ function DocumentList({
               </div>
               <p className="font-semibold text-dark dark:text-white">{name}</p>
             </div>
-            <div className="flex items-center justify-between gap-3 pl-14">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-dark/55 dark:text-white/55">
                 {formatUploadedDate(document.created_at)}
               </p>
