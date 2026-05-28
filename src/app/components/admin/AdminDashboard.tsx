@@ -103,6 +103,14 @@ type StorageAsset = {
   url: string;
 };
 
+type EventDocumentsSnapshot = {
+  id: string;
+  notice_board: string[];
+  results: string[];
+};
+
+type AutosaveState = "idle" | "pending" | "saving" | "saved" | "error";
+
 const statusOptions = [
   { value: "1", label: "Active" },
   { value: "2", label: "Archived" },
@@ -528,6 +536,42 @@ function normalizeEditorHtml(value: string) {
   }
 
   return normalized;
+}
+
+function arraysMatch(first: string[], second: string[]) {
+  return (
+    first.length === second.length &&
+    first.every((value, index) => value === second[index])
+  );
+}
+
+function getEventDocumentsSnapshot(
+  form: EventFormState,
+): EventDocumentsSnapshot | null {
+  if (!form.id) {
+    return null;
+  }
+
+  return {
+    id: form.id,
+    notice_board: [...form.notice_board],
+    results: [...form.results],
+  };
+}
+
+function eventDocumentsSnapshotsMatch(
+  first: EventDocumentsSnapshot | null,
+  second: EventDocumentsSnapshot | null,
+) {
+  if (!first || !second) {
+    return first === second;
+  }
+
+  return (
+    first.id === second.id &&
+    arraysMatch(first.notice_board, second.notice_board) &&
+    arraysMatch(first.results, second.results)
+  );
 }
 
 async function readJson<T>(input: RequestInfo, init?: RequestInit) {
@@ -1920,6 +1964,11 @@ export default function AdminDashboard({
   const [eventDocumentsModalOpen, setEventDocumentsModalOpen] = useState(false);
   const [eventDocumentsForm, setEventDocumentsForm] =
     useState<EventFormState | null>(null);
+  const [eventDocumentsAutosaveState, setEventDocumentsAutosaveState] =
+    useState<AutosaveState>("idle");
+  const eventDocumentsBaselineRef = useRef<EventDocumentsSnapshot | null>(null);
+  const eventDocumentsAutosaveTimerRef = useRef<number | null>(null);
+  const eventDocumentsAutosaveRequestRef = useRef(0);
   const [activeEntriesEvent, setActiveEntriesEvent] =
     useState<AdminEventRecord | null>(null);
   const [activeEventDocumentsEvent, setActiveEventDocumentsEvent] =
@@ -1970,6 +2019,93 @@ export default function AdminDashboard({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!eventDocumentsModalOpen || !eventDocumentsForm) {
+      return;
+    }
+
+    const snapshot = getEventDocumentsSnapshot(eventDocumentsForm);
+
+    if (!snapshot) {
+      return;
+    }
+
+    if (!eventDocumentsBaselineRef.current) {
+      eventDocumentsBaselineRef.current = snapshot;
+      return;
+    }
+
+    if (
+      eventDocumentsBaselineRef.current.id !== snapshot.id ||
+      eventDocumentsSnapshotsMatch(eventDocumentsBaselineRef.current, snapshot)
+    ) {
+      if (eventDocumentsBaselineRef.current.id !== snapshot.id) {
+        eventDocumentsBaselineRef.current = snapshot;
+      }
+
+      return;
+    }
+
+    if (eventDocumentsAutosaveTimerRef.current) {
+      window.clearTimeout(eventDocumentsAutosaveTimerRef.current);
+      eventDocumentsAutosaveTimerRef.current = null;
+    }
+
+    setEventDocumentsAutosaveState("pending");
+
+    const formToSave = {
+      ...eventDocumentsForm,
+      notice_board: [...snapshot.notice_board],
+      results: [...snapshot.results],
+    };
+
+    eventDocumentsAutosaveTimerRef.current = window.setTimeout(() => {
+      eventDocumentsAutosaveTimerRef.current = null;
+      const requestId = eventDocumentsAutosaveRequestRef.current + 1;
+      eventDocumentsAutosaveRequestRef.current = requestId;
+      setEventDocumentsAutosaveState("saving");
+
+      readJson(`/api/admin/events/${snapshot.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(formToSave),
+      })
+        .then(async () => {
+          if (eventDocumentsAutosaveRequestRef.current !== requestId) {
+            return;
+          }
+
+          eventDocumentsBaselineRef.current = snapshot;
+          setEventDocumentsAutosaveState("saved");
+          await refreshEvents();
+          router.refresh();
+        })
+        .catch((error) => {
+          if (eventDocumentsAutosaveRequestRef.current !== requestId) {
+            return;
+          }
+
+          setEventDocumentsAutosaveState("error");
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Unable to autosave event documents.",
+          );
+        });
+    }, 500);
+
+    return () => {
+      if (eventDocumentsAutosaveTimerRef.current) {
+        window.clearTimeout(eventDocumentsAutosaveTimerRef.current);
+        eventDocumentsAutosaveTimerRef.current = null;
+      }
+    };
+  }, [
+    eventDocumentsForm,
+    eventDocumentsModalOpen,
+    router,
+  ]);
 
   function openEventEditor(form = emptyEventForm()) {
     setEventForm(form);
@@ -2067,15 +2203,71 @@ export default function AdminDashboard({
   }
 
   function openEventDocumentsEditor(item: AdminEventRecord) {
+    const form = eventToForm(item);
+
     setActiveEventDocumentsEvent(item);
-    setEventDocumentsForm(eventToForm(item));
+    setEventDocumentsForm(form);
+    eventDocumentsBaselineRef.current = getEventDocumentsSnapshot(form);
+    setEventDocumentsAutosaveState("idle");
     setEventDocumentsModalOpen(true);
   }
 
   function closeEventDocumentsEditor() {
+    const formToFlush = eventDocumentsForm;
+    const snapshot = formToFlush
+      ? getEventDocumentsSnapshot(formToFlush)
+      : null;
+    const shouldFlush =
+      formToFlush &&
+      snapshot &&
+      !eventDocumentsSnapshotsMatch(eventDocumentsBaselineRef.current, snapshot);
+
+    if (eventDocumentsAutosaveTimerRef.current) {
+      window.clearTimeout(eventDocumentsAutosaveTimerRef.current);
+      eventDocumentsAutosaveTimerRef.current = null;
+    }
+
+    if (shouldFlush) {
+      const requestId = eventDocumentsAutosaveRequestRef.current + 1;
+      eventDocumentsAutosaveRequestRef.current = requestId;
+
+      void readJson(`/api/admin/events/${snapshot.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...formToFlush,
+          notice_board: [...snapshot.notice_board],
+          results: [...snapshot.results],
+        }),
+      })
+        .then(async () => {
+          if (eventDocumentsAutosaveRequestRef.current !== requestId) {
+            return;
+          }
+
+          await refreshEvents();
+          router.refresh();
+        })
+        .catch((error) => {
+          if (eventDocumentsAutosaveRequestRef.current !== requestId) {
+            return;
+          }
+
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Unable to autosave event documents.",
+          );
+        });
+    } else {
+      eventDocumentsAutosaveRequestRef.current += 1;
+    }
+
     setEventDocumentsModalOpen(false);
     setActiveEventDocumentsEvent(null);
     setEventDocumentsForm(null);
+    eventDocumentsBaselineRef.current = null;
+    setEventDocumentsAutosaveState("idle");
   }
 
   async function refreshEvents() {
@@ -2125,38 +2317,7 @@ export default function AdminDashboard({
     await loadRegistrations(item.id);
   }
 
-  async function handleEventDocumentsSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!eventDocumentsForm?.id) {
-      return;
-    }
-
-    setEventsBusy(true);
-
-    try {
-      await readJson(`/api/admin/events/${eventDocumentsForm.id}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(eventDocumentsForm),
-      });
-
-      await refreshEvents();
-      toast.success("Event documents updated.");
-      closeEventDocumentsEditor();
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Unable to update event documents.",
-      );
-    } finally {
-      setEventsBusy(false);
-    }
-  }
-
-  async function autosaveEventDocumentOrder(
+  function updateEventDocumentRefs(
     key: "notice_board" | "results",
     values: string[],
   ) {
@@ -2170,35 +2331,6 @@ export default function AdminDashboard({
         [key]: values,
       };
     });
-
-    if (!eventDocumentsForm?.id) {
-      return;
-    }
-
-    setEventsBusy(true);
-
-    try {
-      const nextForm = {
-        ...eventDocumentsForm,
-        [key]: values,
-      };
-
-      await readJson(`/api/admin/events/${eventDocumentsForm.id}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(nextForm),
-      });
-
-      await refreshEvents();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Unable to autosave document order.",
-      );
-    } finally {
-      setEventsBusy(false);
-    }
   }
 
   async function handleSignOut() {
@@ -4032,7 +4164,7 @@ export default function AdminDashboard({
           onClose={closeEventDocumentsEditor}
         >
           {eventDocumentsForm ? (
-            <form onSubmit={handleEventDocumentsSubmit}>
+            <div>
               <Tabs defaultValue="noticeBoard">
                 <TabsList className="mb-6">
                   <TabsTrigger value="noticeBoard">Notice board</TabsTrigger>
@@ -4046,17 +4178,7 @@ export default function AdminDashboard({
                     documents={documents}
                     allowSelectExistingDocuments
                     onChange={(values) =>
-                      setEventDocumentsForm((current) =>
-                        current
-                          ? {
-                              ...current,
-                              notice_board: values,
-                            }
-                          : current,
-                      )
-                    }
-                    onReorder={(values) =>
-                      autosaveEventDocumentOrder("notice_board", values)
+                      updateEventDocumentRefs("notice_board", values)
                     }
                     onError={(msg) => toast.error(msg)}
                     onDocumentsCreated={addDocumentsToLibrary}
@@ -4074,17 +4196,7 @@ export default function AdminDashboard({
                     documents={documents}
                     allowSelectExistingDocuments
                     onChange={(values) =>
-                      setEventDocumentsForm((current) =>
-                        current
-                          ? {
-                              ...current,
-                              results: values,
-                            }
-                          : current,
-                      )
-                    }
-                    onReorder={(values) =>
-                      autosaveEventDocumentOrder("results", values)
+                      updateEventDocumentRefs("results", values)
                     }
                     onError={(msg) => toast.error(msg)}
                     onDocumentsCreated={addDocumentsToLibrary}
@@ -4096,24 +4208,26 @@ export default function AdminDashboard({
                 </TabsContent>
               </Tabs>
 
-              <div className="mt-6 flex items-center gap-3">
-                <Button
-                  type="submit"
-                  disabled={eventsBusy}
-                  className="rounded-xl px-5 text-white"
-                >
-                  {eventsBusy ? "Saving..." : "Save document changes"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeEventDocumentsEditor}
-                  className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
+              <p
+                className={`mt-6 text-sm font-medium ${
+                  eventDocumentsAutosaveState === "error"
+                    ? "text-red-500"
+                    : eventDocumentsAutosaveState === "saved"
+                      ? "text-emerald-600"
+                      : "text-dark/50"
+                }`}
+              >
+                {eventDocumentsAutosaveState === "pending"
+                  ? "Autosaves in a moment"
+                  : eventDocumentsAutosaveState === "saving"
+                    ? "Saving..."
+                    : eventDocumentsAutosaveState === "saved"
+                      ? "Saved"
+                      : eventDocumentsAutosaveState === "error"
+                        ? "Unable to autosave document changes"
+                        : ""}
+              </p>
+            </div>
           ) : null}
         </AdminModal>
 

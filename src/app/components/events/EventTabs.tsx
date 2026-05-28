@@ -31,78 +31,19 @@ function formatUploadedDate(value: string | null) {
   return formatDisplayDate(value) || "—"
 }
 
-function getFileExtension(source: string) {
-  return source.split(".").pop()?.split("?")[0]?.toUpperCase() || "FILE"
-}
-
 function getDownloadUrl(source: string, fileName: string) {
   const separator = source.includes("?") ? "&" : "?"
   return `${source}${separator}download=${encodeURIComponent(fileName)}`
 }
 
-function DocumentGrid({
-  locale,
-  documents,
-}: {
-  locale: string
-  documents: EventDocumentRecord[]
-}) {
-  const t = useTranslations("events")
-
-  if (documents.length === 0) {
-    return (
-      <div className="flex min-h-[180px] items-center justify-center text-center">
-        <p className="text-dark/60 dark:text-white/60">
-          {t("tabsContent.noticeBoardEmpty")}
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {documents.map((document) => {
-        const name = localizeText(locale, document.name_en, document.name_bg)
-        const fileName = document.source.split("/").pop()?.split("?")[0] || document.source
-
-        return (
-          <a
-            key={document.id}
-            href={getDownloadUrl(document.source, fileName)}
-            download={fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group rounded-[1.5rem] border border-black/10 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-black/20"
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Icon icon="ph:file-text-bold" width={24} height={24} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-dark/45 dark:text-white/45">
-                  {getFileExtension(document.source)}
-                </p>
-                <h3 className="mt-1 font-semibold text-dark dark:text-white">
-                  {name}
-                </h3>
-                <p className="mt-3 text-sm text-dark/55 dark:text-white/55">
-                  {t("documentCard.uploaded")}: {formatUploadedDate(document.created_at)}
-                </p>
-              </div>
-            </div>
-          </a>
-        )
-      })}
-    </div>
-  )
-}
-
 function DocumentList({
   locale,
   documents,
+  emptyMessageKey,
 }: {
   locale: string
   documents: EventDocumentRecord[]
+  emptyMessageKey: string
 }) {
   const t = useTranslations("events")
 
@@ -110,7 +51,7 @@ function DocumentList({
     return (
       <div className="flex min-h-[180px] items-center justify-center text-center">
         <p className="text-dark/60 dark:text-white/60">
-          {t("tabsContent.resultsEmpty")}
+          {t(emptyMessageKey)}
         </p>
       </div>
     )
@@ -240,7 +181,11 @@ export default function EventTabs({
 
           <TabsContent value="noticeBoard" className="mt-0">
             <div className="rounded-lg sm:rounded-xl border border-dark/10 dark:border-white/10 sm:border-2 bg-white dark:bg-black shadow-md sm:shadow-lg dark:shadow-white/5 p-4 sm:p-6 md:p-8 lg:p-12 min-h-[250px] sm:min-h-[300px] md:min-h-[400px]">
-              <DocumentGrid locale={locale} documents={noticeBoard} />
+              <DocumentList
+                locale={locale}
+                documents={noticeBoard}
+                emptyMessageKey="tabsContent.noticeBoardEmpty"
+              />
             </div>
           </TabsContent>
 
@@ -252,7 +197,11 @@ export default function EventTabs({
 
           <TabsContent value="results" className="mt-0">
             <div className="rounded-lg sm:rounded-xl border border-dark/10 dark:border-white/10 sm:border-2 bg-white dark:bg-black shadow-md sm:shadow-lg dark:shadow-white/5 p-4 sm:p-6 md:p-8 lg:p-12 min-h-[250px] sm:min-h-[300px] md:min-h-[400px]">
-              <DocumentList locale={locale} documents={results} />
+              <DocumentList
+                locale={locale}
+                documents={results}
+                emptyMessageKey="tabsContent.resultsEmpty"
+              />
             </div>
           </TabsContent>
         </Tabs>

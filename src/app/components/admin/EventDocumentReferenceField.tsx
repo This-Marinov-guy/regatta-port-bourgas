@@ -434,39 +434,112 @@ function EventAttachedDocumentCard({
   const [nameEn, setNameEn] = useState(document.name_en);
   const [nameBg, setNameBg] = useState(document.name_bg ?? "");
   const [generalUse, setGeneralUse] = useState(document.general_use);
-  const [saving, setSaving] = useState(false);
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const saveRequestRef = useRef(0);
+  const syncedDocumentIdRef = useRef(document.id);
+  const callbacksRef = useRef({ onError, onSaveDocument, onUpdated });
 
   useEffect(() => {
+    callbacksRef.current = { onError, onSaveDocument, onUpdated };
+  }, [onError, onSaveDocument, onUpdated]);
+
+  useEffect(() => {
+    if (syncedDocumentIdRef.current === document.id) {
+      return;
+    }
+
+    syncedDocumentIdRef.current = document.id;
     setNameEn(document.name_en);
     setNameBg(document.name_bg ?? "");
     setGeneralUse(document.general_use);
-  }, [document.id, document.name_en, document.name_bg, document.general_use]);
+    setSaveState("idle");
+  }, [document.general_use, document.id, document.name_bg, document.name_en]);
 
   const dirty =
     nameEn !== document.name_en ||
     nameBg !== (document.name_bg ?? "") ||
     generalUse !== document.general_use;
 
-  async function handleSave() {
-    setSaving(true);
+  useEffect(() => {
+    if (!dirty) {
+      return;
+    }
 
-    try {
-      const updated = await onSaveDocument({
+    if (!nameEn.trim()) {
+      setSaveState("error");
+      return;
+    }
+
+    setSaveState("idle");
+
+    const timeout = window.setTimeout(() => {
+      const requestId = saveRequestRef.current + 1;
+      saveRequestRef.current = requestId;
+      setSaveState("saving");
+
+      callbacksRef.current.onSaveDocument({
         id: document.id,
         name_en: nameEn,
         name_bg: nameBg,
         source: document.source,
         general_use: generalUse,
-      });
+      })
+        .then((updated) => {
+          if (saveRequestRef.current !== requestId) {
+            return;
+          }
 
-      onUpdated(updated);
-    } catch (error) {
-      onError(
-        error instanceof Error ? error.message : "Unable to update document.",
-      );
-    } finally {
-      setSaving(false);
+          callbacksRef.current.onUpdated(updated);
+          setSaveState("saved");
+        })
+        .catch((error) => {
+          if (saveRequestRef.current !== requestId) {
+            return;
+          }
+
+          setSaveState("error");
+          callbacksRef.current.onError(
+            error instanceof Error ? error.message : "Unable to update document.",
+          );
+        });
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [
+    dirty,
+    document.id,
+    document.source,
+    generalUse,
+    nameBg,
+    nameEn,
+  ]);
+
+  function getSaveLabel() {
+    if (!nameEn.trim()) {
+      return "Name is required";
     }
+
+    if (saveState === "saving") {
+      return "Saving...";
+    }
+
+    if (saveState === "saved" && !dirty) {
+      return "Saved";
+    }
+
+    if (saveState === "error") {
+      return "Could not save";
+    }
+
+    if (dirty) {
+      return "Autosaves in a moment";
+    }
+
+    return "";
   }
 
   return (
@@ -534,15 +607,18 @@ function EventAttachedDocumentCard({
         </label>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
-        <Button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={saving || !dirty || !nameEn.trim()}
-          className="rounded-xl px-4 text-white"
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <p
+          className={`text-sm font-medium ${
+            saveState === "error" || !nameEn.trim()
+              ? "text-red-500"
+              : saveState === "saved"
+                ? "text-emerald-600"
+                : "text-dark/50"
+          }`}
         >
-          {saving ? "Saving..." : "Apply"}
-        </Button>
+          {getSaveLabel()}
+        </p>
         <button
           type="button"
           onClick={onRemove}
