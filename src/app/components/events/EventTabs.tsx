@@ -3,6 +3,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs"
 import { Icon } from "@iconify/react"
 import { useTranslations } from "next-intl"
+import toast from "react-hot-toast"
 import { localizeText } from "@/lib/localizedContent"
 import type { EventDocumentRecord } from "@/lib/events"
 import { formatDisplayDate } from "@/lib/formatDate"
@@ -36,6 +37,95 @@ function getDownloadUrl(source: string, fileName: string) {
   return `${source}${separator}download=${encodeURIComponent(fileName)}`
 }
 
+const actionButtonClass =
+  "flex h-10 w-10 items-center justify-center rounded-xl border border-black/10 text-dark/70 transition-colors duration-200 hover:border-primary hover:bg-primary/10 hover:text-primary focus-visible:border-primary focus-visible:outline-none dark:border-white/10 dark:text-white/70 dark:hover:text-primary"
+
+const tooltipClass =
+  "pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-dark px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/action:opacity-100 group-focus-within/action:opacity-100 dark:bg-white dark:text-dark"
+
+function DocumentActions({
+  source,
+  fileName,
+  name,
+}: {
+  source: string
+  fileName: string
+  name: string
+}) {
+  const t = useTranslations("events")
+
+  const handleShare = async () => {
+    const shareUrl = typeof window !== "undefined"
+      ? new URL(source, window.location.origin).href
+      : source
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: name, url: shareUrl })
+        return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return
+        }
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success(t("documentCard.linkCopied"))
+    } catch {
+      toast.error(t("documentCard.share"))
+    }
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <span className="group/action relative inline-flex">
+        <a
+          href={source}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t("documentCard.preview")}
+          className={actionButtonClass}
+        >
+          <Icon icon="ph:eye-bold" width={18} height={18} />
+        </a>
+        <span role="tooltip" className={tooltipClass}>
+          {t("documentCard.preview")}
+        </span>
+      </span>
+
+      <span className="group/action relative inline-flex">
+        <a
+          href={getDownloadUrl(source, fileName)}
+          download={fileName}
+          aria-label={t("documentCard.download")}
+          className={actionButtonClass}
+        >
+          <Icon icon="ph:download-simple-bold" width={18} height={18} />
+        </a>
+        <span role="tooltip" className={tooltipClass}>
+          {t("documentCard.download")}
+        </span>
+      </span>
+
+      <span className="group/action relative inline-flex">
+        <button
+          type="button"
+          onClick={handleShare}
+          aria-label={t("documentCard.share")}
+          className={actionButtonClass}
+        >
+          <Icon icon="ph:share-network-bold" width={18} height={18} />
+        </button>
+        <span role="tooltip" className={tooltipClass}>
+          {t("documentCard.share")}
+        </span>
+      </span>
+    </div>
+  )
+}
+
 function DocumentList({
   locale,
   documents,
@@ -64,29 +154,23 @@ function DocumentList({
         const fileName = document.source.split("/").pop()?.split("?")[0] || document.source
 
         return (
-          <a
+          <div
             key={document.id}
-            href={getDownloadUrl(document.source, fileName)}
-            download={fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-black/10 bg-white/90 px-4 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-black/20"
+            className="flex flex-col gap-3 rounded-[1.25rem] border border-black/10 bg-white/90 px-4 py-4 transition-all duration-200 hover:shadow-md dark:border-white/10 dark:bg-black/20"
           >
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Icon icon="ph:file-arrow-down-bold" width={20} height={20} />
+                <Icon icon="ph:file-text-bold" width={20} height={20} />
               </div>
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-dark dark:text-white">{name}</p>
-                <p className="mt-1 text-sm text-dark/55 dark:text-white/55">
-                  {formatUploadedDate(document.created_at)}
-                </p>
-              </div>
+              <p className="font-semibold text-dark dark:text-white">{name}</p>
             </div>
-            <span className="shrink-0 text-sm font-semibold text-primary">
-              {t("documentCard.download")}
-            </span>
-          </a>
+            <div className="flex items-center justify-between gap-3 pl-14">
+              <p className="text-sm text-dark/55 dark:text-white/55">
+                {formatUploadedDate(document.created_at)}
+              </p>
+              <DocumentActions source={document.source} fileName={fileName} name={name} />
+            </div>
+          </div>
         )
       })}
     </div>

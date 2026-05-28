@@ -186,7 +186,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className="site-page-bg antialiased" suppressHydrationWarning>
-        <LocalePersistence locale={locale === 'bg' ? 'bg' : 'en'} />
+        <LocalePersistence locale={locale === "bg" ? "bg" : "en"} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -195,9 +195,11 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <SessionProviderComp session={session}>
             <ThemeProvider
-              attribute='class'
-              enableSystem={true}
-              defaultTheme='light'>
+              attribute="class"
+              forcedTheme="light"
+              // enableSystem={true}
+              defaultTheme="light"
+            >
               <Header />
               {children}
               <Footer />
@@ -208,6 +210,6 @@ export default async function LocaleLayout({
         </NextIntlClientProvider>
       </body>
     </html>
-  )
+  );
 }
 

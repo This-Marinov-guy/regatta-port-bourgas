@@ -3,7 +3,8 @@
     "allow": [
       "Bash(/usr/bin/head -5)",
       "Bash(/usr/bin/head -3)",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(npx eslint *)"
     ]
   }
 }

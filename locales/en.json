@@ -112,7 +112,10 @@
     },
     "documentCard": {
       "uploaded": "Uploaded",
-      "download": "Download"
+      "download": "Download",
+      "preview": "Preview",
+      "share": "Share",
+      "linkCopied": "Link copied to clipboard"
     },
     "entryList": {
       "boat": "Boat",

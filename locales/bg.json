@@ -112,7 +112,10 @@
     },
     "documentCard": {
       "uploaded": "Качено",
-      "download": "Изтегли"
+      "download": "Изтегли",
+      "preview": "Преглед",
+      "share": "Сподели",
+      "linkCopied": "Връзката е копирана"
     },
     "entryList": {
       "boat": "Лодка",
