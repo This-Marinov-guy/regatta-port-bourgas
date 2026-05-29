@@ -142,13 +142,12 @@ export default function EventRegistrationModal({
               </button>
 
               <div className="w-full">
-                <p className="font-semibold uppercase tracking-[0.22em] text-primary/80">
+                {/* <p className="font-semibold uppercase tracking-[0.22em] text-primary/80">
                   {t('registerModalEyebrow')}
-                </p>
+                </p> */}
                 <h2 className="mt-2 text-lg font-semibold text-dark dark:text-white sm:text-3xl">
                   {eventTitle}
-                </h2>
-               
+                </h2>        
               </div>
             </div>
 
