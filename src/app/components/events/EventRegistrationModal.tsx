@@ -148,9 +148,7 @@ export default function EventRegistrationModal({
                 <h2 className="mt-2 text-lg font-semibold text-dark dark:text-white sm:text-3xl">
                   {eventTitle}
                 </h2>
-                <p className="mt-2 font-medium text-dark/60 dark:text-white/60">
-                  {eventDate}
-                </p>
+               
               </div>
             </div>
 
