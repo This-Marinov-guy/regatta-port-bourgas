@@ -11,6 +11,7 @@ export type MyposCheckoutDetails = {
 
 export type MyposConfigurationStatus = {
   enabled: boolean
+  disabled: boolean
   missing: string[]
   invalid: string[]
 }
@@ -47,6 +48,10 @@ function getMyposEnvironment() {
     : 'sandbox'
 }
 
+export function isMyposDisabled() {
+  return process.env.MYPOS_DISABLED === 'true'
+}
+
 export function getMyposCheckoutEndpoint() {
   const configured = process.env.MYPOS_CHECKOUT_URL?.trim()
 
@@ -58,6 +63,10 @@ export function getMyposCheckoutEndpoint() {
 }
 
 export function getMyposConfigurationStatus(): MyposConfigurationStatus {
+  if (isMyposDisabled()) {
+    return { enabled: false, disabled: true, missing: [], invalid: [] }
+  }
+
   const missing: string[] = REQUIRED_MYPOS_ENV_KEYS.filter(
     (name) => !process.env[name]?.trim()
   )
@@ -86,6 +95,7 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
 
   return {
     enabled: missing.length === 0 && invalid.length === 0,
+    disabled: false,
     missing,
     invalid,
   }
@@ -95,6 +105,10 @@ export function assertMyposConfigured() {
   const status = getMyposConfigurationStatus()
 
   if (!status.enabled) {
+    if (status.disabled) {
+      throw new Error('Payments are disabled (MYPOS_DISABLED=true).')
+    }
+
     const details = [
       status.missing.length ? `missing: ${status.missing.join(', ')}` : null,
       ...status.invalid,

@@ -4,7 +4,10 @@
       "Bash(/usr/bin/head -5)",
       "Bash(/usr/bin/head -3)",
       "Bash(echo \"exit=$?\")",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(/usr/bin/head -50)",
+      "Bash(/usr/bin/sort -u)",
+      "Bash(/usr/bin/head -40)"
     ]
   }
 }

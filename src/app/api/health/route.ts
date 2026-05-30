@@ -116,6 +116,10 @@ async function checkGoogleDrive(): Promise<CheckResult> {
 async function checkMypos(): Promise<CheckResult> {
   const config = getMyposConfigurationStatus()
 
+  if (config.disabled) {
+    return { status: 'ok', detail: 'disabled via MYPOS_DISABLED' }
+  }
+
   if (!config.enabled) {
     return {
       status: 'error',
