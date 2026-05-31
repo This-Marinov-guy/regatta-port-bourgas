@@ -1,8 +1,8 @@
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns'
-import { getAwsRegion, getRegistrationEventsTopicArn } from './config'
+import { getAwsClientConfig, getRegistrationEventsTopicArn } from './config'
 import type { RegistrationCreatedMessage } from './types'
 
-const snsClient = new SNSClient({ region: getAwsRegion() })
+const snsClient = new SNSClient(getAwsClientConfig())
 
 export async function publishRegistrationCreated(
   message: RegistrationCreatedMessage

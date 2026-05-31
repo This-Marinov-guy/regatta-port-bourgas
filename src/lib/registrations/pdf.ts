@@ -6,6 +6,7 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3
 import { PDFDocument, PDFPage, rgb } from 'pdf-lib'
 import { format } from 'date-fns'
 import {
+  getAwsClientConfig,
   getAwsRegion,
   getRegistrationOutputBucket,
   getRegistrationOutputPublicBaseUrl,
@@ -24,7 +25,7 @@ import {
   REGISTRATION_PDF_PREVIEW_WIDTH as PREVIEW_WIDTH,
 } from '../../utils/defines/REGISTRATION_PDF_POSITIONS'
 
-const s3Client = new S3Client({ region: getAwsRegion() })
+const s3Client = new S3Client(getAwsClientConfig())
 
 async function streamToBuffer(stream: Readable) {
   const chunks: Buffer[] = []

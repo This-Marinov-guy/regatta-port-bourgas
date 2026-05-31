@@ -4,6 +4,7 @@ import { getMyposConfigurationStatus, getMyposCheckoutEndpoint } from '@/lib/myp
 import { SNSClient, GetTopicAttributesCommand } from '@aws-sdk/client-sns'
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand } from '@aws-sdk/client-s3'
 import { LambdaClient, GetFunctionCommand } from '@aws-sdk/client-lambda'
+import { getAwsClientConfig } from '@/lib/registrations/config'
 import nodemailer from 'nodemailer'
 
 type CheckResult = {
@@ -48,7 +49,7 @@ async function checkSns(): Promise<CheckResult> {
   if (!topicArn) return { status: 'error', detail: 'AWS_REGISTRATION_EVENTS_TOPIC_ARN not set' }
 
   return timed(async () => {
-    const client = new SNSClient({ region: process.env.AWS_REGION || 'eu-central-1' })
+    const client = new SNSClient(getAwsClientConfig())
     await client.send(new GetTopicAttributesCommand({ TopicArn: topicArn }))
   })
 }
@@ -56,7 +57,7 @@ async function checkSns(): Promise<CheckResult> {
 async function checkS3(): Promise<CheckResult> {
   const bucket = 'regatta-registration-proc-registrationartifactsbuc-usp6mvfconkw'
   return timed(async () => {
-    const client = new S3Client({ region: process.env.AWS_REGION || 'eu-central-1' })
+    const client = new S3Client(getAwsClientConfig())
     await client.send(new HeadBucketCommand({ Bucket: bucket }))
 
     const testKey = 'health/ping'
@@ -72,7 +73,7 @@ async function checkS3(): Promise<CheckResult> {
 
 async function checkLambda(functionName: string): Promise<CheckResult> {
   return timed(async () => {
-    const client = new LambdaClient({ region: process.env.AWS_REGION || 'eu-central-1' })
+    const client = new LambdaClient(getAwsClientConfig())
     const res = await client.send(new GetFunctionCommand({ FunctionName: functionName }))
     const state = res.Configuration?.State
     if (state !== 'Active') throw new Error(`Function state: ${state}`)

@@ -29,7 +29,36 @@ function optionalString(value: string | undefined) {
 }
 
 export function getAwsRegion() {
-  return process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-central-1'
+  // CUSTOM_AWS_REGION is used because Vercel reserves AWS_REGION on its
+  // Functions runtime and overwrites any user-set value.
+  return (
+    process.env.CUSTOM_AWS_REGION ||
+    process.env.AWS_REGION ||
+    process.env.AWS_DEFAULT_REGION ||
+    'eu-central-1'
+  )
+}
+
+export function getAwsCredentials() {
+  // Vercel reserves AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY on its Functions
+  // runtime and replaces them with its own Lambda role creds, which can't reach
+  // our SNS topic / S3 buckets. Use CUSTOM_AWS_* on Vercel; fall back to the
+  // standard names for local dev.
+  const accessKeyId =
+    process.env.CUSTOM_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID
+  const secretAccessKey =
+    process.env.CUSTOM_AWS_SECRET_ACCESS_KEY ||
+    process.env.AWS_SECRET_ACCESS_KEY
+
+  if (!accessKeyId || !secretAccessKey) {
+    return undefined
+  }
+
+  return { accessKeyId, secretAccessKey }
+}
+
+export function getAwsClientConfig() {
+  return { region: getAwsRegion(), credentials: getAwsCredentials() }
 }
 
 export function getRegistrationEventsTopicArn() {
