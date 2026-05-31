@@ -25,6 +25,7 @@ type EventDocumentReferenceFieldProps = {
   onCreateDocumentFromUrl: (args: {
     url: string;
     name?: string;
+    nameBg?: string;
     generalUse?: boolean;
   }) => Promise<AdminDocumentRecord>;
   onSaveDocument: (args: {
@@ -160,11 +161,12 @@ function LinkInputPanel({
   onSubmit,
   busy = false,
 }: {
-  onSubmit: (args: { url: string; name: string }) => void;
+  onSubmit: (args: { url: string; name: string; nameBg: string }) => void;
   busy?: boolean;
 }) {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
+  const [nameBg, setNameBg] = useState("");
 
   function handleAdd() {
     const trimmedUrl = url.trim();
@@ -172,9 +174,14 @@ function LinkInputPanel({
       return;
     }
 
-    onSubmit({ url: trimmedUrl, name: name.trim() });
+    onSubmit({
+      url: trimmedUrl,
+      name: name.trim(),
+      nameBg: nameBg.trim(),
+    });
     setUrl("");
     setName("");
+    setNameBg("");
   }
 
   return (
@@ -202,7 +209,15 @@ function LinkInputPanel({
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Display name (optional)"
+              placeholder="Display name EN (optional)"
+              disabled={busy}
+              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
+            />
+            <input
+              type="text"
+              value={nameBg}
+              onChange={(event) => setNameBg(event.target.value)}
+              placeholder="Display name BG (optional)"
               disabled={busy}
               className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
             />
@@ -679,7 +694,15 @@ export default function EventDocumentReferenceField({
     }
   }
 
-  async function handleAddLink({ url, name }: { url: string; name: string }) {
+  async function handleAddLink({
+    url,
+    name,
+    nameBg,
+  }: {
+    url: string;
+    name: string;
+    nameBg: string;
+  }) {
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(url);
@@ -700,6 +723,7 @@ export default function EventDocumentReferenceField({
       const created = await onCreateDocumentFromUrl({
         url,
         name: fallbackName,
+        nameBg,
         generalUse: false,
       });
       onDocumentsCreated([created]);

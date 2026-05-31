@@ -228,7 +228,10 @@ export async function listEvents() {
         .from('events')
         .select('*')
         .order('start_date', { ascending: false }),
-      supabase.from('registrations').select('event_id')
+      supabase
+        .from('registrations')
+        .select('event_id')
+        .is('deleted_at', null)
     ])
 
   if (error) {
@@ -292,6 +295,7 @@ export async function listRegistrations(eventId?: string) {
   let query = supabase
     .from('registrations')
     .select('*')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (eventId) {
@@ -352,7 +356,11 @@ export async function updateRegistrationStatus(
 export async function deleteRegistration(id: string) {
   const supabase = createSupabaseServiceClient()
 
-  const { error } = await supabase.from('registrations').delete().eq('id', id)
+  const { error } = await supabase
+    .from('registrations')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('deleted_at', null)
 
   if (error) {
     throw new Error(error.message)

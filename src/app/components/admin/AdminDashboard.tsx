@@ -632,6 +632,7 @@ async function createAdminDocument(args: {
 async function createAdminDocumentFromUrl(args: {
   url: string;
   name?: string;
+  nameBg?: string;
   generalUse?: boolean;
 }): Promise<AdminDocumentRecord> {
   const source = args.url.trim();
@@ -643,7 +644,7 @@ async function createAdminDocumentFromUrl(args: {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         name_en: fallbackName,
-        name_bg: "",
+        name_bg: args.nameBg?.trim() ?? "",
         source,
         general_use: Boolean(args.generalUse),
       }),
@@ -2319,6 +2320,7 @@ export default function AdminDashboard({
   async function createEventDocumentFromUrl(args: {
     url: string;
     name?: string;
+    nameBg?: string;
     generalUse?: boolean;
   }) {
     return createAdminDocumentFromUrl(args);
@@ -4517,9 +4519,11 @@ export default function AdminDashboard({
                 Delete registration
               </h3>
               <p className="mt-2 text-dark/60">
-                This will permanently delete the entry for{" "}
-                <strong>{deleteRegistrationModal.boatName}</strong>. This
-                action cannot be undone and no email notification will be sent.
+                The entry for{" "}
+                <strong>{deleteRegistrationModal.boatName}</strong> will be
+                hidden from the dashboard. No email notification is sent. The
+                row remains in the database and can be restored by clearing
+                its <code className="text-xs">deleted_at</code> field.
               </p>
               <div className="mt-5 flex gap-3">
                 <Button
