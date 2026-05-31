@@ -1991,6 +1991,13 @@ export default function AdminDashboard({
     boatName: string;
   } | null>(null);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [deleteRegistrationModal, setDeleteRegistrationModal] = useState<{
+    registrationId: string;
+    boatName: string;
+  } | null>(null);
+  const [deletingRegistrationId, setDeletingRegistrationId] = useState<
+    string | null
+  >(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<"email" | "password">("email");
   const [settingsBusy, setSettingsBusy] = useState(false);
@@ -2054,16 +2061,24 @@ export default function AdminDashboard({
     try {
       await reauthenticate(supabase);
 
-      const { error } = await supabase.auth.updateUser({
-        email: settingsNewEmail.trim(),
-      });
+      const origin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_URL ?? "";
+
+      const { error } = await supabase.auth.updateUser(
+        { email: settingsNewEmail.trim() },
+        {
+          emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent("/admin")}`,
+        },
+      );
 
       if (error) {
         throw new Error(error.message);
       }
 
       toast.success(
-        "Confirmation email sent. Check the new inbox to finalize the change.",
+        "Confirmation email sent. Open the link in both your old and new inbox to finalize the change.",
       );
       setSettingsOpen(false);
       resetSettingsForm();
@@ -2678,6 +2693,30 @@ export default function AdminDashboard({
       );
     } finally {
       setDocumentsBusy(false);
+    }
+  }
+
+  async function handleDeleteRegistration(registrationId: string) {
+    setDeletingRegistrationId(registrationId);
+
+    try {
+      await readJson(`/api/admin/registrations/${registrationId}`, {
+        method: "DELETE",
+      });
+
+      setRegistrations((current) =>
+        current.filter((item) => item.id !== registrationId),
+      );
+      toast.success("Registration deleted.");
+      setDeleteRegistrationModal(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete registration.",
+      );
+    } finally {
+      setDeletingRegistrationId(null);
     }
   }
 
@@ -4070,6 +4109,33 @@ export default function AdminDashboard({
                                   : "Mark as paid"}
                               </button>
                             ) : null}
+
+                            <button
+                              type="button"
+                              disabled={
+                                deletingRegistrationId === registration.id ||
+                                isPaymentActionBusy ||
+                                isInvoiceActionBusy ||
+                                isMarkPaidActionBusy ||
+                                isInsuranceActionBusy
+                              }
+                              onClick={() =>
+                                setDeleteRegistrationModal({
+                                  registrationId: registration.id,
+                                  boatName: registration.boat_name,
+                                })
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 font-medium text-red-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Icon
+                                icon="ph:trash-bold"
+                                width={15}
+                                height={15}
+                              />
+                              {deletingRegistrationId === registration.id
+                                ? "Deleting..."
+                                : "Delete"}
+                            </button>
                           </div>
 
                           <div className="grid gap-4 lg:grid-cols-2">
@@ -4436,6 +4502,59 @@ export default function AdminDashboard({
           </div>
         ) : null}
 
+        {/* Delete registration confirmation modal */}
+        {deleteRegistrationModal ? (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => {
+                if (deletingRegistrationId) return;
+                setDeleteRegistrationModal(null);
+              }}
+            />
+            <div className="relative w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-2xl">
+              <h3 className="text-xl font-semibold text-dark">
+                Delete registration
+              </h3>
+              <p className="mt-2 text-dark/60">
+                This will permanently delete the entry for{" "}
+                <strong>{deleteRegistrationModal.boatName}</strong>. This
+                action cannot be undone and no email notification will be sent.
+              </p>
+              <div className="mt-5 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteRegistrationModal(null)}
+                  disabled={
+                    deletingRegistrationId ===
+                    deleteRegistrationModal.registrationId
+                  }
+                  className="flex-1 rounded-xl border-black/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={
+                    deletingRegistrationId ===
+                    deleteRegistrationModal.registrationId
+                  }
+                  onClick={() => {
+                    void handleDeleteRegistration(
+                      deleteRegistrationModal.registrationId,
+                    );
+                  }}
+                  className="flex-1 rounded-xl bg-red-600 text-white hover:bg-red-700"
+                >
+                  {deletingRegistrationId ===
+                  deleteRegistrationModal.registrationId
+                    ? "Deleting..."
+                    : "Confirm delete"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <AdminModal
           open={settingsOpen}
           title="Account settings"
@@ -4514,8 +4633,9 @@ export default function AdminDashboard({
               </label>
 
               <p className="text-xs text-dark/55">
-                Supabase will send a confirmation link to the new address. The
-                email is only updated after that link is opened.
+                A confirmation link will be emailed to the new address (and, if
+                secure email change is enabled, to the current address as
+                well). The email is only updated after the link is opened.
               </p>
 
               <div className="flex justify-end gap-3 pt-2">

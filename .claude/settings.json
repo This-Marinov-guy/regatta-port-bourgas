@@ -13,7 +13,9 @@
       "Bash(/usr/bin/head -10)",
       "Bash(/usr/bin/head -8)",
       "Bash(/usr/bin/tail -30)",
-      "Bash(/usr/bin/tail -20)"
+      "Bash(/usr/bin/tail -20)",
+      "Bash(/usr/bin/head -30)",
+      "Bash(/usr/bin/head -15)"
     ]
   }
 }

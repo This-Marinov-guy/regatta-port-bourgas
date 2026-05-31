@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/adminAuth'
 import {
+  deleteRegistration,
   updateRegistrationPaymentStatus,
   updateRegistrationStatus,
 } from '@/lib/adminContent'
@@ -41,6 +42,27 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unable to update registration.' },
+      { status: 400 }
+    )
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getAdminUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  }
+
+  try {
+    const { id } = await params
+    await deleteRegistration(id)
+    return NextResponse.json({ data: { id } })
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unable to delete registration.' },
       { status: 400 }
     )
   }

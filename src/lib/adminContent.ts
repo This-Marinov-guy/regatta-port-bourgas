@@ -349,6 +349,16 @@ export async function updateRegistrationStatus(
   return data as RegistrationRecord
 }
 
+export async function deleteRegistration(id: string) {
+  const supabase = createSupabaseServiceClient()
+
+  const { error } = await supabase.from('registrations').delete().eq('id', id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
 export async function updateRegistrationPaymentStatus(
   id: string,
   paymentStatus: 'paid'
