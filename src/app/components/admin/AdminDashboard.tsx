@@ -32,6 +32,7 @@ import {
 import EventDocumentReferenceField from "@/app/components/admin/EventDocumentReferenceField";
 import { ExternalLink } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { validateEmail, validatePassword } from "@/lib/validation";
 import { localizeText } from "@/lib/localizedContent";
 import { slugify } from "@/lib/slug";
 import type {
@@ -1990,6 +1991,136 @@ export default function AdminDashboard({
     boatName: string;
   } | null>(null);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"email" | "password">("email");
+  const [settingsBusy, setSettingsBusy] = useState(false);
+  const [settingsCurrentPassword, setSettingsCurrentPassword] = useState("");
+  const [settingsNewEmail, setSettingsNewEmail] = useState("");
+  const [settingsNewPassword, setSettingsNewPassword] = useState("");
+  const [settingsConfirmPassword, setSettingsConfirmPassword] = useState("");
+
+  function resetSettingsForm() {
+    setSettingsCurrentPassword("");
+    setSettingsNewEmail("");
+    setSettingsNewPassword("");
+    setSettingsConfirmPassword("");
+  }
+
+  function openSettings() {
+    resetSettingsForm();
+    setSettingsTab("email");
+    setSettingsOpen(true);
+  }
+
+  function closeSettings() {
+    if (settingsBusy) return;
+    setSettingsOpen(false);
+    resetSettingsForm();
+  }
+
+  async function reauthenticate(supabase: ReturnType<typeof createSupabaseBrowserClient>) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: userEmail,
+      password: settingsCurrentPassword,
+    });
+
+    if (error) {
+      throw new Error("Current password is incorrect.");
+    }
+  }
+
+  async function handleChangeEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const emailError = validateEmail(settingsNewEmail);
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
+    if (settingsNewEmail.trim().toLowerCase() === userEmail.toLowerCase()) {
+      toast.error("New email must be different from the current one.");
+      return;
+    }
+
+    if (!settingsCurrentPassword) {
+      toast.error("Current password is required.");
+      return;
+    }
+
+    setSettingsBusy(true);
+    const supabase = createSupabaseBrowserClient();
+
+    try {
+      await reauthenticate(supabase);
+
+      const { error } = await supabase.auth.updateUser({
+        email: settingsNewEmail.trim(),
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success(
+        "Confirmation email sent. Check the new inbox to finalize the change.",
+      );
+      setSettingsOpen(false);
+      resetSettingsForm();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update email.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const passwordError = validatePassword(settingsNewPassword);
+    if (passwordError) {
+      toast.error(passwordError);
+      return;
+    }
+
+    if (settingsNewPassword !== settingsConfirmPassword) {
+      toast.error("New password and confirmation do not match.");
+      return;
+    }
+
+    if (settingsNewPassword === settingsCurrentPassword) {
+      toast.error("New password must be different from the current one.");
+      return;
+    }
+
+    if (!settingsCurrentPassword) {
+      toast.error("Current password is required.");
+      return;
+    }
+
+    setSettingsBusy(true);
+    const supabase = createSupabaseBrowserClient();
+
+    try {
+      await reauthenticate(supabase);
+
+      const { error } = await supabase.auth.updateUser({
+        password: settingsNewPassword,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success("Password updated.");
+      setSettingsOpen(false);
+      resetSettingsForm();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update password.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -2835,15 +2966,28 @@ export default function AdminDashboard({
               </p>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={handleSignOut}
-              disabled={authBusy}
-              style={{ color: "white", backgroundColor: "#dc2626" }}
-              className="h-11 rounded-xl border-black/10 px-5 text-dark"
-            >
-              {authBusy ? "Signing out..." : "Sign out"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openSettings}
+                disabled={authBusy}
+                aria-label="Account settings"
+                title="Account settings"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-black/10 bg-white text-dark transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Icon icon="ph:gear-six-bold" width={20} height={20} />
+              </button>
+
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+                disabled={authBusy}
+                style={{ color: "white", backgroundColor: "#dc2626" }}
+                className="h-11 rounded-xl border-black/10 px-5 text-dark"
+              >
+                {authBusy ? "Signing out..." : "Sign out"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -4291,6 +4435,185 @@ export default function AdminDashboard({
             </div>
           </div>
         ) : null}
+
+        <AdminModal
+          open={settingsOpen}
+          title="Account settings"
+          description="Update the email or password for this admin account."
+          onClose={closeSettings}
+        >
+          <div className="mb-5 flex gap-2 rounded-2xl border border-black/10 bg-black/[0.03] p-1">
+            <button
+              type="button"
+              onClick={() => setSettingsTab("email")}
+              className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition ${
+                settingsTab === "email"
+                  ? "bg-white text-dark shadow-sm"
+                  : "text-dark/60 hover:text-dark"
+              }`}
+            >
+              Change email
+            </button>
+            <button
+              type="button"
+              onClick={() => setSettingsTab("password")}
+              className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition ${
+                settingsTab === "password"
+                  ? "bg-white text-dark shadow-sm"
+                  : "text-dark/60 hover:text-dark"
+              }`}
+            >
+              Change password
+            </button>
+          </div>
+
+          {settingsTab === "email" ? (
+            <form className="space-y-4" onSubmit={handleChangeEmail}>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-dark">
+                  Current email
+                </span>
+                <input
+                  type="email"
+                  value={userEmail}
+                  disabled
+                  className="w-full rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-base text-dark/60"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-dark">
+                  New email
+                </span>
+                <input
+                  type="email"
+                  value={settingsNewEmail}
+                  onChange={(event) => setSettingsNewEmail(event.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-base text-dark outline-none transition focus:border-primary"
+                  placeholder="new@example.com"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-dark">
+                  Current password
+                </span>
+                <input
+                  type="password"
+                  value={settingsCurrentPassword}
+                  onChange={(event) =>
+                    setSettingsCurrentPassword(event.target.value)
+                  }
+                  required
+                  autoComplete="current-password"
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-base text-dark outline-none transition focus:border-primary"
+                  placeholder="Your current password"
+                />
+              </label>
+
+              <p className="text-xs text-dark/55">
+                Supabase will send a confirmation link to the new address. The
+                email is only updated after that link is opened.
+              </p>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeSettings}
+                  disabled={settingsBusy}
+                  className="rounded-xl border-black/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={settingsBusy}
+                  className="rounded-xl bg-primary text-white hover:bg-primary/90"
+                >
+                  {settingsBusy ? "Saving..." : "Update email"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form className="space-y-4" onSubmit={handleChangePassword}>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-dark">
+                  Current password
+                </span>
+                <input
+                  type="password"
+                  value={settingsCurrentPassword}
+                  onChange={(event) =>
+                    setSettingsCurrentPassword(event.target.value)
+                  }
+                  required
+                  autoComplete="current-password"
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-base text-dark outline-none transition focus:border-primary"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-dark">
+                  New password
+                </span>
+                <input
+                  type="password"
+                  value={settingsNewPassword}
+                  onChange={(event) =>
+                    setSettingsNewPassword(event.target.value)
+                  }
+                  required
+                  autoComplete="new-password"
+                  minLength={6}
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-base text-dark outline-none transition focus:border-primary"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-dark">
+                  Confirm new password
+                </span>
+                <input
+                  type="password"
+                  value={settingsConfirmPassword}
+                  onChange={(event) =>
+                    setSettingsConfirmPassword(event.target.value)
+                  }
+                  required
+                  autoComplete="new-password"
+                  minLength={6}
+                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-base text-dark outline-none transition focus:border-primary"
+                />
+              </label>
+
+              <p className="text-xs text-dark/55">
+                Minimum 6 characters. You will stay signed in after the change.
+              </p>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeSettings}
+                  disabled={settingsBusy}
+                  className="rounded-xl border-black/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={settingsBusy}
+                  className="rounded-xl bg-primary text-white hover:bg-primary/90"
+                >
+                  {settingsBusy ? "Saving..." : "Update password"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </AdminModal>
       </div>
     </main>
   );

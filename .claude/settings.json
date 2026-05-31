@@ -7,7 +7,13 @@
       "Bash(npx eslint *)",
       "Bash(/usr/bin/head -50)",
       "Bash(/usr/bin/sort -u)",
-      "Bash(/usr/bin/head -40)"
+      "Bash(/usr/bin/head -40)",
+      "Bash(/usr/bin/head -20)",
+      "Bash(/usr/bin/head -60)",
+      "Bash(/usr/bin/head -10)",
+      "Bash(/usr/bin/head -8)",
+      "Bash(/usr/bin/tail -30)",
+      "Bash(/usr/bin/tail -20)"
     ]
   }
 }
