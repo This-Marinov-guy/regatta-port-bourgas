@@ -78,6 +78,7 @@ export default async function EventDetailsPage({ params }: Props) {
       boatName: registration.boat_name,
       nationality: registration.country,
       sailNumber: registration.sail_number,
+      model: registration.model_design,
       yachtClub: registration.yacht_club,
       skipperName: registration.skipper_name,
     }))

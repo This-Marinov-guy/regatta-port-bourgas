@@ -13,6 +13,7 @@ type EventEntry = {
   boatName: string
   nationality: string
   sailNumber: string
+  model: string | null
   yachtClub: string | null
   skipperName: string
 }
@@ -198,6 +199,7 @@ function EntryList({ entries }: { entries: EventEntry[] }) {
             <th className="px-4 py-3 font-semibold">{t("entryList.boat")}</th>
             <th className="px-4 py-3 font-semibold">{t("entryList.nationality")}</th>
             <th className="px-4 py-3 font-semibold">{t("entryList.sailNumber")}</th>
+            <th className="px-4 py-3 font-semibold">{t("entryList.model")}</th>
             <th className="px-4 py-3 font-semibold">{t("entryList.yachtClub")}</th>
             <th className="px-4 py-3 font-semibold">{t("entryList.skipper")}</th>
           </tr>
@@ -213,6 +215,9 @@ function EntryList({ entries }: { entries: EventEntry[] }) {
               </td>
               <td className="px-4 py-4 text-dark/70 dark:text-white/70">
                 {entry.sailNumber}
+              </td>
+              <td className="px-4 py-4 text-dark/70 dark:text-white/70">
+                {entry.model || "—"}
               </td>
               <td className="px-4 py-4 text-dark/70 dark:text-white/70">
                 {entry.yachtClub || "—"}

@@ -121,6 +121,7 @@
       "boat": "Boat",
       "nationality": "Nationality",
       "sailNumber": "Sail Number",
+      "model": "Model",
       "yachtClub": "Yacht Club",
       "skipper": "Skipper Name"
     },
