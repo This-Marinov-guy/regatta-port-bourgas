@@ -17,7 +17,9 @@
       "Bash(/usr/bin/head -30)",
       "Bash(/usr/bin/head -15)",
       "Bash(/usr/bin/tail -10)",
-      "Bash(/usr/bin/grep -iE \"\\(content|tab|render|return\\)\")"
+      "Bash(/usr/bin/grep -iE \"\\(content|tab|render|return\\)\")",
+      "Bash(/usr/bin/grep -iE \"\\(modal|close|dialog\\)\")",
+      "Bash(/usr/bin/head -25)"
     ]
   }
 }

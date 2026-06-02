@@ -939,14 +939,15 @@ function AdminModal({
             <p className="mt-1  leading-6 text-dark/60">{description}</p>
           </div>
 
-          <Button
+          <button
             type="button"
-            variant="outline"
             onClick={onClose}
-            className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+            aria-label="Close"
+            title="Close"
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 ${interactiveButtonClass}`}
           >
-            Close
-          </Button>
+            <Icon icon="ph:x-bold" width={18} height={18} />
+          </button>
         </div>
 
         {children}

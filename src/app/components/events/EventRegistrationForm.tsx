@@ -480,14 +480,15 @@ function LegalInfoModal({
                 {title}
               </h3>
             </div>
-            <Button
+            <button
               type="button"
-              variant="outline"
               onClick={onClose}
-              className="rounded-xl border-black/10 bg-white text-dark dark:border-white/10 dark:bg-black/20 dark:text-white"
+              aria-label={closeLabel}
+              title={closeLabel}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 transition-colors hover:bg-red-50 dark:border-red-400/30 dark:bg-black/20 dark:text-red-400 dark:hover:bg-red-500/10"
             >
-              {closeLabel}
-            </Button>
+              <Icon icon="ph:x-bold" width={18} height={18} />
+            </button>
           </div>
           <div className="mt-5 max-h-[70vh] overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white/80 p-5  leading-7 whitespace-pre-line text-dark/80 dark:border-white/10 dark:bg-black/20 dark:text-white/80">
             {body}
