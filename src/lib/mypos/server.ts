@@ -21,6 +21,105 @@ const MYPOS_ENDPOINTS = {
   production: 'https://www.mypos.com/vmp/checkout',
 } as const
 
+// myPOS requires CustomerCountry as an ISO 3166-1 alpha-3 code. Our form collects
+// free-text country, so map the common values (English + Bulgarian names, alpha-2)
+// to alpha-3. Anything unrecognised is omitted from the request rather than sent
+// invalid (CustomerCountry is optional under PaymentParametersRequired=2).
+const COUNTRY_ALPHA3_BY_ALIAS: Record<string, string> = {
+  // Bulgaria (host country — by far the most common)
+  bulgaria: 'BGR',
+  българия: 'BGR',
+  bg: 'BGR',
+  bgr: 'BGR',
+  // Neighbours / common entrants
+  romania: 'ROU',
+  румъния: 'ROU',
+  ro: 'ROU',
+  rou: 'ROU',
+  greece: 'GRC',
+  гърция: 'GRC',
+  gr: 'GRC',
+  grc: 'GRC',
+  turkey: 'TUR',
+  türkiye: 'TUR',
+  турция: 'TUR',
+  tr: 'TUR',
+  tur: 'TUR',
+  serbia: 'SRB',
+  сърбия: 'SRB',
+  rs: 'SRB',
+  srb: 'SRB',
+  ukraine: 'UKR',
+  украйна: 'UKR',
+  ua: 'UKR',
+  ukr: 'UKR',
+  russia: 'RUS',
+  русия: 'RUS',
+  ru: 'RUS',
+  rus: 'RUS',
+  // Wider Europe
+  germany: 'DEU',
+  германия: 'DEU',
+  de: 'DEU',
+  deu: 'DEU',
+  poland: 'POL',
+  полша: 'POL',
+  pl: 'POL',
+  pol: 'POL',
+  italy: 'ITA',
+  италия: 'ITA',
+  it: 'ITA',
+  ita: 'ITA',
+  france: 'FRA',
+  франция: 'FRA',
+  fr: 'FRA',
+  fra: 'FRA',
+  spain: 'ESP',
+  испания: 'ESP',
+  es: 'ESP',
+  esp: 'ESP',
+  netherlands: 'NLD',
+  холандия: 'NLD',
+  nl: 'NLD',
+  nld: 'NLD',
+  'united kingdom': 'GBR',
+  uk: 'GBR',
+  gb: 'GBR',
+  gbr: 'GBR',
+  'great britain': 'GBR',
+  austria: 'AUT',
+  австрия: 'AUT',
+  at: 'AUT',
+  aut: 'AUT',
+  croatia: 'HRV',
+  хърватия: 'HRV',
+  hr: 'HRV',
+  hrv: 'HRV',
+}
+
+export function toMyposCountryCode(
+  value: string | null | undefined
+): string | undefined {
+  const normalized = value?.trim().toLowerCase()
+
+  if (!normalized) {
+    return undefined
+  }
+
+  const mapped = COUNTRY_ALPHA3_BY_ALIAS[normalized]
+
+  if (mapped) {
+    return mapped
+  }
+
+  // Already a plausible alpha-3 code (e.g. "USA") we don't have an alias for.
+  if (/^[a-z]{3}$/.test(normalized)) {
+    return normalized.toUpperCase()
+  }
+
+  return undefined
+}
+
 const REQUIRED_MYPOS_ENV_KEYS = [
   'NEXT_PUBLIC_SITE_URL',
   'MYPOS_SID',
@@ -281,7 +380,7 @@ export function buildMyposPurchaseFields(args: {
   setField('CustomerFirstNames', firstName || 'Customer')
   setField('CustomerFamilyName', familyName)
   setField('CustomerPhone', args.customerPhone)
-  setField('CustomerCountry', args.customerCountry)
+  setField('CustomerCountry', toMyposCountryCode(args.customerCountry))
   setField('Note', args.note ?? '')
   setField('Source', 'Regatta Port Bourgas')
   setField('CartItems', '1')

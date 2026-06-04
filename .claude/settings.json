@@ -36,7 +36,11 @@
       "Bash(awk '{print $2, $11, $12, $13}')",
       "Bash(awk 'NR<=10')",
       "WebFetch(domain:developers.mypos.com)",
-      "WebSearch"
+      "WebSearch",
+      "Read(//Users/vlady/Desktop/**)",
+      "Read(//Users/vlady/Downloads/**)",
+      "Bash(awk 'NR<=15')",
+      "Bash(awk 'NR<=12')"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Icon } from "@iconify/react";
 import { Link } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -111,7 +112,10 @@ export default async function EventDetailsPage({ params }: Props) {
 
   return (
     <main className="site-page-bg">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-32 md:pb-36">
         <Link
           href={`/events`}
@@ -142,18 +146,37 @@ export default async function EventDetailsPage({ params }: Props) {
                 {title}
               </h1>
             </div>
-            <p className="text-dark/60 dark:text-white/60  sm:text-base mb-6">
-              {from} — {to}
-            </p>
-            {fee ? (
-              <p className="mb-6 inline-flex rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
-                {t("events.feeLabel")}: {fee}
-              </p>
-            ) : null}
-
             <div className="prose prose-zinc dark:prose-invert max-w-none whitespace-pre-line">
               <p>{description}</p>
             </div>
+
+            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-primary">
+              {/* <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+                  <Icon icon="ph:currency-eur-bold" width={22} height={22} />
+                </span> */}
+              <div>
+                <p className="text-sm font-medium text-dark/60 dark:text-white/60">
+                  {t("events.dateLabel")}
+                </p>
+                <p className="font-semibold">
+                  {from} — {to}
+                </p>
+              </div>
+            </div>
+
+            {fee ? (
+              <div className="mt-6 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-primary">
+                {/* <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+                  <Icon icon="ph:currency-eur-bold" width={22} height={22} />
+                </span> */}
+                <div>
+                  <p className="text-sm font-medium text-dark/60 dark:text-white/60">
+                    {t("events.feeLabel")}
+                  </p>
+                  <p className="font-semibold">{fee}</p>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 

@@ -99,6 +99,7 @@
     "registerModalEyebrow": "Event registration",
     "registerModalDescription": "Complete the full registration form in this page overlay. The URL updates as you open or close it, so it can also be shared directly.",
     "feeLabel": "Entry fee",
+    "dateLabel": "Event dates",
     "perCrewMember": "per crew member",
     "tabs": {
       "noticeBoard": "Notice Board",
