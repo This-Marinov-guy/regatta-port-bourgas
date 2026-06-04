@@ -11,6 +11,10 @@ import {
 } from '@/lib/mypos/server'
 import type { RegistrationPaymentData } from '@/types/admin'
 import { normalizeLocale, readLocaleFromRequest } from '@/lib/locale'
+import {
+  FEE_PER_CREW_MEMBER_CENTS,
+  calculateTotalFeeCents,
+} from '@/utils/defines/FEES'
 
 type CheckoutPayload = {
   locale?: unknown
@@ -28,12 +32,12 @@ function getBaseUrl(request: Request) {
 
 function buildCheckoutAmount(registration: Awaited<ReturnType<typeof getRegistrationWithEvent>>) {
   const crewCount = Math.max(registration.crew_list.length, 1)
-  const unitAmount = 5000
+  const unitAmount = FEE_PER_CREW_MEMBER_CENTS
 
   return {
     crewCount,
     unitAmount,
-    totalAmount: crewCount * unitAmount,
+    totalAmount: calculateTotalFeeCents(crewCount),
     currency: 'eur',
   }
 }

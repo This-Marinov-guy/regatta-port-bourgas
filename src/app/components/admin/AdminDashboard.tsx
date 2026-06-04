@@ -35,6 +35,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { validateEmail, validatePassword } from "@/lib/validation";
 import { localizeText } from "@/lib/localizedContent";
 import { slugify } from "@/lib/slug";
+import { PAYMENTS_ENABLED_DEFAULT } from "@/utils/defines/PAYMENTS";
 import type {
   AdminDocumentRecord,
   AdminEventRecord,
@@ -1959,7 +1960,7 @@ export default function AdminDashboard({
   const [eventsBusy, setEventsBusy] = useState(false);
   const [newsBusy, setNewsBusy] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
-  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(PAYMENTS_ENABLED_DEFAULT);
   const [authBusy, setAuthBusy] = useState(false);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [newsModalOpen, setNewsModalOpen] = useState(false);

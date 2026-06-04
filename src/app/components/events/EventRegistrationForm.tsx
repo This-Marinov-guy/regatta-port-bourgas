@@ -9,6 +9,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import { useLocale } from 'next-intl'
 import { Button } from '@/app/components/ui/button'
 import EventSubmissionStatusModal from '@/app/components/events/EventSubmissionStatusModal'
+import { PAYMENTS_ENABLED_DEFAULT } from '@/utils/defines/PAYMENTS'
 
 type CrewMemberDraft = {
   name: string
@@ -643,7 +644,7 @@ export default function EventRegistrationForm({
   const [form, setForm] = useState<RegistrationDraft>(() => defaultDraft())
   const [submitting, setSubmitting] = useState(false)
   const [paymentLoading, setPaymentLoading] = useState(false)
-  const [paymentsEnabled, setPaymentsEnabled] = useState(false)
+  const [paymentsEnabled, setPaymentsEnabled] = useState(PAYMENTS_ENABLED_DEFAULT)
   const [insuranceUploading, setInsuranceUploading] = useState(false)
   const [insuranceDragging, setInsuranceDragging] = useState(false)
   const [invalidFields, setInvalidFields] = useState<string[]>([])

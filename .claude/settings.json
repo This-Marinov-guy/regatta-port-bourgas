@@ -20,7 +20,18 @@
       "Bash(/usr/bin/grep -iE \"\\(content|tab|render|return\\)\")",
       "Bash(/usr/bin/grep -iE \"\\(modal|close|dialog\\)\")",
       "Bash(/usr/bin/head -25)",
-      "Bash(sips -g pixelWidth -g pixelHeight public/images/brands/audi_banner.jpg)"
+      "Bash(sips -g pixelWidth -g pixelHeight public/images/brands/audi_banner.jpg)",
+      "Bash(awk '/-----BEGIN RSA PRIVATE KEY-----/,/-----END RSA PRIVATE KEY-----/' /Users/vlady/Desktop/regatta-port-bourgas/.env.local)",
+      "Bash(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' /Users/vlady/Desktop/regatta-port-bourgas/.env.local)",
+      "Bash(openssl rsa *)",
+      "Bash(openssl md5 *)",
+      "Bash(openssl x509 *)",
+      "Bash(node -e ' *)",
+      "Bash(awk 'NR<=40')",
+      "Bash(awk 'NR<=50')",
+      "Bash(awk 'NR<=30')",
+      "Bash(awk 'NR<=14')",
+      "Bash(awk 'NR<=8')"
     ]
   }
 }
