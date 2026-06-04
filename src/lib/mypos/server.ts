@@ -385,7 +385,7 @@ export function buildMyposPurchaseFields(args: {
   setField('URL_Cancel', args.cancelUrl)
   setField('URL_Notify', args.notifyUrl)
   setField('CardTokenRequest', '0')
-  setField('KeyIndex', 4)
+  setField('KeyIndex', 3)
   setField('PaymentParametersRequired', '2')
   setField('PaymentMethod', '3')
   setField('CustomerEmail', args.customerEmail)
