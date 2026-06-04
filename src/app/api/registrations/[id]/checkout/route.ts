@@ -88,6 +88,28 @@ function renderMyposCheckoutForm(args: {
 </html>`
 }
 
+function renderMyposErrorPage() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment unavailable</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: sans-serif; background: #f8f3e8; color: #10243e; }
+    main { max-width: 32rem; padding: 2rem; text-align: center; }
+    a { color: #0057b8; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>We couldn't start the payment</h1>
+    <p>Something went wrong while opening the secure checkout. Please go back and try again, or contact the organisers if the problem continues.</p>
+  </main>
+</body>
+</html>`
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -147,13 +169,19 @@ export async function GET(
       }
     )
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unable to open myPOS checkout.'
+    // Log the real reason for operators, but never expose it to the customer.
+    console.error('myPOS checkout (GET) failed:', error)
 
-    return new Response(
-      message,
-      { status: message.includes('Payments are disabled') ? 503 : 400 }
-    )
+    const isDisabled =
+      error instanceof Error && error.message.includes('Payments are disabled')
+
+    return new Response(renderMyposErrorPage(), {
+      status: isDisabled ? 503 : 400,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+      },
+    })
   }
 }
 

@@ -241,42 +241,50 @@ export function buildMyposPurchaseFields(args: {
   const [firstName, ...familyNameParts] = args.customerName.trim().split(/\s+/)
   const familyName = familyNameParts.join(' ') || firstName || 'Customer'
   const currency = args.currency.toUpperCase()
-  const fields: MyposFieldMap = {
-    IPCmethod: 'IPCPurchase',
-    IPCVersion: '1.4',
-    IPCLanguage: 'EN',
-    SID: config.sid,
-    WalletNumber: config.walletNumber,
-    Amount: centsToMyposAmount(args.amountCents),
-    Currency: currency,
-    OrderID: args.orderId,
-    URL_OK: args.okUrl,
-    URL_Cancel: args.cancelUrl,
-    URL_Notify: args.notifyUrl,
-    CardTokenRequest: '0',
-    KeyIndex: config.keyIndex,
-    PaymentParametersRequired: '2',
-    PaymentMethod: '3',
-    CustomerEmail: args.customerEmail,
-    CustomerFirstNames: firstName || 'Customer',
-    CustomerFamilyName: familyName,
-    Source: 'Regatta Port Bourgas',
-    Note: args.note ?? '',
-    CartItems: '1',
-    Article_1: args.itemName,
-    Quantity_1: String(args.itemQuantity),
-    Price_1: centsToMyposAmount(args.itemUnitAmountCents),
-    Currency_1: currency,
-    Amount_1: centsToMyposAmount(args.amountCents),
+
+  // Fields MUST be built in myPOS' canonical IPCPurchase order: the signature is
+  // computed over the values in this exact sequence, and myPOS reconstructs it
+  // the same way. Any reordering (or putting optional fields out of place) yields
+  // E_SIGNATURE_FAILED. Optional fields are included only when present, in slot.
+  const fields: MyposFieldMap = {}
+  const setField = (
+    key: string,
+    value: string | number | null | undefined
+  ) => {
+    if (value === null || value === undefined || value === '') {
+      return
+    }
+    fields[key] = value
   }
 
-  if (args.customerPhone) {
-    fields.CustomerPhone = args.customerPhone
-  }
-
-  if (args.customerCountry) {
-    fields.CustomerCountry = args.customerCountry
-  }
+  setField('IPCmethod', 'IPCPurchase')
+  setField('IPCVersion', '1.4')
+  setField('IPCLanguage', 'EN')
+  setField('SID', config.sid)
+  setField('WalletNumber', config.walletNumber)
+  setField('Amount', centsToMyposAmount(args.amountCents))
+  setField('Currency', currency)
+  setField('OrderID', args.orderId)
+  setField('URL_OK', args.okUrl)
+  setField('URL_Cancel', args.cancelUrl)
+  setField('URL_Notify', args.notifyUrl)
+  setField('CardTokenRequest', '0')
+  setField('KeyIndex', config.keyIndex)
+  setField('PaymentParametersRequired', '2')
+  setField('PaymentMethod', '3')
+  setField('CustomerEmail', args.customerEmail)
+  setField('CustomerFirstNames', firstName || 'Customer')
+  setField('CustomerFamilyName', familyName)
+  setField('CustomerPhone', args.customerPhone)
+  setField('CustomerCountry', args.customerCountry)
+  setField('Note', args.note ?? '')
+  setField('Source', 'Regatta Port Bourgas')
+  setField('CartItems', '1')
+  setField('Article_1', args.itemName)
+  setField('Quantity_1', String(args.itemQuantity))
+  setField('Price_1', centsToMyposAmount(args.itemUnitAmountCents))
+  setField('Currency_1', currency)
+  setField('Amount_1', centsToMyposAmount(args.amountCents))
 
   return {
     ...fields,

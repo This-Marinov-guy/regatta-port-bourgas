@@ -34,7 +34,9 @@
       "Bash(awk 'NR<=8')",
       "Bash(awk 'NR<=20')",
       "Bash(awk '{print $2, $11, $12, $13}')",
-      "Bash(awk 'NR<=10')"
+      "Bash(awk 'NR<=10')",
+      "WebFetch(domain:developers.mypos.com)",
+      "WebSearch"
     ]
   }
 }

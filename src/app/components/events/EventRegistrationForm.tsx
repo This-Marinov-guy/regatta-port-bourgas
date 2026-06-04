@@ -897,14 +897,12 @@ export default function EventRegistrationForm({
         | null
 
       if (!response.ok || !payload?.data?.checkoutUrl) {
-        throw new Error(payload?.error || t.submissionStatus.paymentError)
+        throw new Error(t.submissionStatus.paymentError)
       }
 
       window.location.assign(payload.data.checkoutUrl)
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t.submissionStatus.paymentError
-      )
+    } catch {
+      toast.error(t.submissionStatus.paymentError)
       setPaymentLoading(false)
     }
   }
