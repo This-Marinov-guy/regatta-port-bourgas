@@ -664,6 +664,9 @@ export function buildRegistrationStatusChangeTemplate(args: {
   const boatName = registration.boat_name
   const evtName = eventName(registration, locale)
   const evtDates = eventDates(registration, locale)
+  const paymentCopy = registrationEmailCopy[locale].registrationConfirmation
+  const checkoutUrl = status === 'approved' ? paymentUrl(registration, locale) : null
+  const payableAmount = checkoutUrl ? paymentSummary(registration) : null
   const subject = interpolate(copy.subject, { boatName })
 
   const summary = [
@@ -702,6 +705,33 @@ export function buildRegistrationStatusChangeTemplate(args: {
 
   if (status === 'approved') {
     textLines.push(interpolate((copy as typeof statusChangeCopy.en.approved).textDates, { eventDates: evtDates }))
+
+    if (checkoutUrl) {
+      sections.push({
+        title: paymentCopy.paymentTitle,
+        body:
+          paragraph(
+            interpolate(paymentCopy.paymentBody, {
+              payableAmount: payableAmount
+                ? interpolate(paymentCopy.paymentAmountFragment, {
+                    amount: escapeHtml(payableAmount),
+                  })
+                : '',
+            })
+          ) +
+          noteBox(paymentCopy.paymentNote, 'warning'),
+      })
+      textLines.push(
+        interpolate(paymentCopy.textPaymentPending, {
+          payableAmount: payableAmount
+            ? interpolate(paymentCopy.textPaymentAmountFragment, {
+                amount: payableAmount,
+              })
+            : '',
+          checkoutUrl,
+        })
+      )
+    }
   } else if (feedback) {
     textLines.push(interpolate((copy as typeof statusChangeCopy.en.rejected).textFeedback, { feedback }))
   }
@@ -715,6 +745,8 @@ export function buildRegistrationStatusChangeTemplate(args: {
       intro: copy.intro,
       summary,
       sections,
+      buttonLabel: checkoutUrl ? paymentCopy.buttonLabel : undefined,
+      buttonUrl: checkoutUrl,
     }),
     text: textLines.join('\n'),
   } satisfies EmailTemplate

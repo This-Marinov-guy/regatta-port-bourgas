@@ -4044,7 +4044,11 @@ export default function AdminDashboard({
                               registration yet.
                             </div>
                           ) : null}
-                          <div className="flex flex-wrap gap-2">
+                          <div>
+                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                              Registration status
+                            </p>
+                            <div className="flex flex-wrap gap-2">
                             {(
                               [
                                 "pending",
@@ -4080,9 +4084,14 @@ export default function AdminDashboard({
                                 {status}
                               </button>
                             ))}
+                            </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
+                          <div>
+                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                              Actions
+                            </p>
+                            <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
                             <button
                               type="button"
                               disabled={
@@ -4210,9 +4219,14 @@ export default function AdminDashboard({
                                 ? "Deleting..."
                                 : "Delete"}
                             </button>
+                            </div>
                           </div>
 
-                          <div className="grid gap-4 lg:grid-cols-2">
+                          <div>
+                            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                              Registration details
+                            </p>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                             <RegistrationDetailRow
                               label="Boat name"
                               value={registration.boat_name}
@@ -4363,6 +4377,7 @@ export default function AdminDashboard({
                                 )}
                               />
                             ) : null}
+                            </div>
                           </div>
 
                           <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">

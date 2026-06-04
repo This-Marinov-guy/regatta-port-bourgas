@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import RegistrationPaymentAction from '@/app/components/payments/RegistrationPaymentAction'
+import StickyActionBar from '@/app/components/payments/StickyActionBar'
 import { Link } from '@/i18n/routing'
 import { calculateEventFeeCents, hasEventFee } from '@/lib/eventFees'
 import { localizeText } from '@/lib/localizedContent'
@@ -52,18 +53,17 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
   return (
     <main className="site-page-bg min-h-screen">
       <div className="container mx-auto max-w-3xl px-5 pb-28 pt-36 md:pt-44">
-        <div className="rounded-[2rem] border border-black/10 bg-white/90 p-7 shadow-xl dark:border-white/10 dark:bg-black/25 sm:p-10">
-         
-          <h2 className="mt-3 text-2xl text-center font-semibold text-dark dark:text-white sm:text-4xl">
+        <div className="sm:p-10">
+          <h2 className="mb-16 text-2xl text-center font-semibold text-dark dark:text-white sm:text-4xl">
             {paid ? t('paidTitle') : t('unpaidTitle')}
           </h2>
-          <p className="mt-4 leading-7 text-dark/70 dark:text-white/70">
+          {/* <p className="mt-4 leading-7 text-dark/70 dark:text-white/70">
             {paid
               ? feeRequired
                 ? t('paidBody', { boatName: registration.boat_name })
                 : t('noFeeBody', { boatName: registration.boat_name })
               : t('unpaidBody', { boatName: registration.boat_name })}
-          </p>
+          </p> */}
 
           <dl className="mt-7 grid gap-4 rounded-2xl bg-black/[0.03] p-5 dark:bg-white/[0.05] sm:grid-cols-2">
             <div>
@@ -92,19 +92,25 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
               <dt className="text-sm font-semibold uppercase tracking-[0.08em] text-dark/50 dark:text-white/50">
                 {t('status')}
               </dt>
-              <dd className="mt-1 font-medium text-dark dark:text-white">
+              <dd
+                className={`mt-1 font-semibold ${
+                  paid
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}
+              >
                 {paid ? t('paidStatus') : t('unpaidStatus')}
               </dd>
             </div>
           </dl>
 
           {query.payment === 'cancelled' && !paid ? (
-            <p className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">
+            <p className="mt-6 rounded-2xl border text-center border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">
               {t('cancelled')}
             </p>
           ) : null}
 
-          <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
+          <StickyActionBar>
             {!paid ? (
               <RegistrationPaymentAction
                 registrationId={registration.id}
@@ -121,7 +127,7 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
             >
               {t('backToEvent')}
             </Link>
-          </div>
+          </StickyActionBar>
         </div>
       </div>
     </main>
