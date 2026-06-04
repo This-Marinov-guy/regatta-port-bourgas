@@ -209,7 +209,7 @@ export default async function AboutUsPage() {
           </div>
         </div>
 
-        <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {/* <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {content.stats.map((stat) => (
             <div
               key={stat.label}
@@ -223,7 +223,7 @@ export default async function AboutUsPage() {
               </p>
             </div>
           ))}
-        </div>
+        </div> */}
 
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]">
           <article className="space-y-8">
