@@ -892,11 +892,13 @@ function RegistrationDetailRow({
   value: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-white/70 p-4">
+    <div className="">
       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
         {label}
       </p>
-      <div className="mt-2  leading-6 text-dark/75">{value}</div>
+      <div className="rounded-[1.25rem] border border-black/10 bg-white/80 py-2 pl-4 w-auto">
+        {value}
+      </div>
     </div>
   );
 }
@@ -4036,7 +4038,7 @@ export default function AdminDashboard({
                         </div>
                       </AccordionTrigger>
 
-                      <AccordionContent className="px-5 pb-5 text-dark">
+                      <AccordionContent className="px-1 pb-5 text-dark">
                         <div className="space-y-5">
                           {isUnpaid ? (
                             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3  font-medium text-red-700">
@@ -4380,7 +4382,7 @@ export default function AdminDashboard({
                             </div>
                           </div>
 
-                          <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
+                          <div className="">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
                               Crew list
                             </p>
@@ -4414,7 +4416,7 @@ export default function AdminDashboard({
                             )}
                           </div>
 
-                          <div className="rounded-[1.25rem] border border-black/10 bg-white/80 p-4">
+                          <div className="">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
                               Insurance documents
                             </p>
