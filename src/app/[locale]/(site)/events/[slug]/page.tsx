@@ -76,6 +76,7 @@ export default async function EventDetailsPage({ params }: Props) {
     getEventDocumentsByRefs(event.results),
   ])
   const entries = (await listRegistrations(event.id))
+    .filter((registration) => registration.status === "approved")
     .map((registration) => ({
       id: registration.id,
       boatName: registration.boat_name,
