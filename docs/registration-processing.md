@@ -27,6 +27,28 @@ App / API:
 
 The myPOS configuration pack contains the Store ID, client number, merchant private key, and myPOS public certificate. `MYPOS_KEY_INDEX` selects the currently active key in the store integration settings and overrides the index embedded in the pack. If the pack or key index is missing or invalid, or `NEXT_PUBLIC_SITE_URL` is not valid for myPOS callbacks, payment actions are disabled in the public registration flow and admin dashboard. Registrations can still be submitted and admins can still mark payments manually.
 
+### myPOS payment notification
+
+No separate webhook registration is required in the myPOS portal. Every checkout request sends the signed notification URL:
+
+`https://www.regattaportbourgas.org/api/mypos/webhook/checkout`
+
+After a successful payment, myPOS sends an `IPCPurchaseNotify` form POST to that URL. The app verifies the myPOS signature and checks the store ID, active order ID, amount, currency, and transaction reference before marking the registration as paid. The endpoint must remain publicly accessible over HTTPS and return HTTP `200` with the plain-text body `OK`; otherwise myPOS can roll back the payment.
+
+### Failed jobs and retries
+
+Run `supabase/migrations/20260604160000_create_failed_jobs.sql` before deploying the webhook and Lambda changes. Failed myPOS webhook deliveries and registration SQS worker events are stored in `public.failed_jobs`.
+
+Each row contains:
+
+- `source`, `job_type`, and `handler` to identify the replay target
+- `request`, `response`, and `details` JSON containing the original payload and replay data
+- `dedupe_key` so repeated delivery attempts update one row
+- `status`, `attempt_count`, `max_attempts`, `next_retry_at`, and `resolved_at` for retry lifecycle management
+- `error_message` and `error_stack` for diagnosis
+
+SQS continues to perform its normal retries and DLQ redrive. A repeated myPOS delivery or SQS retry that succeeds automatically marks the matching failed job as `resolved`. Failed jobs use row-level security and are only accessible to authenticated admins or the service role.
+
 Lambda workers:
 
 - `AWS_REGION`

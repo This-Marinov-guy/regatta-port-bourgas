@@ -2,6 +2,12 @@ import type { QueueBatchResponse, QueueEvent, RegistrationCreatedMessage } from 
 import { getRegistrationWithEvent, setGeneratedRegistrationFormUrl } from '@/lib/registrations/data'
 import { generateRegistrationPdf, uploadRegistrationPdf } from '@/lib/registrations/pdf'
 import { sendRegistrationPdfToEntrant } from '@/lib/registrations/email'
+import {
+  recordFailedRegistrationEvent,
+  resolveFailedRegistrationEvent,
+} from '@/lib/registrations/failedJobs'
+
+const WORKER = 'src/lambdas/registrations/registrationBlanks.handler'
 
 function parseMessage(body: string) {
   const parsed = JSON.parse(body) as RegistrationCreatedMessage | { Message?: string }
@@ -36,8 +42,14 @@ export async function handler(event: QueueEvent): Promise<QueueBatchResponse> {
           generatedFormUrl: uploaded.url,
           locale: message.locale,
         })
+        await resolveFailedRegistrationEvent({ worker: WORKER, record })
       } catch (error) {
         console.error('registrationBlanks failed', error)
+        await recordFailedRegistrationEvent({
+          worker: WORKER,
+          record,
+          error,
+        })
         batchItemFailures.push({ itemIdentifier: record.messageId })
       }
     })

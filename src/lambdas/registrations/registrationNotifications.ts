@@ -1,6 +1,12 @@
 import type { QueueBatchResponse, QueueEvent, RegistrationCreatedMessage } from '@/lib/registrations/types'
 import { getRegistrationWithEvent } from '@/lib/registrations/data'
 import { sendRegistrationNotificationToAdmins } from '@/lib/registrations/email'
+import {
+  recordFailedRegistrationEvent,
+  resolveFailedRegistrationEvent,
+} from '@/lib/registrations/failedJobs'
+
+const WORKER = 'src/lambdas/registrations/registrationNotifications.handler'
 
 function parseMessage(body: string) {
   const parsed = JSON.parse(body) as RegistrationCreatedMessage | { Message?: string }
@@ -21,8 +27,14 @@ export async function handler(event: QueueEvent): Promise<QueueBatchResponse> {
         const message = parseMessage(record.body)
         const registration = await getRegistrationWithEvent(message.registrationId)
         await sendRegistrationNotificationToAdmins(registration)
+        await resolveFailedRegistrationEvent({ worker: WORKER, record })
       } catch (error) {
         console.error('registrationNotifications failed', error)
+        await recordFailedRegistrationEvent({
+          worker: WORKER,
+          record,
+          error,
+        })
         batchItemFailures.push({ itemIdentifier: record.messageId })
       }
     })
@@ -30,4 +42,3 @@ export async function handler(event: QueueEvent): Promise<QueueBatchResponse> {
 
   return { batchItemFailures }
 }
-

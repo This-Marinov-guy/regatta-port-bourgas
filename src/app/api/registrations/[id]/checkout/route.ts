@@ -57,14 +57,11 @@ function getLocalizedFeeItemName(
   registration: Awaited<ReturnType<typeof getRegistrationWithEvent>>,
   locale: 'en' | 'bg'
 ) {
-  const eventName =
-    locale === 'bg'
-      ? registration.event?.name_bg || registration.event?.name_en
-      : registration.event?.name_en
+  const boat = `${registration.boat_name} | ${registration.sail_number}`
 
   return locale === 'bg'
-    ? `${eventName} - такса за участие`
-    : `${eventName} registration fee`
+    ? `${boat} - такса за участие`
+    : `${boat} registration fee`
 }
 
 function escapeHtml(value: string | number) {
