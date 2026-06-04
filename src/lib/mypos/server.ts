@@ -1,4 +1,9 @@
-import { createSign, createVerify } from 'crypto'
+import {
+  createPrivateKey,
+  createSign,
+  createVerify,
+  X509Certificate,
+} from 'crypto'
 import type { AppLocale } from '@/lib/locale'
 import { COUNTRY_ALPHA3_BY_ALIAS } from '@/utils/defines/COUNTRIES'
 
@@ -65,7 +70,37 @@ function requireEnv(name: string) {
 }
 
 function normalizePem(value: string) {
-  return value.replace(/\\n/g, '\n')
+  const trimmed = value.trim()
+  const unquoted =
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+      ? trimmed.slice(1, -1)
+      : trimmed
+
+  return unquoted
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+}
+
+function validatePrivateKey(value: string) {
+  try {
+    const key = createPrivateKey(normalizePem(value))
+
+    if (key.asymmetricKeyType !== 'rsa') {
+      throw new Error('The key is not RSA.')
+    }
+  } catch {
+    throw new Error('MYPOS_PRIVATE_KEY is not a valid PEM RSA private key.')
+  }
+}
+
+function validatePublicCertificate(value: string) {
+  try {
+    new X509Certificate(normalizePem(value))
+  } catch {
+    throw new Error('MYPOS_PUBLIC_CERTIFICATE is not a valid PEM certificate.')
+  }
 }
 
 function getMyposEnvironment() {
@@ -106,6 +141,10 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
 
   const invalid: string[] = []
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  const privateKey = process.env.MYPOS_PRIVATE_KEY?.trim()
+  const publicCertificate =
+    process.env.MYPOS_PUBLIC_CERTIFICATE?.trim() ||
+    process.env.MYPOS_CERTIFICATE?.trim()
 
   if (siteUrl) {
     try {
@@ -115,6 +154,24 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
         error instanceof Error
           ? error.message
           : 'NEXT_PUBLIC_SITE_URL is not valid for myPOS checkout.'
+      )
+    }
+  }
+
+  if (privateKey) {
+    try {
+      validatePrivateKey(privateKey)
+    } catch (error) {
+      invalid.push(error instanceof Error ? error.message : 'Invalid myPOS private key.')
+    }
+  }
+
+  if (publicCertificate) {
+    try {
+      validatePublicCertificate(publicCertificate)
+    } catch (error) {
+      invalid.push(
+        error instanceof Error ? error.message : 'Invalid myPOS public certificate.'
       )
     }
   }
@@ -167,6 +224,7 @@ function valuesForSigning(fields: MyposFieldMap) {
 
 export function signMyposFields(fields: MyposFieldMap) {
   const privateKey = normalizePem(requireEnv('MYPOS_PRIVATE_KEY'))
+  validatePrivateKey(privateKey)
   const payload = Buffer.from(valuesForSigning(fields).join('-')).toString('base64')
 
   return createSign('RSA-SHA256').update(payload, 'utf8').sign(privateKey, 'base64')

@@ -40,7 +40,8 @@
       "Read(//Users/vlady/Desktop/**)",
       "Read(//Users/vlady/Downloads/**)",
       "Bash(awk 'NR<=15')",
-      "Bash(awk 'NR<=12')"
+      "Bash(awk 'NR<=12')",
+      "Bash(cat)"
     ]
   }
 }
