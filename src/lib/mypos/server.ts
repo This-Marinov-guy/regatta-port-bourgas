@@ -22,12 +22,18 @@ export type MyposConfigurationStatus = {
   invalid: string[]
 }
 
+type MyposConfig = {
+  sid: string
+  walletNumber: string
+  keyIndex: string
+  privateKey: string
+  publicCertificate: string
+}
+
 const MYPOS_ENDPOINTS = {
   sandbox: 'https://www.mypos.com/vmp/checkout-test',
   production: 'https://www.mypos.com/vmp/checkout',
 } as const
-
-
 
 export function toMyposCountryCode(
   value: string | null | undefined
@@ -54,9 +60,7 @@ export function toMyposCountryCode(
 
 const REQUIRED_MYPOS_ENV_KEYS = [
   'NEXT_PUBLIC_SITE_URL',
-  'MYPOS_SID',
-  'MYPOS_WALLET_NUMBER',
-  'MYPOS_PRIVATE_KEY',
+  'MYPOS_CONFIGURATION_PACK',
 ] as const
 
 function requireEnv(name: string) {
@@ -69,15 +73,19 @@ function requireEnv(name: string) {
   return value
 }
 
-function normalizePem(value: string) {
+function normalizeEnvValue(value: string) {
   const trimmed = value.trim()
-  const unquoted =
+
+  return (
     (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
     (trimmed.startsWith("'") && trimmed.endsWith("'"))
       ? trimmed.slice(1, -1)
       : trimmed
+  )
+}
 
-  return unquoted
+function normalizePem(value: string) {
+  return normalizeEnvValue(value)
     .replace(/\\r\\n/g, '\n')
     .replace(/\\n/g, '\n')
     .replace(/\r\n/g, '\n')
@@ -91,7 +99,9 @@ function validatePrivateKey(value: string) {
       throw new Error('The key is not RSA.')
     }
   } catch {
-    throw new Error('MYPOS_PRIVATE_KEY is not a valid PEM RSA private key.')
+    throw new Error(
+      'MYPOS_CONFIGURATION_PACK contains an invalid PEM RSA private key.'
+    )
   }
 }
 
@@ -99,7 +109,57 @@ function validatePublicCertificate(value: string) {
   try {
     new X509Certificate(normalizePem(value))
   } catch {
-    throw new Error('MYPOS_PUBLIC_CERTIFICATE is not a valid PEM certificate.')
+    throw new Error(
+      'MYPOS_CONFIGURATION_PACK contains an invalid PEM public certificate.'
+    )
+  }
+}
+
+function readPackField(
+  value: unknown,
+  field: 'sid' | 'cn' | 'idx' | 'pk' | 'pc'
+) {
+  if (
+    (typeof value !== 'string' && typeof value !== 'number') ||
+    !String(value).trim()
+  ) {
+    throw new Error(
+      `MYPOS_CONFIGURATION_PACK is missing the required "${field}" field.`
+    )
+  }
+
+  return String(value).trim()
+}
+
+function parseMyposConfigurationPack(value: string): MyposConfig {
+  let pack: unknown
+
+  try {
+    const decoded = Buffer.from(normalizeEnvValue(value), 'base64').toString('utf8')
+    pack = JSON.parse(decoded)
+  } catch {
+    throw new Error(
+      'MYPOS_CONFIGURATION_PACK is not a valid Base64-encoded JSON configuration pack.'
+    )
+  }
+
+  if (!pack || typeof pack !== 'object' || Array.isArray(pack)) {
+    throw new Error('MYPOS_CONFIGURATION_PACK must decode to a JSON object.')
+  }
+
+  const fields = pack as Record<string, unknown>
+  const privateKey = normalizePem(readPackField(fields.pk, 'pk'))
+  const publicCertificate = normalizePem(readPackField(fields.pc, 'pc'))
+
+  validatePrivateKey(privateKey)
+  validatePublicCertificate(publicCertificate)
+
+  return {
+    sid: readPackField(fields.sid, 'sid'),
+    walletNumber: readPackField(fields.cn, 'cn'),
+    keyIndex: readPackField(fields.idx, 'idx'),
+    privateKey,
+    publicCertificate,
   }
 }
 
@@ -132,19 +192,9 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
     (name) => !process.env[name]?.trim()
   )
 
-  if (
-    !process.env.MYPOS_PUBLIC_CERTIFICATE?.trim() &&
-    !process.env.MYPOS_CERTIFICATE?.trim()
-  ) {
-    missing.push('MYPOS_PUBLIC_CERTIFICATE')
-  }
-
   const invalid: string[] = []
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
-  const privateKey = process.env.MYPOS_PRIVATE_KEY?.trim()
-  const publicCertificate =
-    process.env.MYPOS_PUBLIC_CERTIFICATE?.trim() ||
-    process.env.MYPOS_CERTIFICATE?.trim()
+  const configurationPack = process.env.MYPOS_CONFIGURATION_PACK?.trim()
 
   if (siteUrl) {
     try {
@@ -158,20 +208,12 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
     }
   }
 
-  if (privateKey) {
+  if (configurationPack) {
     try {
-      validatePrivateKey(privateKey)
-    } catch (error) {
-      invalid.push(error instanceof Error ? error.message : 'Invalid myPOS private key.')
-    }
-  }
-
-  if (publicCertificate) {
-    try {
-      validatePublicCertificate(publicCertificate)
+      parseMyposConfigurationPack(configurationPack)
     } catch (error) {
       invalid.push(
-        error instanceof Error ? error.message : 'Invalid myPOS public certificate.'
+        error instanceof Error ? error.message : 'Invalid myPOS configuration pack.'
       )
     }
   }
@@ -206,16 +248,7 @@ export function assertMyposConfigured() {
 }
 
 export function getMyposConfig() {
-  return {
-    sid: requireEnv('MYPOS_SID'),
-    walletNumber: requireEnv('MYPOS_WALLET_NUMBER'),
-    keyIndex: process.env.MYPOS_KEY_INDEX?.trim() || '1',
-    publicCertificate: normalizePem(
-      process.env.MYPOS_PUBLIC_CERTIFICATE?.trim() ||
-        process.env.MYPOS_CERTIFICATE?.trim() ||
-        ''
-    ),
-  }
+  return parseMyposConfigurationPack(requireEnv('MYPOS_CONFIGURATION_PACK'))
 }
 
 function valuesForSigning(fields: MyposFieldMap) {
@@ -223,8 +256,7 @@ function valuesForSigning(fields: MyposFieldMap) {
 }
 
 export function signMyposFields(fields: MyposFieldMap) {
-  const privateKey = normalizePem(requireEnv('MYPOS_PRIVATE_KEY'))
-  validatePrivateKey(privateKey)
+  const { privateKey } = getMyposConfig()
   const payload = Buffer.from(valuesForSigning(fields).join('-')).toString('base64')
 
   return createSign('RSA-SHA256').update(payload, 'utf8').sign(privateKey, 'base64')
@@ -232,11 +264,6 @@ export function signMyposFields(fields: MyposFieldMap) {
 
 export function verifyMyposFields(fields: MyposFieldMap, signature: string) {
   const { publicCertificate } = getMyposConfig()
-
-  if (!publicCertificate) {
-    throw new Error('MYPOS_PUBLIC_CERTIFICATE is not configured.')
-  }
-
   const payload = Buffer.from(valuesForSigning(fields).join('-')).toString('base64')
 
   return createVerify('RSA-SHA256')
