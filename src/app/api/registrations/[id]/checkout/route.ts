@@ -12,10 +12,9 @@ import {
   getMyposCheckoutEndpoint,
 } from '@/lib/mypos/server'
 import type { RegistrationPaymentData } from '@/types/admin'
-import { normalizeLocale, readLocaleFromRequest } from '@/lib/locale'
+import { normalizeLocale } from '@/lib/locale'
 
 type CheckoutPayload = {
-  locale?: unknown
   session?: unknown
 }
 
@@ -52,6 +51,20 @@ function isPaid(registration: Awaited<ReturnType<typeof getRegistrationWithEvent
     registration.payment_data?.mypos?.payment_status === 'paid' ||
     registration.payment_data?.stripe?.payment_status === 'paid'
   )
+}
+
+function getLocalizedFeeItemName(
+  registration: Awaited<ReturnType<typeof getRegistrationWithEvent>>,
+  locale: 'en' | 'bg'
+) {
+  const eventName =
+    locale === 'bg'
+      ? registration.event?.name_bg || registration.event?.name_en
+      : registration.event?.name_en
+
+  return locale === 'bg'
+    ? `${eventName} - такса за участие`
+    : `${eventName} registration fee`
 }
 
 function escapeHtml(value: string | number) {
@@ -151,7 +164,7 @@ export async function GET(
     }
 
     const baseUrl = getBaseUrl(request)
-    const locale = normalizeLocale(currentMypos.locale ?? readLocaleFromRequest(request))
+    const locale = normalizeLocale(registration.preferred_language)
     const { itemQuantity, unitAmount, totalAmount, currency } =
       buildCheckoutAmount(registration)
     const urls = buildMyposReturnUrls({
@@ -161,6 +174,7 @@ export async function GET(
       registrationId: registration.id,
     })
     const fields = buildMyposPurchaseFields({
+      locale,
       amountCents: totalAmount,
       currency,
       orderId,
@@ -171,7 +185,7 @@ export async function GET(
       customerPhone: registration.contact_phone,
       customerName: registration.contact_name || registration.skipper_name,
       customerCountry: registration.country,
-      itemName: `${registration.event.name_en} registration fee`,
+      itemName: getLocalizedFeeItemName(registration, locale),
       itemQuantity,
       itemUnitAmountCents: unitAmount,
       note: `${registration.boat_name} / ${registration.skipper_name}`,
@@ -212,7 +226,6 @@ export async function POST(
 ) {
   try {
     const body = (await request.json().catch(() => ({}))) as CheckoutPayload
-    const locale = normalizeLocale(body.locale ?? readLocaleFromRequest(request))
     const { id } = await params
     const session = typeof body.session === 'string' ? body.session : null
     const admin = session === id ? null : await getAdminUser()
@@ -224,6 +237,7 @@ export async function POST(
     assertMyposConfigured()
 
     const registration = await getRegistrationWithEvent(id)
+    const locale = normalizeLocale(registration.preferred_language)
 
     if (!registration.event) {
       return NextResponse.json(

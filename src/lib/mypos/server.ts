@@ -61,6 +61,7 @@ export function toMyposCountryCode(
 const REQUIRED_MYPOS_ENV_KEYS = [
   'NEXT_PUBLIC_SITE_URL',
   'MYPOS_CONFIGURATION_PACK',
+  'MYPOS_KEY_INDEX',
 ] as const
 
 function requireEnv(name: string) {
@@ -89,6 +90,16 @@ function normalizePem(value: string) {
     .replace(/\\r\\n/g, '\n')
     .replace(/\\n/g, '\n')
     .replace(/\r\n/g, '\n')
+}
+
+function getConfiguredMyposKeyIndex() {
+  const keyIndex = requireEnv('MYPOS_KEY_INDEX')
+
+  if (!/^[1-9]\d*$/.test(keyIndex)) {
+    throw new Error('MYPOS_KEY_INDEX must be a positive integer.')
+  }
+
+  return keyIndex
 }
 
 function validatePrivateKey(value: string) {
@@ -195,6 +206,7 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
   const invalid: string[] = []
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
   const configurationPack = process.env.MYPOS_CONFIGURATION_PACK?.trim()
+  const keyIndex = process.env.MYPOS_KEY_INDEX?.trim()
 
   if (siteUrl) {
     try {
@@ -214,6 +226,16 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
     } catch (error) {
       invalid.push(
         error instanceof Error ? error.message : 'Invalid myPOS configuration pack.'
+      )
+    }
+  }
+
+  if (keyIndex) {
+    try {
+      getConfiguredMyposKeyIndex()
+    } catch (error) {
+      invalid.push(
+        error instanceof Error ? error.message : 'Invalid myPOS key index.'
       )
     }
   }
@@ -248,7 +270,10 @@ export function assertMyposConfigured() {
 }
 
 export function getMyposConfig() {
-  return parseMyposConfigurationPack(requireEnv('MYPOS_CONFIGURATION_PACK'))
+  return {
+    ...parseMyposConfigurationPack(requireEnv('MYPOS_CONFIGURATION_PACK')),
+    keyIndex: getConfiguredMyposKeyIndex(),
+  }
 }
 
 function valuesForSigning(fields: MyposFieldMap) {
@@ -338,6 +363,7 @@ export function buildMyposReturnUrls(args: {
 }
 
 export function buildMyposPurchaseFields(args: {
+  locale?: AppLocale
   amountCents: number
   currency: string
   orderId: string
@@ -375,7 +401,7 @@ export function buildMyposPurchaseFields(args: {
 
   setField('IPCmethod', 'IPCPurchase')
   setField('IPCVersion', '1.4')
-  setField('IPCLanguage', 'EN')
+  setField('IPCLanguage', (args.locale ?? 'en').toUpperCase())
   setField('SID', config.sid)
   setField('WalletNumber', config.walletNumber)
   setField('Amount', centsToMyposAmount(args.amountCents))
@@ -385,7 +411,7 @@ export function buildMyposPurchaseFields(args: {
   setField('URL_Cancel', args.cancelUrl)
   setField('URL_Notify', args.notifyUrl)
   setField('CardTokenRequest', '0')
-  setField('KeyIndex', 3)
+  setField('KeyIndex', config.keyIndex)
   setField('PaymentParametersRequired', '2')
   setField('PaymentMethod', '3')
   setField('CustomerEmail', args.customerEmail)
