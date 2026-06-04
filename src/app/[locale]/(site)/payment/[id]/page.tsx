@@ -53,12 +53,10 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
     <main className="site-page-bg min-h-screen">
       <div className="container mx-auto max-w-3xl px-5 pb-28 pt-36 md:pt-44">
         <div className="rounded-[2rem] border border-black/10 bg-white/90 p-7 shadow-xl dark:border-white/10 dark:bg-black/25 sm:p-10">
-          <p className="font-semibold uppercase tracking-[0.18em] text-primary">
-            {t('eyebrow')}
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold text-dark dark:text-white sm:text-4xl">
+         
+          <h2 className="mt-3 text-2xl text-center font-semibold text-dark dark:text-white sm:text-4xl">
             {paid ? t('paidTitle') : t('unpaidTitle')}
-          </h1>
+          </h2>
           <p className="mt-4 leading-7 text-dark/70 dark:text-white/70">
             {paid
               ? feeRequired
@@ -106,7 +104,7 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
             </p>
           ) : null}
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
             {!paid ? (
               <RegistrationPaymentAction
                 registrationId={registration.id}
