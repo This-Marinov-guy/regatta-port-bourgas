@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import type { AppLocale } from '@/lib/locale'
 import { localizeText } from '@/lib/localizedContent'
+import { calculateEventFeeCents, hasEventFee } from '@/lib/eventFees'
 import type { RegistrationWithEvent } from './data'
 
 export type EmailTemplate = {
@@ -207,22 +208,31 @@ function paymentSummary(registration: RegistrationWithEvent) {
   const payment =
     registration.payment_data?.mypos ?? registration.payment_data?.stripe
 
-  if (!payment?.total_amount || !payment.currency) {
-    return null
+  if (payment?.total_amount && payment.currency) {
+    return `${(payment.total_amount / 100).toFixed(2)} ${payment.currency.toUpperCase()}`
   }
 
-  return `${(payment.total_amount / 100).toFixed(2)} ${payment.currency.toUpperCase()}`
+  const totalAmount = calculateEventFeeCents(
+    registration.event,
+    registration.crew_list.length
+  )
+
+  return totalAmount ? `${(totalAmount / 100).toFixed(2)} EUR` : null
 }
 
-function paymentUrl(registration: RegistrationWithEvent) {
+function paymentUrl(registration: RegistrationWithEvent, locale: TemplateLocale) {
   const payment =
     registration.payment_data?.mypos ?? registration.payment_data?.stripe
 
-  if (!payment?.checkout_url || payment.payment_status === 'paid') {
+  if (!hasEventFee(registration.event) || payment?.payment_status === 'paid') {
     return null
   }
 
-  return payment.checkout_url
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+  ).replace(/\/$/, '')
+
+  return `${siteUrl}/${locale}/payment/${encodeURIComponent(registration.id)}?session=${encodeURIComponent(registration.id)}`
 }
 
 function prefillUrl(eventUrl: string, referenceId: string) {
@@ -412,7 +422,7 @@ export function buildRegistrationConfirmationTemplate(args: {
     registration.blank_link ??
     registration.generated_form_url ??
     null
-  const checkoutUrl = paymentUrl(registration)
+  const checkoutUrl = paymentUrl(registration, locale)
   const payableAmount = paymentSummary(registration)
   const subject = interpolate(copy.subject, { boatName })
   const summary = [

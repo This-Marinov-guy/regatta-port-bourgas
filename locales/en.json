@@ -98,6 +98,8 @@
     "closeRegistration": "Close registration",
     "registerModalEyebrow": "Event registration",
     "registerModalDescription": "Complete the full registration form in this page overlay. The URL updates as you open or close it, so it can also be shared directly.",
+    "feeLabel": "Entry fee",
+    "perCrewMember": "per crew member",
     "tabs": {
       "noticeBoard": "Notice Board",
       "entryList": "Entry List",
@@ -147,6 +149,25 @@
         "body": "This is a mock event recap. Add results, photos, and a recap story here."
       }
     }
+  },
+  "payment": {
+    "eyebrow": "Entry payment",
+    "paidTitle": "Payment already complete",
+    "unpaidTitle": "Complete your entry payment",
+    "paidBody": "The payment for {boatName} has already been received. No further action is needed.",
+    "noFeeBody": "No entry fee is required for {boatName}. The entry is treated as paid.",
+    "unpaidBody": "The payment for {boatName} is still pending. Continue to secure checkout below.",
+    "event": "Event",
+    "boat": "Boat",
+    "amount": "Amount",
+    "status": "Payment status",
+    "paidStatus": "Paid",
+    "unpaidStatus": "Unpaid",
+    "cancelled": "The previous payment attempt was cancelled. You can try again below.",
+    "payAction": "Pay entry fee",
+    "payLoading": "Opening secure checkout...",
+    "payError": "We could not start the payment. Please try again.",
+    "backToEvent": "Back to event"
   },
   "news": {
     "title": "News",

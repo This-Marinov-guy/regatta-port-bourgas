@@ -590,7 +590,6 @@ function EventAttachedDocumentCard({
           title="Drag to reorder"
         >
           <Icon icon="ph:dots-six-vertical-bold" width={16} height={16} />
-          Move
         </button>
       </div>
 
@@ -606,7 +605,7 @@ function EventAttachedDocumentCard({
           value={nameBg}
           onChange={setNameBg}
         />
-        <label className="inline-flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark">
+        {/* <label className="inline-flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark">
           <input
             type="checkbox"
             checked={generalUse}
@@ -619,7 +618,7 @@ function EventAttachedDocumentCard({
               Make this reusable outside this event too.
             </p>
           </div>
-        </label>
+        </label> */}
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+import { getAdminUser } from '@/lib/adminAuth'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { getRegistrationWithEvent } from '@/lib/registrations/data'
+import { calculateEventFeeCents, hasEventFee } from '@/lib/eventFees'
 import {
   assertMyposConfigured,
   buildMyposPurchaseFields,
@@ -11,13 +13,10 @@ import {
 } from '@/lib/mypos/server'
 import type { RegistrationPaymentData } from '@/types/admin'
 import { normalizeLocale, readLocaleFromRequest } from '@/lib/locale'
-import {
-  FEE_PER_CREW_MEMBER_CENTS,
-  calculateTotalFeeCents,
-} from '@/utils/defines/FEES'
 
 type CheckoutPayload = {
   locale?: unknown
+  session?: unknown
 }
 
 function getBaseUrl(request: Request) {
@@ -31,15 +30,28 @@ function getBaseUrl(request: Request) {
 }
 
 function buildCheckoutAmount(registration: Awaited<ReturnType<typeof getRegistrationWithEvent>>) {
+  if (!hasEventFee(registration.event)) {
+    throw new Error('This event does not require an entry fee.')
+  }
+
   const crewCount = Math.max(registration.crew_list.length, 1)
-  const unitAmount = FEE_PER_CREW_MEMBER_CENTS
+  const unitAmount = Number(registration.event?.fee_amount_cents)
+  const totalAmount = calculateEventFeeCents(registration.event, crewCount)
 
   return {
     crewCount,
+    itemQuantity: registration.event?.fee_type === 'per_crew' ? crewCount : 1,
     unitAmount,
-    totalAmount: calculateTotalFeeCents(crewCount),
+    totalAmount: Number(totalAmount),
     currency: 'eur',
   }
+}
+
+function isPaid(registration: Awaited<ReturnType<typeof getRegistrationWithEvent>>) {
+  return (
+    registration.payment_data?.mypos?.payment_status === 'paid' ||
+    registration.payment_data?.stripe?.payment_status === 'paid'
+  )
 }
 
 function escapeHtml(value: string | number) {
@@ -126,18 +138,27 @@ export async function GET(
       return new Response('Registration event not found.', { status: 400 })
     }
 
+    if (!hasEventFee(registration.event)) {
+      return new Response('This event does not require an entry fee.', { status: 400 })
+    }
+
+    if (isPaid(registration)) {
+      return new Response('This registration has already been paid.', { status: 409 })
+    }
+
     if (!orderId || currentMypos?.order_id !== orderId) {
       return new Response('Checkout session not found.', { status: 404 })
     }
 
     const baseUrl = getBaseUrl(request)
     const locale = normalizeLocale(currentMypos.locale ?? readLocaleFromRequest(request))
-    const { crewCount, unitAmount, totalAmount, currency } =
+    const { itemQuantity, unitAmount, totalAmount, currency } =
       buildCheckoutAmount(registration)
     const urls = buildMyposReturnUrls({
       baseUrl,
       locale,
       eventSlug: registration.event.slug,
+      registrationId: registration.id,
     })
     const fields = buildMyposPurchaseFields({
       amountCents: totalAmount,
@@ -151,7 +172,7 @@ export async function GET(
       customerName: registration.contact_name || registration.skipper_name,
       customerCountry: registration.country,
       itemName: `${registration.event.name_en} registration fee`,
-      itemQuantity: crewCount,
+      itemQuantity,
       itemUnitAmountCents: unitAmount,
       note: `${registration.boat_name} / ${registration.skipper_name}`,
     })
@@ -190,17 +211,38 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    assertMyposConfigured()
-
     const body = (await request.json().catch(() => ({}))) as CheckoutPayload
     const locale = normalizeLocale(body.locale ?? readLocaleFromRequest(request))
     const { id } = await params
+    const session = typeof body.session === 'string' ? body.session : null
+    const admin = session === id ? null : await getAdminUser()
+
+    if (session !== id && !admin) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 403 })
+    }
+
+    assertMyposConfigured()
+
     const registration = await getRegistrationWithEvent(id)
 
     if (!registration.event) {
       return NextResponse.json(
         { error: 'Unable to create checkout for a registration without an event.' },
         { status: 400 }
+      )
+    }
+
+    if (!hasEventFee(registration.event)) {
+      return NextResponse.json(
+        { error: 'This event does not require an entry fee.' },
+        { status: 400 }
+      )
+    }
+
+    if (isPaid(registration)) {
+      return NextResponse.json(
+        { error: 'This registration has already been paid.', paid: true },
+        { status: 409 }
       )
     }
 
@@ -211,6 +253,7 @@ export async function POST(
       baseUrl,
       locale,
       eventSlug: registration.event.slug,
+      registrationId: registration.id,
     })
     const orderId = createMyposOrderId(registration.id)
     const checkoutUrl = `${baseUrl}/api/registrations/${registration.id}/checkout?orderId=${encodeURIComponent(orderId)}`

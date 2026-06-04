@@ -11,6 +11,7 @@ type Props = {
   eventId: string
   eventTitle: string
   eventDate: string
+  feeRequired: boolean
 }
 
 const ANIMATION_DURATION_MS = 240
@@ -19,6 +20,7 @@ export default function EventRegistrationModal({
   eventId,
   eventTitle,
   eventDate,
+  feeRequired,
 }: Props) {
   const t = useTranslations('events')
   const pathname = usePathname()
@@ -154,6 +156,7 @@ export default function EventRegistrationModal({
             <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6">
               <EventRegistrationForm
                 eventId={eventId}
+                feeRequired={feeRequired}
                 onCancel={closeModal}
                 onSuccess={closeModal}
               />

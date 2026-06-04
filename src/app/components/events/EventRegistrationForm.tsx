@@ -49,6 +49,7 @@ type RegistrationDraft = {
 
 type Props = {
   eventId: string
+  feeRequired: boolean
   onCancel?: () => void
   onSuccess?: () => void
 }
@@ -203,6 +204,8 @@ const content = {
       "We could not compress this image enough. Please upload a smaller file under 10 MB.",
     success:
       "Registration submitted successfully. Your local draft has been cleared. If you have not paid the entry fee, you can do it here.",
+    successWithoutPayment:
+      "Registration submitted successfully. Your local draft has been cleared.",
     error: "We could not submit your registration. Please try again.",
     submissionStatus: {
       loadingTitle: "Submitting registration",
@@ -306,6 +309,8 @@ const content = {
       "Не успяхме да компресираме това изображение достатъчно. Моля, качете по-малък файл под 10 MB.",
     success:
       "Регистрацията е изпратена успешно. Локалната чернова беше изчистена. Ако все още не сте платили таксата за участие, можете да го направите оттук.",
+    successWithoutPayment:
+      "Регистрацията е изпратена успешно. Локалната чернова беше изчистена.",
     error: "Неуспешно изпращане на регистрацията. Моля, опитайте отново.",
     submissionStatus: {
       loadingTitle: "Изпращане на регистрацията",
@@ -635,6 +640,7 @@ async function uploadInsuranceDocument(file: File, eventId: string) {
 
 export default function EventRegistrationForm({
   eventId,
+  feeRequired,
   onCancel,
   onSuccess,
 }: Props) {
@@ -656,6 +662,11 @@ export default function EventRegistrationForm({
   const hydratedRef = useRef(false)
 
   useEffect(() => {
+    if (!feeRequired) {
+      setPaymentsEnabled(false)
+      return
+    }
+
     let cancelled = false
 
     async function loadPaymentStatus() {
@@ -682,7 +693,7 @@ export default function EventRegistrationForm({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [feeRequired])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -873,38 +884,15 @@ export default function EventRegistrationForm({
     }
   }
 
-  async function handlePaymentCheckout() {
+  function handlePaymentCheckout() {
     if (!createdRegistrationId) {
       return
     }
 
     setPaymentLoading(true)
-
-    try {
-      const response = await fetch(
-        `/api/registrations/${createdRegistrationId}/checkout`,
-        {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ locale }),
-        }
-      )
-
-      const payload = (await response.json().catch(() => null)) as
-        | { data?: { checkoutUrl?: string }; error?: string }
-        | null
-
-      if (!response.ok || !payload?.data?.checkoutUrl) {
-        throw new Error(t.submissionStatus.paymentError)
-      }
-
-      window.location.assign(payload.data.checkoutUrl)
-    } catch {
-      toast.error(t.submissionStatus.paymentError)
-      setPaymentLoading(false)
-    }
+    window.location.assign(
+      `/${locale}/payment/${createdRegistrationId}?session=${encodeURIComponent(createdRegistrationId)}`
+    )
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -980,7 +968,7 @@ export default function EventRegistrationForm({
       clearDraft()
       setCreatedRegistrationId(payload?.data?.id ?? null)
       setSubmissionState('success')
-      setSubmissionMessage(t.success)
+      setSubmissionMessage(feeRequired ? t.success : t.successWithoutPayment)
     } catch (error) {
       const message = error instanceof Error ? error.message : t.error
       setSubmissionState('error')
@@ -1025,7 +1013,7 @@ export default function EventRegistrationForm({
           closeLabel={t.submissionStatus.close}
           onClose={closeSubmissionModal}
           actionLabel={
-            submissionState === 'success'
+            submissionState === 'success' && feeRequired
               ? paymentLoading
                 ? t.submissionStatus.paymentLoading
                 : paymentsEnabled
@@ -1034,7 +1022,10 @@ export default function EventRegistrationForm({
               : undefined
           }
           onAction={
-            submissionState === 'success' && createdRegistrationId && paymentsEnabled
+            submissionState === 'success' &&
+            feeRequired &&
+            createdRegistrationId &&
+            paymentsEnabled
               ? handlePaymentCheckout
               : undefined
           }

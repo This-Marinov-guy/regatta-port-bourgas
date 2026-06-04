@@ -35,6 +35,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { validateEmail, validatePassword } from "@/lib/validation";
 import { localizeText } from "@/lib/localizedContent";
 import { slugify } from "@/lib/slug";
+import { hasEventFee } from "@/lib/eventFees";
 import { PAYMENTS_ENABLED_DEFAULT } from "@/utils/defines/PAYMENTS";
 import type {
   AdminDocumentRecord,
@@ -75,6 +76,8 @@ type EventFormState = {
   notice_board: string[];
   results: string[];
   register_form: string[];
+  fee_amount: string;
+  fee_type: "per_crew" | "total";
 };
 
 type NewsFormState = {
@@ -219,6 +222,8 @@ function emptyEventForm(): EventFormState {
     notice_board: [],
     results: [],
     register_form: [],
+    fee_amount: "",
+    fee_type: "total",
   };
 }
 
@@ -261,6 +266,10 @@ function eventToForm(event: AdminEventRecord): EventFormState {
     notice_board: event.notice_board ?? [],
     results: event.results ?? [],
     register_form: event.register_form ?? [],
+    fee_amount: event.fee_amount_cents
+      ? (event.fee_amount_cents / 100).toFixed(2)
+      : "",
+    fee_type: event.fee_type ?? "total",
   };
 }
 
@@ -723,6 +732,8 @@ function AdminField({
   onChange,
   placeholder,
   type = "text",
+  min,
+  step,
   required = false,
   disabled = false,
 }: {
@@ -731,6 +742,8 @@ function AdminField({
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  min?: string;
+  step?: string;
   required?: boolean;
   disabled?: boolean;
 }) {
@@ -739,6 +752,8 @@ function AdminField({
       <span className="mb-2 block  font-medium text-dark">{label}</span>
       <input
         type={type}
+        min={min}
+        step={step}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={required}
@@ -2930,8 +2945,10 @@ export default function AdminDashboard({
   const approvedRegistrations = registrations.filter(
     (registration) => registration.status === "approved",
   );
+  const activeEntriesHasFee = hasEventFee(activeEntriesEvent);
   const paidRegistrations = registrations.filter(
     (registration) =>
+      !activeEntriesHasFee ||
       getRegistrationPayment(registration)?.payment_status === "paid",
   );
 
@@ -3096,6 +3113,15 @@ export default function AdminDashboard({
                         <span className="rounded-full bg-white/70 px-3 py-1">
                           {item.total_entries} total entr
                           {item.total_entries === 1 ? "y" : "ies"}
+                        </span>
+                        <span className="rounded-full bg-white/70 px-3 py-1">
+                          {hasEventFee(item)
+                            ? `€${(Number(item.fee_amount_cents) / 100).toFixed(2)} ${
+                                item.fee_type === "per_crew"
+                                  ? "per crew member"
+                                  : "total fee"
+                              }`
+                            : "No entry fee"}
                         </span>
                         {/* <span
                           className={`rounded-full px-3 py-1 font-semibold ${getEventStatusBadgeClasses(item.status)}`}
@@ -3588,6 +3614,39 @@ export default function AdminDashboard({
                 }
                 required
               />
+              <AdminField
+                label="Entry fee in EUR (optional)"
+                value={eventForm.fee_amount}
+                onChange={(value) =>
+                  setEventForm((current) => ({
+                    ...current,
+                    fee_amount: value,
+                  }))
+                }
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="20.00"
+              />
+              <label className="block">
+                <span className="mb-2 block font-medium text-dark">
+                  Fee calculation
+                </span>
+                <select
+                  value={eventForm.fee_type}
+                  disabled={!eventForm.fee_amount}
+                  onChange={(event) =>
+                    setEventForm((current) => ({
+                      ...current,
+                      fee_type: event.target.value as EventFormState["fee_type"],
+                    }))
+                  }
+                  className={adminFieldInputClassName}
+                >
+                  <option value="total">Total per entry</option>
+                  <option value="per_crew">Per crew member</option>
+                </select>
+              </label>
             </div>
 
             <div className="mt-4 grid gap-4">
@@ -3611,7 +3670,7 @@ export default function AdminDashboard({
                   }))
                 }
               />
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-4">
                 <EventDocumentReferenceField
                   label="Notice board"
                   values={eventForm.notice_board}
@@ -3913,7 +3972,8 @@ export default function AdminDashboard({
                   : registrations
                 ).map((registration) => {
                   const payment = getRegistrationPayment(registration);
-                  const isUnpaid = payment?.payment_status !== "paid";
+                  const isUnpaid =
+                    activeEntriesHasFee && payment?.payment_status !== "paid";
                   const isPaymentActionBusy =
                     registrationActionBusyKey === `${registration.id}:payment`;
                   const isInvoiceActionBusy =
@@ -3961,9 +4021,15 @@ export default function AdminDashboard({
                             {/* <span className="rounded-full bg-black/5 px-3 py-1  text-dark/60">
                             {registration.crew_list.length} crew
                           </span> */}
-                            {isUnpaid ? (
-                              <span className="rounded-full bg-red-100 px-3 py-1  font-semibold text-red-700">
-                                Unpaid
+                            {activeEntriesHasFee ? (
+                              <span
+                                className={`rounded-full px-3 py-1 font-semibold ${
+                                  isUnpaid
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-emerald-100 text-emerald-700"
+                                }`}
+                              >
+                                {isUnpaid ? "Unpaid" : "Paid"}
                               </span>
                             ) : null}
                           </div>
@@ -4063,32 +4129,34 @@ export default function AdminDashboard({
                                 ? "Downloading insurance..."
                                 : "Download insurance"}
                             </button>
-                            <button
-                              type="button"
-                              disabled={
-                                isUnpaid === false ||
-                                !paymentsEnabled ||
-                                isPaymentActionBusy ||
-                                isInvoiceActionBusy ||
-                                isMarkPaidActionBusy ||
-                                isInsuranceActionBusy
-                              }
-                              onClick={() => {
-                                void handleGeneratePaymentLink(registration);
-                              }}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <Icon
-                                icon="ph:credit-card-bold"
-                                width={15}
-                                height={15}
-                              />
-                              {isPaymentActionBusy
-                                ? "Generating payment link..."
-                                : paymentsEnabled
-                                  ? "Generate payment link"
-                                  : "Payments unavailable"}
-                            </button>
+                            {activeEntriesHasFee ? (
+                              <button
+                                type="button"
+                                disabled={
+                                  isUnpaid === false ||
+                                  !paymentsEnabled ||
+                                  isPaymentActionBusy ||
+                                  isInvoiceActionBusy ||
+                                  isMarkPaidActionBusy ||
+                                  isInsuranceActionBusy
+                                }
+                                onClick={() => {
+                                  void handleGeneratePaymentLink(registration);
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Icon
+                                  icon="ph:credit-card-bold"
+                                  width={15}
+                                  height={15}
+                                />
+                                {isPaymentActionBusy
+                                  ? "Generating payment link..."
+                                  : paymentsEnabled
+                                    ? "Generate payment link"
+                                    : "Payments unavailable"}
+                              </button>
+                            ) : null}
                             {isUnpaid ? (
                               <button
                                 type="button"
@@ -4246,10 +4314,12 @@ export default function AdminDashboard({
                               value={registration.contact_email}
                             />
 
-                            <RegistrationDetailRow
-                              label="Payment status"
-                              value={formatOptionalValue(payment?.payment_status)}
-                            />
+                            {activeEntriesHasFee ? (
+                              <RegistrationDetailRow
+                                label="Payment status"
+                                value={isUnpaid ? "unpaid" : "paid"}
+                              />
+                            ) : null}
 
                             <RegistrationDetailRow
                               label="Receive documents by email"

@@ -14,6 +14,7 @@ import EventRegistrationModal from "@/app/components/events/EventRegistrationMod
 import { localizeText } from "@/lib/localizedContent";
 import { listRegistrations } from "@/lib/adminContent";
 import { formatDisplayDate } from "@/lib/formatDate";
+import { formatEventFee, hasEventFee } from "@/lib/eventFees";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
 
@@ -68,6 +69,7 @@ export default async function EventDetailsPage({ params }: Props) {
     event.description_bg
   );
   const registrationOpen = isEventRegistrationOpen(event.start_date)
+  const fee = formatEventFee(event, locale, t("events.perCrewMember"))
   const [noticeBoardDocuments, resultDocuments] = await Promise.all([
     getEventDocumentsByRefs(event.notice_board),
     getEventDocumentsByRefs(event.results),
@@ -143,6 +145,11 @@ export default async function EventDetailsPage({ params }: Props) {
             <p className="text-dark/60 dark:text-white/60  sm:text-base mb-6">
               {from} — {to}
             </p>
+            {fee ? (
+              <p className="mb-6 inline-flex rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
+                {t("events.feeLabel")}: {fee}
+              </p>
+            ) : null}
 
             <div className="prose prose-zinc dark:prose-invert max-w-none whitespace-pre-line">
               <p>{description}</p>
@@ -161,6 +168,7 @@ export default async function EventDetailsPage({ params }: Props) {
             eventId={event.id}
             eventTitle={title}
             eventDate={`${from} — ${to}`}
+            feeRequired={hasEventFee(event)}
           />
         ) : null}
 

@@ -1,7 +1,7 @@
 import { addDays, parseISO, startOfDay } from 'date-fns'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
-import type { AdminDocumentRecord } from '@/types/admin'
+import type { AdminDocumentRecord, EventFeeType } from '@/types/admin'
 
 export type DbEvent = {
   id: string
@@ -18,6 +18,8 @@ export type DbEvent = {
   notice_board: string[]
   results: string[]
   register_form: string[]
+  fee_amount_cents: number | null
+  fee_type: EventFeeType | null
   created_at: string
   updated_at: string
 }

@@ -3,6 +3,7 @@ import { extractNewsAttachmentUrls } from '@/lib/newsAttachments'
 import { ensureSlug, slugify } from '@/lib/slug'
 import { getRegistrationWithEvent } from '@/lib/registrations/data'
 import { sendRegistrationStatusEmail } from '@/lib/registrations/email'
+import { hasEventFee } from '@/lib/eventFees'
 import type {
   AdminDocumentPayload,
   AdminDocumentRecord,
@@ -10,6 +11,7 @@ import type {
   AdminEventRecord,
   AdminNewsPayload,
   AdminNewsRecord,
+  EventFeeType,
   EventStatus,
   NewsStatus,
   RegistrationPaymentData,
@@ -78,6 +80,34 @@ function normalizeBoolean(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : fallback
 }
 
+function normalizeEventFee(input: Record<string, unknown>) {
+  const rawAmount =
+    typeof input.fee_amount === 'string' ? input.fee_amount.trim() : input.fee_amount
+
+  if (rawAmount === '' || rawAmount === null || rawAmount === undefined) {
+    return {
+      fee_amount_cents: null,
+      fee_type: null,
+    }
+  }
+
+  const amount = Number(rawAmount)
+  const feeType = input.fee_type
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error('Fee amount must be a positive number.')
+  }
+
+  if (feeType !== 'per_crew' && feeType !== 'total') {
+    throw new Error('Fee type must be per crew member or total.')
+  }
+
+  return {
+    fee_amount_cents: Math.round(amount * 100),
+    fee_type: feeType as EventFeeType,
+  }
+}
+
 function stripHtmlToText(value: string) {
   return value
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -122,6 +152,7 @@ function normalizeNewsStatus(value: unknown): NewsStatus {
 export function parseEventPayload(input: Record<string, unknown>): AdminEventPayload {
   const startDate = normalizeDate(input.start_date, 'Start date')
   const endDate = normalizeDate(input.end_date, 'End date')
+  const fee = normalizeEventFee(input)
 
   if (startDate > endDate) {
     throw new Error('End date must be on or after the start date.')
@@ -140,7 +171,8 @@ export function parseEventPayload(input: Record<string, unknown>): AdminEventPay
     documents: normalizeStringArray(input.documents),
     notice_board: normalizeStringArray(input.notice_board),
     results: normalizeStringArray(input.results),
-    register_form: normalizeStringArray(input.register_form)
+    register_form: normalizeStringArray(input.register_form),
+    ...fee,
   }
 }
 
@@ -372,6 +404,11 @@ export async function updateRegistrationPaymentStatus(
   paymentStatus: 'paid'
 ) {
   const registration = await getRegistrationWithEvent(id)
+
+  if (!hasEventFee(registration.event)) {
+    throw new Error('This event does not require an entry fee.')
+  }
+
   const supabase = createSupabaseServiceClient()
   const existingPayment =
     registration.payment_data?.mypos &&

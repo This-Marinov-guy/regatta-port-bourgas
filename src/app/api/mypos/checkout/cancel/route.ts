@@ -5,6 +5,17 @@ function redirectToEvent(request: Request) {
   const url = new URL(request.url)
   const locale = normalizeLocale(url.searchParams.get('locale'))
   const eventSlug = url.searchParams.get('eventSlug')?.trim()
+  const registrationId = url.searchParams.get('registrationId')?.trim()
+
+  if (registrationId) {
+    return NextResponse.redirect(
+      new URL(
+        `/${locale}/payment/${encodeURIComponent(registrationId)}?session=${encodeURIComponent(registrationId)}&payment=cancelled`,
+        url.origin
+      ),
+      303
+    )
+  }
 
   if (!eventSlug) {
     return NextResponse.redirect(

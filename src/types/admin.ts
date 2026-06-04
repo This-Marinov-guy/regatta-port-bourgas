@@ -2,6 +2,7 @@ import type { AppLocale } from '@/lib/locale'
 
 export type EventStatus = 1 | 2 | 3
 export type NewsStatus = 1 | 2 | 3
+export type EventFeeType = 'per_crew' | 'total'
 
 export type AdminEventRecord = {
   id: string
@@ -18,6 +19,8 @@ export type AdminEventRecord = {
   notice_board: string[]
   results: string[]
   register_form: string[]
+  fee_amount_cents: number | null
+  fee_type: EventFeeType | null
   total_entries: number
   created_at: string
   updated_at: string

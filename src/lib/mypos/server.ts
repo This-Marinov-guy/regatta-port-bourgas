@@ -203,9 +203,14 @@ export function buildMyposReturnUrls(args: {
   baseUrl: string
   locale: AppLocale
   eventSlug: string
+  registrationId?: string
 }) {
-  const { baseUrl, locale, eventSlug } = args
+  const { baseUrl, locale, eventSlug, registrationId } = args
   const params = new URLSearchParams({ locale, eventSlug })
+
+  if (registrationId) {
+    params.set('registrationId', registrationId)
+  }
   const okUrl = `${baseUrl}/api/mypos/checkout/ok?${params.toString()}`
   const cancelUrl = `${baseUrl}/api/mypos/checkout/cancel?${params.toString()}`
   const notifyUrl = `${baseUrl}/api/mypos/webhook/checkout`

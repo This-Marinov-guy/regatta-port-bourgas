@@ -1,5 +1,5 @@
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
-import type { RegistrationRecord } from '@/types/admin'
+import type { EventFeeType, RegistrationRecord } from '@/types/admin'
 
 type RegistrationEventRecord = {
   id: string
@@ -8,6 +8,8 @@ type RegistrationEventRecord = {
   name_bg: string | null
   start_date: string
   end_date: string
+  fee_amount_cents: number | null
+  fee_type: EventFeeType | null
 }
 
 export type RegistrationWithEvent = RegistrationRecord & {
@@ -29,7 +31,9 @@ export async function getRegistrationWithEvent(registrationId: string) {
           name_en,
           name_bg,
           start_date,
-          end_date
+          end_date,
+          fee_amount_cents,
+          fee_type
         )
       `
     )
