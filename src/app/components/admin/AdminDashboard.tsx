@@ -1960,7 +1960,7 @@ export default function AdminDashboard({
   const [eventsBusy, setEventsBusy] = useState(false);
   const [newsBusy, setNewsBusy] = useState(false);
   const [documentsBusy, setDocumentsBusy] = useState(false);
-  const [paymentsEnabled, setPaymentsEnabled] = useState(PAYMENTS_ENABLED_DEFAULT);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [newsModalOpen, setNewsModalOpen] = useState(false);
@@ -2007,7 +2007,7 @@ export default function AdminDashboard({
   const [settingsCurrentPassword, setSettingsCurrentPassword] = useState("");
   const [settingsNewEmail, setSettingsNewEmail] = useState("");
   const [settingsNewPassword, setSettingsNewPassword] = useState("");
-  const [settingsConfirmPassword, setSettingsConfirmPassword] = useState("");
+  const [settingsConfirmPassword, setSettingsConfirmPassword] = useState("");  
 
   function resetSettingsForm() {
     setSettingsCurrentPassword("");
@@ -2067,7 +2067,7 @@ export default function AdminDashboard({
       const origin =
         typeof window !== "undefined"
           ? window.location.origin
-          : process.env.NEXT_PUBLIC_URL ?? "";
+          : process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
       const { error } = await supabase.auth.updateUser(
         { email: settingsNewEmail.trim() },
@@ -2141,32 +2141,34 @@ export default function AdminDashboard({
   }
 
   useEffect(() => {
-    let cancelled = false;
+    // let cancelled = false;
 
     async function loadPaymentStatus() {
-      try {
-        const response = await fetch("/api/payments/status", {
-          cache: "no-store",
-        });
-        const payload = (await response.json().catch(() => null)) as
-          | PaymentStatusResponse
-          | null;
+      // try {
+      //   const response = await fetch("/api/payments/status", {
+      //     cache: "no-store",
+      //   });
+      //   const payload = (await response.json().catch(() => null)) as
+      //     | PaymentStatusResponse
+      //     | null;
 
-        if (!cancelled) {
-          setPaymentsEnabled(Boolean(response.ok && payload?.data?.enabled));
-        }
-      } catch {
-        if (!cancelled) {
-          setPaymentsEnabled(false);
-        }
-      }
+      //   if (!cancelled) {
+      //     setPaymentsEnabled(Boolean(response.ok && payload?.data?.enabled));
+      //   }
+      // } catch {
+      //   if (!cancelled) {
+      //     setPaymentsEnabled(false);
+      //   }
+      // }
+
+      setPaymentsEnabled(PAYMENTS_ENABLED_DEFAULT);
     }
 
     void loadPaymentStatus();
 
-    return () => {
-      cancelled = true;
-    };
+    // return () => {
+    //   cancelled = true;
+    // };
   }, []);
 
   useEffect(() => {

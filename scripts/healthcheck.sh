@@ -12,7 +12,7 @@ if [[ -f "$ROOT_DIR/.env.local" ]]; then
   set +a
 fi
 
-BASE_URL="${NEXT_PUBLIC_URL:-http://localhost:3000}"
+BASE_URL="${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}"
 HEALTH_URL="$BASE_URL/api/health"
 
 # ── colours ───────────────────────────────────────────────────────────────────

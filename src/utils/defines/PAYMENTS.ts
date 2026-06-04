@@ -8,4 +8,5 @@ export const MYPOS_DISABLED =
 // Optimistic initial value for `paymentsEnabled` state. The authoritative value
 // still comes from GET /api/payments/status (which also verifies the myPOS keys
 // are present and valid); this just avoids a flash of the disabled UI on mount.
+
 export const PAYMENTS_ENABLED_DEFAULT = !MYPOS_DISABLED

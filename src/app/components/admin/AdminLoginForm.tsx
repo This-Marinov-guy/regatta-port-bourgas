@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 import { validateEmail, validatePassword } from '@/lib/validation'
 
@@ -9,7 +10,6 @@ export default function AdminLoginForm() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -20,12 +20,11 @@ export default function AdminLoginForm() {
     const message = emailError || passwordError
 
     if (message) {
-      setErrorMessage(message)
+      toast.error(message)
       return
     }
 
     setIsSubmitting(true)
-    setErrorMessage('')
 
     const supabase = createSupabaseBrowserClient()
     const { error } = await supabase.auth.signInWithPassword({
@@ -34,11 +33,12 @@ export default function AdminLoginForm() {
     })
 
     if (error) {
-      setErrorMessage(error.message)
+      toast.error(error.message)
       setIsSubmitting(false)
       return
     }
 
+    toast.success('Signed in successfully')
     router.replace('/admin')
     router.refresh()
   }
@@ -79,12 +79,6 @@ export default function AdminLoginForm() {
             placeholder="Your password"
           />
         </label>
-
-        {errorMessage ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3  text-red-700">
-            {errorMessage}
-          </div>
-        ) : null}
 
         <button
           type="submit"
