@@ -62,13 +62,18 @@ const Footer = () => {
     <footer className="relative z-10 bg-dark">
       <div className="container mx-auto max-w-8xl pt-10 md:pt-14 px-5 2xl:px-0">
         {/* Audi banner - mobile only, at the top on its own row */}
-        <Image
-          src="/images/brands/audi_banner.jpg"
-          alt="Audi"
-          width={1000}
-          height={300}
-          className="md:hidden w-auto rounded-md"
-        />
+        <a
+          href="https://www.westauto-m.com/novini/audi-q4-e-tron-elektricheskiyat-bestselar-stava-oshte-po-funktsionalen"
+          target="_blank"
+        >
+          <Image
+            src="/images/brands/audi_banner.jpg"
+            alt="Audi"
+            width={1000}
+            height={300}
+            className="md:hidden w-auto rounded-md"
+          />
+        </a>
         <div className="py-10 md:py-16 border-b border-white/10">
           <div className="grid grid-cols-2 md:flex md:flex-row md:justify-between gap-6 md:gap-12">
             {/* Logo and Social Media Links */}
@@ -118,13 +123,18 @@ const Footer = () => {
                 </div>
               </div>
 
-              <Image
-                src="/images/brands/audi_banner.jpg"
-                alt="Audi"
-                width={700}
-                height={300}
-                className="hidden md:block h-44 w-auto rounded-md"
-              />
+              <a
+                href="https://www.westauto-m.com/novini/audi-q4-e-tron-elektricheskiyat-bestselar-stava-oshte-po-funktsionalen"
+                target="_blank"
+              >
+                <Image
+                  src="/images/brands/audi_banner.jpg"
+                  alt="Audi"
+                  width={700}
+                  height={300}
+                  className="hidden md:block h-44 w-auto rounded-md"
+                />
+              </a>
             </div>
 
             {/* Footer Links - Combined for mobile, split for desktop */}
