@@ -31,7 +31,10 @@
       "Bash(awk 'NR<=50')",
       "Bash(awk 'NR<=30')",
       "Bash(awk 'NR<=14')",
-      "Bash(awk 'NR<=8')"
+      "Bash(awk 'NR<=8')",
+      "Bash(awk 'NR<=20')",
+      "Bash(awk '{print $2, $11, $12, $13}')",
+      "Bash(awk 'NR<=10')"
     ]
   }
 }

@@ -118,7 +118,7 @@ async function checkMypos(): Promise<CheckResult> {
   const config = getMyposConfigurationStatus()
 
   if (config.disabled) {
-    return { status: 'ok', detail: 'disabled via MYPOS_DISABLED' }
+    return { status: 'ok', detail: 'disabled via NEXT_PUBLIC_MYPOS_DISABLED' }
   }
 
   if (!config.enabled) {

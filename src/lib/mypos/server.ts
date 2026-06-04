@@ -49,7 +49,7 @@ function getMyposEnvironment() {
 }
 
 export function isMyposDisabled() {
-  return process.env.MYPOS_DISABLED === 'true'
+  return process.env.NEXT_PUBLIC_MYPOS_DISABLED === 'true'
 }
 
 export function getMyposCheckoutEndpoint() {
@@ -106,7 +106,7 @@ export function assertMyposConfigured() {
 
   if (!status.enabled) {
     if (status.disabled) {
-      throw new Error('Payments are disabled (MYPOS_DISABLED=true).')
+      throw new Error('Payments are disabled (NEXT_PUBLIC_MYPOS_DISABLED=true).')
     }
 
     const details = [
