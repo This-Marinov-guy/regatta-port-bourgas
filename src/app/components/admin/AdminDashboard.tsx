@@ -4225,9 +4225,9 @@ export default function AdminDashboard({
                           </div>
 
                           <div>
-                            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
+                            {/* <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
                               Registration details
-                            </p>
+                            </p> */}
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                             <RegistrationDetailRow
                               label="Boat name"
