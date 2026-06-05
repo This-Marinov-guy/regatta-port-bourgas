@@ -54,7 +54,7 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
     <main className="site-page-bg min-h-screen">
       <div className="container mx-auto max-w-3xl px-5 pb-28 pt-36 md:pt-44">
         <div className="sm:p-10">
-          <h2 className="mb-16 text-2xl text-center font-semibold text-dark dark:text-white sm:text-4xl">
+          <h2 className="mb-8 text-2xl text-center font-semibold text-dark dark:text-white sm:text-4xl">
             {paid ? t('paidTitle') : t('unpaidTitle')}
           </h2>
           {/* <p className="mt-4 leading-7 text-dark/70 dark:text-white/70">
