@@ -840,7 +840,7 @@ function AdminTextarea({
 
 function formatOptionalValue(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") {
-    return "Not provided";
+    return "-";
   }
 
   return String(value);
@@ -918,15 +918,14 @@ function AddCardButton({
       onClick={onClick}
       className={`group w-full rounded-[1.5rem] border border-dashed border-primary/30 bg-white/80 p-5 text-left shadow-sm ${interactiveButtonClass}`}
     >
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white shadow-md transition-transform duration-200 group-hover:scale-105">
-          <Icon icon="ph:plus-bold" width={22} height={22} />
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md transition-transform duration-200 group-hover:scale-105 sm:h-12 sm:w-12 sm:rounded-2xl">
+          <Icon icon="ph:plus-bold" width={18} height={18} className="sm:hidden" />
+          <Icon icon="ph:plus-bold" width={22} height={22} className="hidden sm:block" />
         </div>
-        <div>
-          <h3 className="text-lg font-semibold text-dark">{title}</h3>
-          <p className="mt-1  leading-6 text-dark/60">{description}</p>
-        </div>
+        <h3 className="text-lg font-semibold text-dark">{title}</h3>
       </div>
+      <p className="mt-2 leading-6 text-dark/60">{description}</p>
     </button>
   );
 }
@@ -962,9 +961,9 @@ function AdminModal({
             onClick={onClose}
             aria-label="Close"
             title="Close"
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 ${interactiveButtonClass}`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-red-600  ${interactiveButtonClass}`}
           >
-            <Icon icon="ph:x-bold" width={18} height={18} />
+            <Icon icon="ph:x-bold" width={22} height={22} />
           </button>
         </div>
 
@@ -1599,7 +1598,7 @@ function AssetPreviewCard({
         </>
       ) : (
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
             <Icon icon="ph:file-text-bold" width={20} height={20} />
           </div>
           <div className="min-w-0 flex-1">
@@ -1776,15 +1775,18 @@ function FileDropPanel({
             : "border-black/10 bg-white/80"
         } ${uploading ? "cursor-progress" : "cursor-pointer"}`}
       >
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Icon icon="ph:upload-simple-bold" width={22} height={22} />
-          </div>
-          <div>
-            <p className=" font-semibold text-dark">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-12 sm:w-12 sm:rounded-2xl">
+              <Icon icon="ph:upload-simple-bold" width={18} height={18} className="sm:hidden" />
+              <Icon icon="ph:upload-simple-bold" width={22} height={22} className="hidden sm:block" />
+            </div>
+            <p className="font-semibold text-dark">
               {uploading ? "Uploading files..." : "Upload files"}
             </p>
-            <p className="mt-1  text-dark/60">
+          </div>
+          <div>
+            <p className="mt-2 text-dark/60">
               {helperText ??
                 "Drag and drop files or click the input to start selecting."}
             </p>
@@ -2004,6 +2006,7 @@ export default function AdminDashboard({
   >(null);
   const [registrationStatusFilter, setRegistrationStatusFilter] =
     useState<RegistrationStatus | null>(null);
+  const [registrationSearchQuery, setRegistrationSearchQuery] = useState("");
   const [downloadingBlanks, setDownloadingBlanks] = useState(false);
   const [downloadingPaidBlanks, setDownloadingPaidBlanks] = useState(false);
   const [rejectionModal, setRejectionModal] = useState<{
@@ -2303,6 +2306,7 @@ export default function AdminDashboard({
     setRegistrationStatusBusyId(null);
     setRegistrationActionBusyKey(null);
     setRegistrationStatusFilter(null);
+    setRegistrationSearchQuery("");
     setRejectionModal(null);
     setRejectionFeedback("");
     setDownloadingBlanks(false);
@@ -2954,6 +2958,32 @@ export default function AdminDashboard({
       getRegistrationPayment(registration)?.payment_status === "paid",
   );
 
+  const normalizedRegistrationSearch = registrationSearchQuery
+    .trim()
+    .toLowerCase();
+  const filteredRegistrations = registrations.filter((registration) => {
+    if (
+      registrationStatusFilter &&
+      registration.status !== registrationStatusFilter
+    ) {
+      return false;
+    }
+
+    if (!normalizedRegistrationSearch) {
+      return true;
+    }
+
+    return [
+      registration.boat_name,
+      registration.model_design,
+      registration.contact_email,
+      registration.skipper_name,
+      registration.sail_number,
+    ].some((field) =>
+      field?.toLowerCase().includes(normalizedRegistrationSearch),
+    );
+  });
+
   function startBlankDownloads(
     targets: RegistrationRecord[],
     setDownloading: (value: boolean) => void,
@@ -3024,9 +3054,7 @@ export default function AdminDashboard({
                 Content management
               </h1>
               <p className="mt-3 max-w-3xl  leading-6 text-dark/65 md:text-base">
-                Signed in as <span className="font-semibold">{userEmail}</span>.
-                Use the tabs below to manage events, news, and downloadable
-                documents stored in Supabase.
+                Signed in as <span className="font-semibold">{userEmail}</span>
               </p>
             </div>
 
@@ -3037,7 +3065,7 @@ export default function AdminDashboard({
                 disabled={authBusy}
                 aria-label="Account settings"
                 title="Account settings"
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-black/10 bg-white text-dark transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/10 bg-white text-dark transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60 sm:h-11 sm:w-11"
               >
                 <Icon icon="ph:gear-six-bold" width={20} height={20} />
               </button>
@@ -3463,7 +3491,7 @@ export default function AdminDashboard({
             />
             <div className="rounded-[1.5rem] border border-black/10 bg-white/90 p-6 shadow-sm space-y-6">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 sm:h-12 sm:w-12">
                   <Image
                     src="/images/SVGs/google-drive.png"
                     width={100}
@@ -3929,6 +3957,24 @@ export default function AdminDashboard({
                 </button>
               </div>
 
+              <div className="relative">
+                <Icon
+                  icon="ph:magnifying-glass-bold"
+                  width={16}
+                  height={16}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-dark/40"
+                />
+                <input
+                  type="search"
+                  value={registrationSearchQuery}
+                  onChange={(event) =>
+                    setRegistrationSearchQuery(event.target.value)
+                  }
+                  placeholder="Search by boat name, model, email, skipper or sail number"
+                  className="w-full rounded-xl border border-black/10 bg-white py-2.5 pl-11 pr-4 text-dark shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -3966,13 +4012,14 @@ export default function AdminDashboard({
                 </button>
               </div>
 
+              {filteredRegistrations.length === 0 ? (
+                <div className="rounded-[1.5rem] border border-dashed border-black/15 bg-white/80 px-5 py-10 text-dark/60">
+                  No registrations match your filters.
+                </div>
+              ) : null}
+
               <Accordion type="single" collapsible className="space-y-3">
-                {(registrationStatusFilter
-                  ? registrations.filter(
-                      (r) => r.status === registrationStatusFilter,
-                    )
-                  : registrations
-                ).map((registration) => {
+                {filteredRegistrations.map((registration) => {
                   const payment = getRegistrationPayment(registration);
                   const isUnpaid =
                     activeEntriesHasFee && payment?.payment_status !== "paid";
@@ -4000,14 +4047,14 @@ export default function AdminDashboard({
                         <div className="flex flex-1 flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <p className="text-lg font-semibold text-dark">
-                              {registration.boat_name}
+                              {registration.boat_name} |{" "}
+                              {registration.sail_number}
                             </p>
                             <p className="mt-1  text-dark/60">
-                              {registration.skipper_name} •{" "}
-                              {registration.country}
+                              {registration.skipper_name}
                             </p>
                             <p className="mt-1  text-dark/45">
-                              {registration.contact_email} • Submitted{" "}
+                               Submitted{" "}
                               {formatTimestamp(registration.created_at)}
                             </p>
                           </div>
@@ -4051,41 +4098,41 @@ export default function AdminDashboard({
                               Registration status
                             </p>
                             <div className="flex flex-wrap gap-2">
-                            {(
-                              [
-                                "pending",
-                                "approved",
-                                "rejected",
-                              ] as RegistrationStatus[]
-                            ).map((status) => (
-                              <button
-                                key={status}
-                                type="button"
-                                disabled={
-                                  registrationStatusBusyId === registration.id
-                                }
-                                onClick={() => {
-                                  if (status === "rejected") {
-                                    setRejectionModal({
-                                      registrationId: registration.id,
-                                      boatName: registration.boat_name,
-                                    });
-                                    setRejectionFeedback("");
-                                  } else {
-                                    void handleRegistrationStatusChange(
-                                      registration.id,
-                                      status,
-                                    );
+                              {(
+                                [
+                                  "pending",
+                                  "approved",
+                                  "rejected",
+                                ] as RegistrationStatus[]
+                              ).map((status) => (
+                                <button
+                                  key={status}
+                                  type="button"
+                                  disabled={
+                                    registrationStatusBusyId === registration.id
                                   }
-                                }}
-                                className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
-                                  status,
-                                  registration.status,
-                                )}`}
-                              >
-                                {status}
-                              </button>
-                            ))}
+                                  onClick={() => {
+                                    if (status === "rejected") {
+                                      setRejectionModal({
+                                        registrationId: registration.id,
+                                        boatName: registration.boat_name,
+                                      });
+                                      setRejectionFeedback("");
+                                    } else {
+                                      void handleRegistrationStatusChange(
+                                        registration.id,
+                                        status,
+                                      );
+                                    }
+                                  }}
+                                  className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
+                                    status,
+                                    registration.status,
+                                  )}`}
+                                >
+                                  {status}
+                                </button>
+                              ))}
                             </div>
                           </div>
 
@@ -4094,133 +4141,136 @@ export default function AdminDashboard({
                               Actions
                             </p>
                             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
-                            <button
-                              type="button"
-                              disabled={
-                                !getRegistrationBlankUrl(registration) ||
-                                isPaymentActionBusy ||
-                                isInvoiceActionBusy ||
-                                isMarkPaidActionBusy ||
-                                isInsuranceActionBusy
-                              }
-                              onClick={() =>
-                                downloadRegistrationForm(registration)
-                              }
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <Icon
-                                icon="ph:file-pdf-bold"
-                                width={15}
-                                height={15}
-                              />
-                              Download form
-                            </button>
-                            <button
-                              type="button"
-                              disabled={
-                                registration.insurance_documents.length === 0 ||
-                                isPaymentActionBusy ||
-                                isInvoiceActionBusy ||
-                                isMarkPaidActionBusy ||
-                                isInsuranceActionBusy
-                              }
-                              onClick={() => {
-                                void handleDownloadInsuranceDocuments(
-                                  registration,
-                                );
-                              }}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <Icon
-                                icon="ph:shield-check-bold"
-                                width={15}
-                                height={15}
-                              />
-                              {isInsuranceActionBusy
-                                ? "Downloading insurance..."
-                                : "Download insurance"}
-                            </button>
-                            {activeEntriesHasFee ? (
                               <button
                                 type="button"
                                 disabled={
-                                  isUnpaid === false ||
-                                  !paymentsEnabled ||
+                                  !getRegistrationBlankUrl(registration) ||
                                   isPaymentActionBusy ||
                                   isInvoiceActionBusy ||
                                   isMarkPaidActionBusy ||
                                   isInsuranceActionBusy
                                 }
-                                onClick={() => {
-                                  void handleGeneratePaymentLink(registration);
-                                }}
+                                onClick={() =>
+                                  downloadRegistrationForm(registration)
+                                }
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 <Icon
-                                  icon="ph:credit-card-bold"
+                                  icon="ph:file-pdf-bold"
                                   width={15}
                                   height={15}
                                 />
-                                {isPaymentActionBusy
-                                  ? "Generating payment link..."
-                                  : paymentsEnabled
-                                    ? "Generate payment link"
-                                    : "Payments unavailable"}
+                                Download form
                               </button>
-                            ) : null}
-                            {isUnpaid ? (
                               <button
                                 type="button"
                                 disabled={
+                                  registration.insurance_documents.length ===
+                                    0 ||
                                   isPaymentActionBusy ||
                                   isInvoiceActionBusy ||
                                   isMarkPaidActionBusy ||
                                   isInsuranceActionBusy
                                 }
                                 onClick={() => {
-                                  void handleMarkRegistrationPaid(
-                                    registration.id,
+                                  void handleDownloadInsuranceDocuments(
+                                    registration,
                                   );
                                 }}
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 <Icon
-                                  icon="ph:check-circle-bold"
+                                  icon="ph:shield-check-bold"
                                   width={15}
                                   height={15}
                                 />
-                                {isMarkPaidActionBusy
-                                  ? "Marking as paid..."
-                                  : "Mark as paid"}
+                                {isInsuranceActionBusy
+                                  ? "Downloading insurance..."
+                                  : "Download insurance"}
                               </button>
-                            ) : null}
+                              {activeEntriesHasFee ? (
+                                <button
+                                  type="button"
+                                  disabled={
+                                    isUnpaid === false ||
+                                    !paymentsEnabled ||
+                                    isPaymentActionBusy ||
+                                    isInvoiceActionBusy ||
+                                    isMarkPaidActionBusy ||
+                                    isInsuranceActionBusy
+                                  }
+                                  onClick={() => {
+                                    void handleGeneratePaymentLink(
+                                      registration,
+                                    );
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <Icon
+                                    icon="ph:credit-card-bold"
+                                    width={15}
+                                    height={15}
+                                  />
+                                  {isPaymentActionBusy
+                                    ? "Generating payment link..."
+                                    : paymentsEnabled
+                                      ? "Generate payment link"
+                                      : "Payments unavailable"}
+                                </button>
+                              ) : null}
+                              {isUnpaid ? (
+                                <button
+                                  type="button"
+                                  disabled={
+                                    isPaymentActionBusy ||
+                                    isInvoiceActionBusy ||
+                                    isMarkPaidActionBusy ||
+                                    isInsuranceActionBusy
+                                  }
+                                  onClick={() => {
+                                    void handleMarkRegistrationPaid(
+                                      registration.id,
+                                    );
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <Icon
+                                    icon="ph:check-circle-bold"
+                                    width={15}
+                                    height={15}
+                                  />
+                                  {isMarkPaidActionBusy
+                                    ? "Marking as paid..."
+                                    : "Mark as paid"}
+                                </button>
+                              ) : null}
 
-                            <button
-                              type="button"
-                              disabled={
-                                deletingRegistrationId === registration.id ||
-                                isPaymentActionBusy ||
-                                isInvoiceActionBusy ||
-                                isMarkPaidActionBusy ||
-                                isInsuranceActionBusy
-                              }
-                              onClick={() =>
-                                setDeleteRegistrationModal({
-                                  registrationId: registration.id,
-                                  boatName: registration.boat_name,
-                                })
-                              }
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 font-medium text-red-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <Icon
-                                icon="ph:trash-bold"
-                                width={15}
-                                height={15}
-                              />
-                              {deletingRegistrationId === registration.id
-                                ? "Deleting..."
-                                : "Delete"}
-                            </button>
+                              <button
+                                type="button"
+                                disabled={
+                                  deletingRegistrationId === registration.id ||
+                                  isPaymentActionBusy ||
+                                  isInvoiceActionBusy ||
+                                  isMarkPaidActionBusy ||
+                                  isInsuranceActionBusy
+                                }
+                                onClick={() =>
+                                  setDeleteRegistrationModal({
+                                    registrationId: registration.id,
+                                    boatName: registration.boat_name,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 font-medium text-red-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Icon
+                                  icon="ph:trash-bold"
+                                  width={15}
+                                  height={15}
+                                />
+                                {deletingRegistrationId === registration.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </button>
                             </div>
                           </div>
 
@@ -4229,156 +4279,156 @@ export default function AdminDashboard({
                               Registration details
                             </p> */}
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-                            <RegistrationDetailRow
-                              label="Boat name"
-                              value={registration.boat_name}
-                            />
-                            <RegistrationDetailRow
-                              label="Border number"
-                              value={formatOptionalValue(
-                                registration.border_number,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Country"
-                              value={registration.country}
-                            />
-                            <RegistrationDetailRow
-                              label="Model / design"
-                              value={registration.model_design}
-                            />
-                            <RegistrationDetailRow
-                              label="Sail number"
-                              value={registration.sail_number}
-                            />
-                            <RegistrationDetailRow
-                              label="Boat age"
-                              value={registration.boat_age}
-                            />
-                            <RegistrationDetailRow
-                              label="LOA"
-                              value={`${registration.loa} m`}
-                            />
-                            <RegistrationDetailRow
-                              label="GPH / IRC"
-                              value={registration.gph_irc}
-                            />
-                            <RegistrationDetailRow
-                              label="Boat color"
-                              value={formatOptionalValue(
-                                registration.boat_color,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Port of registry"
-                              value={formatOptionalValue(
-                                registration.port_of_registry,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Yacht club"
-                              value={formatOptionalValue(
-                                registration.yacht_club,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Certificate of navigation"
-                              value={formatOptionalValue(
-                                registration.certificate_of_navigation,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Certificate of navigation expiry"
-                              value={formatOptionalValue(
-                                registration.certificate_of_navigation_expiry,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Skipper name"
-                              value={registration.skipper_name}
-                            />
-                            <RegistrationDetailRow
-                              label="Skipper yacht club"
-                              value={registration.skipper_yacht_club}
-                            />
-                            <RegistrationDetailRow
-                              label="Charterer name"
-                              value={formatOptionalValue(
-                                registration.charterer_name,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Certificate of competency"
-                              value={registration.certificate_of_competency}
-                            />
-                            <RegistrationDetailRow
-                              label="Competency expiry"
-                              value={formatOptionalValue(
-                                registration.certificate_of_competency_expiry,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Contact name"
-                              value={registration.contact_name}
-                            />
-                            <RegistrationDetailRow
-                              label="Contact phone"
-                              value={registration.contact_phone}
-                            />
-                            <RegistrationDetailRow
-                              label="Contact email"
-                              value={registration.contact_email}
-                            />
-
-                            {activeEntriesHasFee ? (
                               <RegistrationDetailRow
-                                label="Payment status"
-                                value={isUnpaid ? "unpaid" : "paid"}
+                                label="Boat name"
+                                value={registration.boat_name}
                               />
-                            ) : null}
-
-                            <RegistrationDetailRow
-                              label="Receive documents by email"
-                              value={formatBooleanValue(
-                                registration.receive_documents_by_email,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Crew insurance"
-                              value={formatBooleanValue(
-                                registration.crew_insurance,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Third-party insurance"
-                              value={formatBooleanValue(
-                                registration.third_party_insurance,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Disclaimer accepted"
-                              value={formatBooleanValue(
-                                registration.disclaimer_accepted,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="GDPR accepted"
-                              value={formatBooleanValue(
-                                registration.gdpr_accepted,
-                              )}
-                            />
-                            <RegistrationDetailRow
-                              label="Preferred language"
-                              value={registration.preferred_language ?? "en"}
-                            />
-                            {registration.status === "rejected" ? (
                               <RegistrationDetailRow
-                                label="Rejection feedback"
+                                label="Border number"
                                 value={formatOptionalValue(
-                                  registration.rejection_feedback,
+                                  registration.border_number,
                                 )}
                               />
-                            ) : null}
+                              <RegistrationDetailRow
+                                label="Country"
+                                value={registration.country}
+                              />
+                              <RegistrationDetailRow
+                                label="Model / design"
+                                value={registration.model_design}
+                              />
+                              <RegistrationDetailRow
+                                label="Sail number"
+                                value={registration.sail_number}
+                              />
+                              <RegistrationDetailRow
+                                label="Boat age"
+                                value={registration.boat_age}
+                              />
+                              <RegistrationDetailRow
+                                label="LOA"
+                                value={`${registration.loa} m`}
+                              />
+                              <RegistrationDetailRow
+                                label="GPH / IRC"
+                                value={registration.gph_irc}
+                              />
+                              <RegistrationDetailRow
+                                label="Boat color"
+                                value={formatOptionalValue(
+                                  registration.boat_color,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Port of registry"
+                                value={formatOptionalValue(
+                                  registration.port_of_registry,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Yacht club"
+                                value={formatOptionalValue(
+                                  registration.yacht_club,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Certificate of navigation"
+                                value={formatOptionalValue(
+                                  registration.certificate_of_navigation,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Certificate of navigation expiry"
+                                value={formatOptionalValue(
+                                  registration.certificate_of_navigation_expiry,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Skipper name"
+                                value={registration.skipper_name}
+                              />
+                              <RegistrationDetailRow
+                                label="Skipper yacht club"
+                                value={registration.skipper_yacht_club}
+                              />
+                              <RegistrationDetailRow
+                                label="Charterer name"
+                                value={formatOptionalValue(
+                                  registration.charterer_name,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Certificate of competency"
+                                value={registration.certificate_of_competency}
+                              />
+                              <RegistrationDetailRow
+                                label="Competency expiry"
+                                value={formatOptionalValue(
+                                  registration.certificate_of_competency_expiry,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Contact name"
+                                value={registration.contact_name}
+                              />
+                              <RegistrationDetailRow
+                                label="Contact phone"
+                                value={registration.contact_phone}
+                              />
+                              <RegistrationDetailRow
+                                label="Contact email"
+                                value={registration.contact_email}
+                              />
+
+                              {activeEntriesHasFee ? (
+                                <RegistrationDetailRow
+                                  label="Payment status"
+                                  value={isUnpaid ? "unpaid" : "paid"}
+                                />
+                              ) : null}
+
+                              <RegistrationDetailRow
+                                label="Receive documents by email"
+                                value={formatBooleanValue(
+                                  registration.receive_documents_by_email,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Crew insurance"
+                                value={formatBooleanValue(
+                                  registration.crew_insurance,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Third-party insurance"
+                                value={formatBooleanValue(
+                                  registration.third_party_insurance,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Disclaimer accepted"
+                                value={formatBooleanValue(
+                                  registration.disclaimer_accepted,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="GDPR accepted"
+                                value={formatBooleanValue(
+                                  registration.gdpr_accepted,
+                                )}
+                              />
+                              <RegistrationDetailRow
+                                label="Preferred language"
+                                value={registration.preferred_language ?? "en"}
+                              />
+                              {registration.status === "rejected" ? (
+                                <RegistrationDetailRow
+                                  label="Rejection feedback"
+                                  value={formatOptionalValue(
+                                    registration.rejection_feedback,
+                                  )}
+                                />
+                              ) : null}
                             </div>
                           </div>
 

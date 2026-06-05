@@ -260,7 +260,7 @@ const Header: React.FC = () => {
               <ul className="w-full">
                 {authDisplayName ? (
                   <li className="mb-6 flex items-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 px-5 py-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-dark">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-dark sm:h-12 sm:w-12">
                       <Icon icon="ph:user-circle-bold" width={28} height={28} />
                     </div>
                     <div>

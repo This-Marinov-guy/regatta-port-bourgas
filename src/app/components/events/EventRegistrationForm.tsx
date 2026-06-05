@@ -1474,7 +1474,7 @@ export default function EventRegistrationForm({
                   } ${insuranceUploading ? 'cursor-progress' : 'cursor-pointer hover:border-primary/50'}`}
                 >
                   <div className="flex w-full items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-12 sm:w-12">
                       <Icon icon="ph:upload-simple-bold" width={22} height={22} />
                     </div>
                     <div className="min-w-0">

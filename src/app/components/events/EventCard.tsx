@@ -56,7 +56,7 @@ export default function EventCard({
 
         <Link
           href={href}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-md bg-primary text-white  sm:text-base font-semibold hover:bg-primary/90 transition-colors duration-300"
+          className="inline-flex items-center float-right mb-4 gap-2 px-5 py-3 rounded-md text-primary sm:text-base font-semibold  transition-colors duration-300"
           aria-label={detailsLabel}
         >
           {detailsLabel}

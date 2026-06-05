@@ -160,7 +160,7 @@ function DocumentList({
             className="flex flex-col gap-3 rounded-[1.25rem] border border-black/10 bg-white/90 px-4 py-4 transition-all duration-200 hover:shadow-md dark:border-white/10 dark:bg-black/20"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
                 <Icon icon="ph:file-text-bold" width={20} height={20} />
               </div>
               <p className="font-semibold text-dark dark:text-white">{name}</p>

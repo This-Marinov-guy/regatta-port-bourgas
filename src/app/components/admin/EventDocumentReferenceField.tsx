@@ -128,7 +128,7 @@ function FileDropPanel({
         } ${uploading ? "cursor-progress" : "cursor-pointer"}`}
       >
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-12 sm:w-12">
             <Icon icon="ph:upload-simple-bold" width={22} height={22} />
           </div>
           <div>
@@ -187,7 +187,7 @@ function LinkInputPanel({
   return (
     <div className="mt-3 rounded-[1.5rem] border border-black/10 bg-white/80 px-5 py-5">
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-12 sm:w-12">
           <Icon icon="ph:link-bold" width={22} height={22} />
         </div>
         <div className="min-w-0 flex-1">
@@ -564,7 +564,7 @@ function EventAttachedDocumentCard({
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
           <Icon icon="ph:file-text-bold" width={20} height={20} />
         </div>
         <div className="min-w-0 flex-1">

@@ -138,9 +138,9 @@ export default function EventRegistrationModal({
                 type="button"
                 onClick={closeModal}
                 aria-label={t('closeRegistration')}
-                className="absolute right-4 top-4 inline-flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:right-6 sm:top-6"
+                className="absolute right-4 top-4 inline-flex h-7 w-7 items-center justify-center rounded-full text-red-600  hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:right-6 sm:top-6"
               >
-                <X className="h-4 w-4" strokeWidth={2.5} />
+                <X className="h-6 w-6" strokeWidth={2.5} />
               </button>
 
               <div className="w-full">
