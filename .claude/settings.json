@@ -41,7 +41,10 @@
       "Read(//Users/vlady/Downloads/**)",
       "Bash(awk 'NR<=15')",
       "Bash(awk 'NR<=12')",
-      "Bash(cat)"
+      "Bash(cat)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\); console.log\\('--- deps ---'\\); console.log\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\).filter\\(d=>/tsx|ts-node|dotenv|supabase/.test\\(d\\)\\).join\\(', '\\)\\)\")",
+      "Bash(node -e \"const t=require\\('./tsconfig.json'\\); console.log\\(JSON.stringify\\(t.compilerOptions.paths\\)\\)\")",
+      "Bash(node --env-file=.env.local --experimental-strip-types --import ./scripts/registration-workers/register-aliases.mjs scripts/registration-workers/test-email.ts)"
     ]
   }
 }

@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import type { AppLocale } from '@/lib/locale'
 import { localizeText } from '@/lib/localizedContent'
 import { calculateEventFeeCents, hasEventFee } from '@/lib/eventFees'
+import { CLUB_FB, CLUB_INSTA } from '@/utils/defines/SOCIAL'
 import type { RegistrationWithEvent } from './data'
 
 export type EmailTemplate = {
@@ -30,8 +31,35 @@ type HtmlSection = {
 
 type TemplateLocale = AppLocale
 
-const EVENT_EMAIL_LOGO_URL =
-  'https://rrzdfnbaqpotytofgrsi.supabase.co/storage/v1/object/public/internal/logo.jpg'
+const EVENT_EMAIL_HEADER_URL =
+  'https://res.cloudinary.com/ddrppwd3t/image/upload/v1780643247/491908145_1263678389094137_5438122119907180038_n_with_bgc_uu5t2o.png'
+
+const EVENT_EMAIL_FOOTER_LOGO_URL =
+  'https://res.cloudinary.com/ddrppwd3t/image/upload/v1780644146/logo_shkcxg.png'
+
+function getSiteUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+  ).replace(/\/$/, '')
+}
+
+const EVENT_EMAIL_SOCIAL_LINKS = [
+  {
+    label: 'Facebook',
+    url: CLUB_FB,
+    icon: 'https://mailsend-email-assets.mailtrap.io/ivu8ql6l7ktsgrurv27q3bb5j4pj.png',
+  },
+  {
+    label: 'Instagram',
+    url: CLUB_INSTA,
+    icon: 'https://mailsend-email-assets.mailtrap.io/44u4o66kgfizq7okplzxuzxcwqrl.png',
+  },
+  {
+    label: 'Website',
+    url: getSiteUrl(),
+    icon: 'https://res.cloudinary.com/ddrppwd3t/image/upload/v1780644297/wikipedia_Circle_ltiyga.svg',
+  },
+]
 
 const registrationEmailCopy = {
   en: {
@@ -62,7 +90,7 @@ const registrationEmailCopy = {
         'Your payment is still pending{payableAmount}. Complete the payment below to finalize the registration.',
       paymentAmountFragment: ' for <strong>{amount}</strong>',
       paymentNote:
-        'Your registration will be treated as complete once the myPOS payment has been successfully finished.',
+        'Your registration will be treated as complete once the payment has been successfully finished.',
       nextStepTitle: 'Next step',
       nextStepBody:
         'Your registration has been received and is currently being processed by the organizing team.',
@@ -128,7 +156,7 @@ const registrationEmailCopy = {
         'Вашето плащане все още е очаквано{payableAmount}. Завършете плащането по-долу, за да финализирате регистрацията.',
       paymentAmountFragment: ' за <strong>{amount}</strong>',
       paymentNote:
-        'Регистрацията ще се счита за завършена след успешно приключено плащане чрез myPOS.',
+        'Регистрацията ще се счита за завършена след успешно приключено плащане.',
       nextStepTitle: 'Следваща стъпка',
       nextStepBody:
         'Вашата регистрация е получена и в момента се обработва от организаторския екип.',
@@ -228,11 +256,16 @@ function paymentUrl(registration: RegistrationWithEvent, locale: TemplateLocale)
     return null
   }
 
-  const siteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
-  ).replace(/\/$/, '')
+  const siteUrl = getSiteUrl()
 
   return `${siteUrl}/${locale}/payment/${encodeURIComponent(registration.id)}?session=${encodeURIComponent(registration.id)}`
+}
+
+function boatLabel(registration: RegistrationWithEvent) {
+  const sailNumber = registration.sail_number?.trim()
+  return sailNumber
+    ? `${registration.boat_name} | ${sailNumber}`
+    : registration.boat_name
 }
 
 function prefillUrl(eventUrl: string, referenceId: string) {
@@ -246,7 +279,7 @@ function paragraph(text: string) {
 
 function button(label: string, url: string) {
   return `
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 0;">
+    <table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin:24px auto 0;">
       <tr>
         <td bgcolor="#0057b8" style="border-radius:14px;">
           <a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 22px;font-size:16px;line-height:1.1;font-weight:700;color:#ffffff;text-decoration:none;border-radius:14px;">
@@ -330,6 +363,35 @@ function sectionBlock(section: HtmlSection) {
   `
 }
 
+function socialFooter() {
+  return '';
+  
+  // const icons = EVENT_EMAIL_SOCIAL_LINKS.map(
+  //   (item) => `
+  //     <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-left:12px;text-decoration:none;">
+  //       <img src="${item.icon}" alt="${escapeHtml(item.label)}" width="28" height="28" style="display:inline-block;width:28px;height:28px;border:0;" />
+  //     </a>
+  //   `
+  // ).join('')
+
+  // return `
+  //   <tr>
+  //     <td style="padding:22px 30px;border-top:1px solid #dbe4ee;background:#ffffff;">
+  //       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+  //         <tr>
+  //           <td align="left" style="vertical-align:middle;">
+  //             <img src="${EVENT_EMAIL_FOOTER_LOGO_URL}" alt="" width="120" style="display:block;width:120px;max-width:120px;height:auto;border:0;" />
+  //           </td>
+  //           <td align="right" style="vertical-align:middle;text-align:right;white-space:nowrap;">
+  //             ${icons}
+  //           </td>
+  //         </tr>
+  //       </table>
+  //     </td>
+  //   </tr>
+  // `
+}
+
 function renderEmailShell(args: {
   previewText: string
   eyebrow: string
@@ -365,27 +427,13 @@ function renderEmailShell(args: {
         <td align="center" style="padding:28px 14px;">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:720px;background:#ffffff;border:1px solid #dbe4ee;border-radius:28px;overflow:hidden;">
             <tr>
-              <td style="padding:26px 30px;background:#3435aa;color:#ffffff;">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                  <tr>
-                    <td style="width:104px;vertical-align:middle;">
-                      <img
-                        src="${EVENT_EMAIL_LOGO_URL}"
-                        alt="Event logo"
-                        width="69"
-                        style="display:block;width:88px;height:88px;max-width:100%;border-radius:50%;object-fit:cover;"
-                      />
-                    </td>
-                    <td style="vertical-align:middle;">
-                      <p style="margin:0 0 8px;font-size:12px;line-height:1.4;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;">
-                        ${escapeHtml(args.eyebrow)}
-                      </p>
-                      <h1 style="margin:0;font-size:32px;line-height:1.2;font-weight:800;color:#ffffff;">
-                        ${escapeHtml(args.title)}
-                      </h1>
-                    </td>
-                  </tr>
-                </table>
+              <td style="padding:0;background:#3435aa;line-height:0;font-size:0;">
+                <img
+                  src="${EVENT_EMAIL_HEADER_URL}"
+                  alt=""
+                  width="720"
+                  style="display:block;width:100%;max-width:100%;height:auto;border:0;"
+                />
               </td>
             </tr>
             <tr>
@@ -399,6 +447,7 @@ function renderEmailShell(args: {
                 ${footerNoteHtml}
               </td>
             </tr>
+            ${socialFooter()}
           </table>
         </td>
       </tr>
@@ -422,22 +471,18 @@ export function buildRegistrationConfirmationTemplate(args: {
     registration.blank_link ??
     registration.generated_form_url ??
     null
+  const boatTitle = boatLabel(registration)
   const checkoutUrl = paymentUrl(registration, locale)
   const payableAmount = paymentSummary(registration)
   const subject = interpolate(copy.subject, { boatName })
   const summary = [
     { label: labels.event, value: eventName(registration, locale) },
     { label: labels.dates, value: eventDates(registration, locale) },
-    { label: labels.boat, value: boatName },
+    { label: labels.boat, value: boatTitle },
     { label: labels.skipper, value: registration.skipper_name },
   ]
 
   const sections: HtmlSection[] = [
-    {
-      body: paragraph(
-        interpolate(copy.greeting, { contactName: escapeHtml(registration.contact_name) })
-      ),
-    },
     {
       title: copy.statusTitle,
       body:
@@ -484,17 +529,14 @@ export function buildRegistrationConfirmationTemplate(args: {
         ? interpolate(copy.previewWithPayment, { boatName })
         : interpolate(copy.previewWithoutPayment, { boatName }),
       eyebrow: copy.eyebrow,
-      title: boatName,
+      title: boatTitle,
       intro: copy.intro,
       summary,
       sections,
       buttonLabel: checkoutUrl ? copy.buttonLabel : undefined,
       buttonUrl: checkoutUrl,
-      footerNote: copy.footerNote,
     }),
     text: [
-      interpolate(copy.textGreeting, { contactName: registration.contact_name }),
-      '',
       interpolate(copy.textReceived, { boatName }),
       `${labels.event}: ${eventName(registration, locale)}`,
       `${labels.dates}: ${eventDates(registration, locale)}`,

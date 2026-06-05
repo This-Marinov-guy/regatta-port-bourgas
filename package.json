@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "registration:test-pdf": "node --env-file=.env.local --experimental-strip-types scripts/registration-workers/generate-first-registration-pdf.ts",
+    "registration:test-email": "node --env-file=.env.local --experimental-strip-types --import ./scripts/registration-workers/register-aliases.mjs scripts/registration-workers/test-email.ts",
     "registration:deploy": "bash scripts/registration-workers/deploy.sh",
     "registration:stop": "bash scripts/registration-workers/stop.sh",
     "registration:restart": "bash scripts/registration-workers/restart.sh",
