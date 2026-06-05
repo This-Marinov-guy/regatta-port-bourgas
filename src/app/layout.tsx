@@ -5,7 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import LocalePersistence from '@/app/components/layout/LocalePersistence'
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
 const googleAnalyticsId = 'G-ZY60CQ9H68'
 
 export const metadata: Metadata = {

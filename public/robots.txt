@@ -10,4 +10,4 @@ Disallow: /signup
 Disallow: /forgot-password
 
 # Sitemap
-Sitemap: https://www.regattaportbourgas.com/sitemap.xml
+Sitemap: https://www.regattaportbourgas.org/sitemap.xml

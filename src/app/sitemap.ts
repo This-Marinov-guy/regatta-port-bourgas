@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { getEvents } from '@/lib/events'
 import { getNews } from '@/lib/news'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
 const locales = ['en', 'bg'] as const
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

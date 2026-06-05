@@ -17,7 +17,7 @@ import { listRegistrations } from "@/lib/adminContent";
 import { formatDisplayDate } from "@/lib/formatDate";
 import { formatEventFee, hasEventFee } from "@/lib/eventFees";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
 
 type Props = {
   params: Promise<{ slug: string; locale: string }>;

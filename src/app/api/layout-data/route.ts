@@ -20,6 +20,7 @@ const footerLinksStructure = [
   { labelKey: "navigation.news", href: "/news" },
   { labelKey: "navigation.gallery", href: "/gallery" },
   { labelKey: "navigation.contactUs", href: "/contact-us" },
+  { labelKey: "terms.title", href: "/terms-and-conditions" },
   // { labelKey: "navigation.documents", href: "/documents" },
 ];
 

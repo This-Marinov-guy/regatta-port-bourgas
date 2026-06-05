@@ -13,7 +13,7 @@ type Props = {
 };
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://www.regattaportbourgas.com";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.regattaportbourgas.org";
 
 export async function generateMetadata({ params }: Props) {
   const { slug, locale } = await params;

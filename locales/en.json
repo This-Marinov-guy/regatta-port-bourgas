@@ -170,6 +170,104 @@
     "payError": "We could not start the payment. Please try again.",
     "backToEvent": "Back to event"
   },
+  "terms": {
+    "title": "Terms & Conditions",
+    "subtitle": "Please review the terms that apply to using this website, registering for events, payments, refunds, cookies, and privacy.",
+    "tabs": {
+      "general": "General use",
+      "refund": "Refund and Cancellation",
+      "privacy": "Cookies and Privacy"
+    },
+    "sections": {
+      "general": {
+        "title": "General use",
+        "intro": "These terms apply to visitors, registered crews, boat representatives, and anyone using the official Regatta Port Bourgas website or event registration services.",
+        "paymentProvider": {
+          "title": "Payment provider",
+          "text": "Online payments are processed through <mypos>myPOS</mypos>. The website supports online payments via various payment methods made available by myPOS during checkout.",
+          "logoAlt": "myPOS payment provider logo"
+        },
+        "points": [
+          {
+            "title": "Acceptance of terms",
+            "text": "By using the website, submitting an event registration, uploading documents, or completing a payment, you agree to follow these terms and any official event documents published by the organizers."
+          },
+          {
+            "title": "Event information",
+            "text": "Programmes, entry fees, schedules, classes, notices, entry lists, and results may be updated when needed. Official notices and event documents take priority for event-specific instructions."
+          },
+          {
+            "title": "Registration responsibility",
+            "text": "Registrants are responsible for providing accurate boat, skipper, crew, contact, insurance, and payment information. The organizers may reject or request correction of incomplete, inaccurate, or unsuitable submissions."
+          },
+          {
+            "title": "Participant conduct",
+            "text": "Participants must follow applicable sailing rules, safety requirements, harbour rules, organizer instructions, and standards of fair sporting behaviour during the event."
+          },
+          {
+            "title": "Website availability",
+            "text": "We aim to keep the website available and accurate, but temporary interruptions, maintenance, or corrections may occur. The website may not be used for unlawful activity, interference with the service, or misuse of published information."
+          }
+        ]
+      },
+      "refund": {
+        "title": "Refund and Cancellation",
+        "intro": "Refunds are possible only when there is a reasonable cause and only after approval by the event organizers. If a refund is granted, participation for that boat is no longer possible for the refunded entry.",
+        "points": [
+          {
+            "title": "Refund requests",
+            "text": "A refund request should be sent to the organizers with the registration details, payment reference, and the reason for the request. Reasonable causes may include duplicate payment, administrative error, documented inability to attend, or an organizer-approved event change."
+          },
+          {
+            "title": "Organizer approval",
+            "text": "All refunds are reviewed case by case. A refund is not automatic and is valid only when expressly approved by the event organizers."
+          },
+          {
+            "title": "Effect of refund",
+            "text": "Once a refund is approved or processed, the related registration and payment are treated as cancelled. The boat may not participate in the event under that refunded entry."
+          },
+          {
+            "title": "Processing",
+            "text": "Approved refunds are normally returned through the original payment method when possible. Bank, card, payment provider, currency conversion, or processing fees may affect the final amount or timing."
+          },
+          {
+            "title": "Event cancellation or changes",
+            "text": "The organizers may cancel, postpone, shorten, or modify an event for safety, weather, operational, legal, or other substantial reasons. Any available refund, transfer, or credit options will be communicated by the organizers."
+          }
+        ]
+      },
+      "privacy": {
+        "title": "Cookies and Privacy",
+        "intro": "We use limited personal data and cookies to operate the website, manage registrations, communicate with participants, and support event administration.",
+        "points": [
+          {
+            "title": "Cookies",
+            "text": "The website may use essential cookies for core functions such as language preference, consent choices, security, and session behaviour. Optional cookies may be used for analytics or performance where consent is required."
+          },
+          {
+            "title": "Information we collect",
+            "text": "For event registration and administration, we may collect boat details, skipper and crew information, contact details, nationality, club information, insurance documents, payment status, and messages sent through the website."
+          },
+          {
+            "title": "How information is used",
+            "text": "Information is used to process registrations, prepare entry lists and event documents, verify payment and insurance status, send operational notices, support safety procedures, and meet administrative or legal obligations."
+          },
+          {
+            "title": "Payments",
+            "text": "Payment details are handled by the payment provider. We may store payment status, payment identifiers, amounts, and related references, but we do not store full card details on this website."
+          },
+          {
+            "title": "Sharing and retention",
+            "text": "Information may be shared with event organizers, race officials, service providers, or authorities when needed for event operation, safety, compliance, or support. Data is retained only for as long as reasonably necessary for these purposes."
+          },
+          {
+            "title": "Your choices",
+            "text": "You may contact the organizers to request correction, access, or deletion of personal information where applicable. Some information may need to be retained for payment, safety, legal, or event record purposes."
+          }
+        ]
+      }
+    }
+  },
   "news": {
     "title": "News",
     "subtitle": "Stay updated with the latest news, announcements, and updates from the International Regatta Port Bourgas Bulstrad Cup .",

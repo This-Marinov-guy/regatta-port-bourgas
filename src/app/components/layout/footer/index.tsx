@@ -18,6 +18,10 @@ const Footer = () => {
       { label: t("navigation.news"), href: `/${locale}/news` },
       { label: t("navigation.gallery"), href: `/${locale}/gallery` },
       { label: t("navigation.contactUs"), href: `/${locale}/contact-us` },
+      {
+        label: t("terms.title"),
+        href: `/${locale}/terms-and-conditions`,
+      },
       // { label: t('navigation.documents'), href: `/${locale}/documents` },
     ],
     [locale, t],

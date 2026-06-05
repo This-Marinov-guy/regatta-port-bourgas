@@ -13,7 +13,7 @@ import SessionProviderComp from '../../providers/SessionProvider';
 import ScrollToTop from '../components/scroll-to-top';
 import LocalePersistence from '../components/layout/LocalePersistence';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
 
 export async function generateMetadata({
   params,

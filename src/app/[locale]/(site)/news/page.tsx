@@ -5,7 +5,7 @@ import { getNews } from '@/lib/news'
 import Breadcrumb from '@/app/components/breadcrumb'
 import { localizeText } from '@/lib/localizedContent'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
 
 type Props = { params: Promise<{ locale: string }> }
 

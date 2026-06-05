@@ -39,7 +39,7 @@ const EVENT_EMAIL_FOOTER_LOGO_URL =
 
 function getSiteUrl() {
   return (
-    process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
   ).replace(/\/$/, '')
 }
 

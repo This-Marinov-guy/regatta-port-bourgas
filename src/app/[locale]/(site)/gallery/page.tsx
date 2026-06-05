@@ -5,7 +5,7 @@ import Breadcrumb from '@/app/components/breadcrumb'
 
 export const dynamic = 'force-dynamic'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
 
 type Props = { params: Promise<{ locale: string }> }
 

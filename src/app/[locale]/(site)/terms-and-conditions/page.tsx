@@ -1,107 +1,77 @@
-import { Metadata } from "next";
-import Link from "next/link";
+import type { Metadata } from "next"
+import { getLocale, getTranslations } from "next-intl/server"
+import Breadcrumb from "@/app/components/breadcrumb"
+import TermsTabs from "./TermsTabs"
 
-export const metadata: Metadata = {
-    title: "Terms & Condition | Homely",
-};
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.regattaportbourgas.org"
 
-export default function Page() {
-    return (
-        <section>
-            <div className="relative w-full flex justify-center pt-20">
-                <div className="container relative z-10">
-                    <div className='flex flex-col gap-5'>
-                        <h1 className='md:text-6xl text-4xl font-medium text-center'>
-                            Terms & Conditions
-                        </h1>
-                        <div className="p-8">
-                            <p className="text-dark/70 dark:text-white/50">
-                                This Getnextjstemplates Terms of Service (“<span className="font-semibold">Agreement</span>”) is entered into by and between <Link href={"https://getnextjstemplates.com/"} className="font-semibold hover:text-primary">Getnextjstemplates</Link> and the entity or person placing an order for or accessing the Services (“<span className="font-semibold">Customer</span>”). This Agreement consists of the terms and conditions set forth below and any Order Form. The “<span className="font-semibold">Effective Date”</span> of this Agreement is the date which is the earlier of (a) Customer’s initial access to the Services through any online provisioning, registration or order process or (b) the Effective Date of the first Order Form. This Agreement will govern Customer’s initial purchase on the Effective Date as well as any future purchases made by Customer that reference this Agreement. Getnextjstemplates may modify this Agreement from time to time as permitted in Section 13.4 (Amendment).
-                            </p>
-                            <p className="mt-5 text-dark/70 dark:text-white/50">
-                                Capitalized terms shall have the meanings set forth in Section 1, or in the section where they are first used
-                            </p>
-                            <div className="my-6">
-                                <h4 className="font-semibold">1. Definitions</h4>
-                                <ul className="mt-6">
-                                    <li>
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">1.1 “Authorized Devices”</span>
-                                            means those mobile, desktop, or other devices with which the Services can be accessed and used.
-                                        </p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">1.2 “Content”</span>
-                                            means code, content, fonts, graphics, designs, documents, or materials created using the Services by Customer and its Users or imported into the Services by Customer and its Users.
-                                        </p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                        <span className="font-semibold">1.3 “Documentation”</span>
-                                            means the technical materials made available by Getnextjstemplates to Customer and/or its Users in hard copy or electronic form describing the use and operation of the Services.</p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">1.4 “Services”</span>
-                                            Getnextjstemplates’s proprietary web-based products and services, along with downloadable desktop and mobile apps. Each Order Form will identify details of Customer’s Services subscription.
-                                        </p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">
-                                                1.5 “Order Form”
-                                            </span>
-                                            means a document signed by both Parties identifying the Enterprise Services to be made available by Getnextjstemplates pursuant to this Agreement.
-                                        </p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">1.6 “Packages”</span>
-                                            or
-                                            <span className="font-semibold">
-                                                “Components”
-                                            </span>
-                                            means add-on modules made available within the Services. Packages and Components may be created by Getnextjstemplates, Customer or other third parties. Packages and Components created by Getnextjstemplates are supported as part of the Services. Getnextjstemplates will use reasonable efforts to support Customer’s use of Packages and Components created by third parties but disclaims all warranties as to such Packages and Components.
-                                        </p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">
-                                                1.7 “User”
-                                            </span>
-                                            means an employee, contractor or other individual associated with Customer who has been provisioned by Customer with access to the Services.
-                                        </p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">1.8 “Services”</span>
-                                            means Getnextjstemplates’s SaaS product, web design software, tools, along with downloadable desktop and mobile apps. Each Order Form will identify details of Customer’s subscription to the Services.
-                                        </p>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="my-6">
-                                <h4 className="font-semibold">2. License and use rights</h4>
-                                <ul className="mt-6">
-                                    <li>
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">2.1 Services</span>{" "}
-                                            Getnextjstemplates hereby grants Customer a non-exclusive, non-transferable license during the Term (as defined in Section 12) to: (a) use the Services and to download and install desktop or mobile applications as applicable on the number and type of Authorized Devices solely for Customer’s internal business purposes in accordance with the Documentation, and/or (b) use our SaaS product, hosted systems, design software, tools, and build websites under the Getnextjstemplates.app domain.. The Services are delivered electronically.
-                                        </p>
-                                    </li>
-                                    <li className="mt-5">
-                                        <p className="text-dark/70 dark:text-white/50">
-                                            <span className="font-semibold">2.2 Provisioning the Services</span>{" "}
-                                            Getnextjstemplates will provide to Customer the necessary passwords, security protocols, policies, network links or connections (“Access Protocols”) to allow Customer and its Users to access the Services as described herein; no other access to the website or servers from which the Services are delivered is permitted. Customer will provision its Users  to access and use the features and functions of the Services through the Access Protocols. Customer may select one or more Users to act as administrators and control, manage and use the Services on Customer’s behalf. Customer shall be responsible for all acts and omissions of its Users
-                                        </p>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: "terms" })
+
+  return {
+    title: t("title"),
+    description: t("subtitle"),
+    openGraph: {
+      title: t("title"),
+      description: t("subtitle"),
+      images: [
+        {
+          url: `${siteUrl}/images/banner.png`,
+          width: 1200,
+          height: 630,
+          alt: t("title"),
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("subtitle"),
+      images: [`${siteUrl}/images/banner.png`],
+    },
+    alternates: {
+      canonical: `${siteUrl}/${locale}/terms-and-conditions`,
+      languages: {
+        en: `${siteUrl}/en/terms-and-conditions`,
+        bg: `${siteUrl}/bg/terms-and-conditions`,
+      },
+    },
+  }
+}
+
+export default async function TermsAndConditionsPage() {
+  const locale = await getLocale()
+  const t = await getTranslations("terms")
+  const tCommon = await getTranslations()
+
+  return (
+    <main className="site-page-bg">
+      <div className="container mx-auto max-w-8xl px-5 pb-14 pt-22 md:pb-28 2xl:px-0">
+        <Breadcrumb
+          image="/images/breadcrumbs/2.jpg"
+          links={[
+            { href: `/${locale}`, text: tCommon("navigation.home") },
+            { href: `/${locale}/terms-and-conditions`, text: t("title") },
+          ]}
+        />
+
+        <section className="mx-auto max-w-5xl py-0">
+          <div className="mb-8 text-center md:mb-12">
+            <h1 className="text-4xl font-medium text-dark dark:text-white md:text-6xl">
+              {t("title")}
+            </h1>
+            <p className="mx-auto mt-4 max-w-3xl leading-7 text-dark/70 dark:text-white/70">
+              {t("subtitle")}
+            </p>
+          </div>
+
+          <TermsTabs />
         </section>
-    );
-};
+      </div>
+    </main>
+  )
+}
