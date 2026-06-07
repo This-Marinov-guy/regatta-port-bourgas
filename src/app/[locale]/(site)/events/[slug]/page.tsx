@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Icon } from "@iconify/react";
 import { Link } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -76,7 +75,6 @@ export default async function EventDetailsPage({ params }: Props) {
     getEventDocumentsByRefs(event.results),
   ])
   const entries = (await listRegistrations(event.id))
-    .filter((registration) => registration.status === "approved")
     .map((registration) => ({
       id: registration.id,
       boatName: registration.boat_name,

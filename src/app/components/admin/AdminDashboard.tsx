@@ -701,7 +701,7 @@ function SectionHeading({
 }
 
 const adminFieldInputClassName =
-  "w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-black/5 disabled:text-dark/55";
+  "block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-black/5 disabled:text-dark/55";
 
 function parseAdminDateValue(value: string) {
   if (!value) {
@@ -748,7 +748,7 @@ function AdminField({
   disabled?: boolean;
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-2 block  font-medium text-dark">{label}</span>
       <input
         type={type}
@@ -781,7 +781,7 @@ function AdminDateField({
   disabled?: boolean;
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-2 block font-medium text-dark">{label}</span>
       <div className="relative">
         <DatePicker
@@ -825,14 +825,14 @@ function AdminTextarea({
   rows?: number;
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-2 block  font-medium text-dark">{label}</span>
       <textarea
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary"
+        className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary"
       />
     </label>
   );
@@ -948,11 +948,11 @@ function AdminModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-dark/45 px-4 py-8 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-5xl rounded-[1.75rem] border border-black/10 bg-white p-6 shadow-[0_30px_100px_rgba(23,32,35,0.2)] animate-in zoom-in-95 slide-in-from-bottom-6 duration-300 md:p-8">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-2xl font-semibold text-dark">{title}</h3>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-dark/45 px-2 py-3 backdrop-blur-sm animate-in fade-in duration-200 sm:px-4 sm:py-8">
+      <div className="w-full min-w-0 max-w-5xl rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-[0_30px_100px_rgba(23,32,35,0.2)] animate-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:rounded-[1.75rem] sm:p-6 md:p-8">
+        <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6 sm:gap-4">
+          <div className="min-w-0">
+            <h3 className="break-words text-xl font-semibold text-dark sm:text-2xl">{title}</h3>
             <p className="mt-1  leading-6 text-dark/60">{description}</p>
           </div>
 
@@ -961,7 +961,7 @@ function AdminModal({
             onClick={onClose}
             aria-label="Close"
             title="Close"
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-red-600  ${interactiveButtonClass}`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-red-600 ${interactiveButtonClass}`}
           >
             <Icon icon="ph:x-bold" width={22} height={22} />
           </button>
@@ -1583,21 +1583,21 @@ function AssetPreviewCard({
   const image = isImageUrl(url);
 
   return (
-    <div className="rounded-[1.25rem] border-none p-3">
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[1.25rem] border-none p-3">
       {image ? (
-        <>
+        <div className="min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={url}
             alt={getFileLabelFromUrl(url)}
-            className="mb-3 h-32 w-full rounded-xl object-cover"
+            className="mb-3 block h-32 w-full max-w-full rounded-xl object-cover"
           />
-          <p className="truncate  font-medium text-dark/70">
+          <p className="block max-w-full truncate font-medium text-dark/70">
             {getFileLabelFromUrl(url)}
           </p>
-        </>
+        </div>
       ) : (
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
             <Icon icon="ph:file-text-bold" width={20} height={20} />
           </div>
@@ -1611,12 +1611,12 @@ function AssetPreviewCard({
       )}
 
       {showActions ? (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className=" font-semibold text-primary hover:underline"
+            className="max-w-full truncate font-semibold text-primary hover:underline"
           >
             Preview
           </a>
@@ -1624,7 +1624,7 @@ function AssetPreviewCard({
             <button
               type="button"
               onClick={onRemove}
-              className=" font-semibold text-red-500 hover:underline"
+              className="font-semibold text-red-500 hover:underline"
             >
               Remove
             </button>
@@ -1751,7 +1751,7 @@ function FileDropPanel({
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <span className="mb-2 block  font-medium text-dark">{label}</span>
       <div
         onClick={() => {
@@ -1769,13 +1769,13 @@ function FileDropPanel({
           setDragging(false);
           handleFiles(event.dataTransfer.files);
         }}
-        className={`rounded-[1.5rem] border-2 border-dashed px-5 py-6 transition-all ${
+        className={`min-w-0 rounded-[1.25rem] border-2 border-dashed px-4 py-5 transition-all sm:rounded-[1.5rem] sm:px-5 sm:py-6 ${
           dragging
             ? "border-primary bg-primary/5 shadow-lg"
             : "border-black/10 bg-white/80"
         } ${uploading ? "cursor-progress" : "cursor-pointer"}`}
       >
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-12 sm:w-12 sm:rounded-2xl">
               <Icon icon="ph:upload-simple-bold" width={18} height={18} className="sm:hidden" />
@@ -1785,7 +1785,7 @@ function FileDropPanel({
               {uploading ? "Uploading files..." : "Upload files"}
             </p>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="mt-2 text-dark/60">
               {helperText ??
                 "Drag and drop files or click the input to start selecting."}
@@ -1859,7 +1859,7 @@ function ImageUploadField({
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <FileDropPanel
         label={label}
         accept="image/*"
@@ -1871,7 +1871,7 @@ function ImageUploadField({
       />
 
       {value ? (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 w-full min-w-0 max-w-full overflow-hidden sm:max-w-sm">
           <AssetPreviewCard url={value} onRemove={() => onChange("")} />
         </div>
       ) : null}
@@ -1946,7 +1946,7 @@ function SingleFileUploadField({
       />
 
       {value ? (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 w-full min-w-0 max-w-full overflow-hidden sm:max-w-sm">
           <AssetPreviewCard url={value} onRemove={() => onChange("")} />
         </div>
       ) : null}
@@ -2821,7 +2821,7 @@ export default function AdminDashboard({
     document.body.removeChild(anchor);
   }
 
-  function downloadRegistrationForm(registration: RegistrationRecord) {
+  function previewRegistrationForm(registration: RegistrationRecord) {
     const blankUrl = getRegistrationBlankUrl(registration);
 
     if (!blankUrl) {
@@ -2829,13 +2829,7 @@ export default function AdminDashboard({
       return;
     }
 
-    const anchor = document.createElement("a");
-    anchor.href = blankUrl;
-    anchor.download = `${registration.boat_name ?? "entry"}.pdf`;
-    anchor.target = "_blank";
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
+    openExternalUrl(blankUrl);
   }
 
   async function handleGeneratePaymentLink(registration: RegistrationRecord) {
@@ -2891,9 +2885,7 @@ export default function AdminDashboard({
     }
   }
 
-  async function handleDownloadInsuranceDocuments(
-    registration: RegistrationRecord,
-  ) {
+  function handlePreviewInsuranceDocuments(registration: RegistrationRecord) {
     const busyKey = `${registration.id}:insurance`;
     setRegistrationActionBusyKey(busyKey);
 
@@ -2903,37 +2895,14 @@ export default function AdminDashboard({
         return;
       }
 
-      for (
-        let index = 0;
-        index < registration.insurance_documents.length;
-        index += 1
-      ) {
-        const url = registration.insurance_documents[index];
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          throw new Error("Unable to download one of the insurance documents.");
-        }
-
-        const blob = await response.blob();
-        const objectUrl = window.URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = objectUrl;
-        anchor.download = getFileLabelFromUrl(url);
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
-        window.URL.revokeObjectURL(objectUrl);
-
-        if (index < registration.insurance_documents.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
-        }
-      }
+      registration.insurance_documents.forEach((url) => {
+        openExternalUrl(url);
+      });
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Unable to download the insurance documents.",
+          : "Unable to preview the insurance documents.",
       );
     } finally {
       setRegistrationActionBusyKey(null);
@@ -3551,8 +3520,8 @@ export default function AdminDashboard({
           description="Save bilingual copy and resource files for this event."
           onClose={closeEventEditor}
         >
-          <form onSubmit={handleEventSubmit}>
-            <div className="grid gap-4 md:grid-cols-2">
+          <form onSubmit={handleEventSubmit} className="min-w-0">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <AdminField
                 label="Name (EN)"
                 value={eventForm.name_en}
@@ -3581,7 +3550,7 @@ export default function AdminDashboard({
                   setEventForm((current) => ({ ...current, name_bg: value }))
                 }
               />
-              <div className="md:col-span-2">
+              <div className="min-w-0 md:col-span-2">
                 <AdminField
                   label="Slug"
                   value={eventForm.slug}
@@ -3607,7 +3576,7 @@ export default function AdminDashboard({
                 }
                 onError={(msg) => toast.error(msg)}
               />
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block  font-medium text-dark">
                   Status
                 </span>
@@ -3619,7 +3588,7 @@ export default function AdminDashboard({
                       status: event.target.value as EventFormState["status"],
                     }))
                   }
-                  className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3  text-dark outline-none transition focus:border-primary"
+                  className={adminFieldInputClassName}
                 >
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -3658,7 +3627,7 @@ export default function AdminDashboard({
                 step="0.01"
                 placeholder="20.00"
               />
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block font-medium text-dark">
                   Fee calculation
                 </span>
@@ -3679,7 +3648,7 @@ export default function AdminDashboard({
               </label>
             </div>
 
-            <div className="mt-4 grid gap-4">
+            <div className="mt-4 grid min-w-0 gap-4">
               <AdminTextarea
                 label="Description (EN)"
                 value={eventForm.description_en}
@@ -3700,7 +3669,7 @@ export default function AdminDashboard({
                   }))
                 }
               />
-              <div className="flex flex-col gap-4">
+              <div className="flex min-w-0 flex-col gap-4">
                 <EventDocumentReferenceField
                   label="Notice board"
                   values={eventForm.notice_board}
@@ -3737,11 +3706,11 @@ export default function AdminDashboard({
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
               <Button
                 type="submit"
                 disabled={eventsBusy}
-                className="rounded-xl px-5 text-white"
+                className="w-full rounded-xl px-5 text-white sm:w-auto"
               >
                 {eventsBusy
                   ? "Saving..."
@@ -3753,7 +3722,7 @@ export default function AdminDashboard({
                 type="button"
                 variant="outline"
                 onClick={closeEventEditor}
-                className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+                className={`w-full rounded-xl border-black/10 bg-white text-dark sm:w-auto ${interactiveButtonClass}`}
               >
                 Cancel
               </Button>
@@ -4151,7 +4120,7 @@ export default function AdminDashboard({
                                   isInsuranceActionBusy
                                 }
                                 onClick={() =>
-                                  downloadRegistrationForm(registration)
+                                  previewRegistrationForm(registration)
                                 }
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                               >
@@ -4160,7 +4129,7 @@ export default function AdminDashboard({
                                   width={15}
                                   height={15}
                                 />
-                                Download form
+                                Preview form
                               </button>
                               <button
                                 type="button"
@@ -4173,9 +4142,7 @@ export default function AdminDashboard({
                                   isInsuranceActionBusy
                                 }
                                 onClick={() => {
-                                  void handleDownloadInsuranceDocuments(
-                                    registration,
-                                  );
+                                  handlePreviewInsuranceDocuments(registration);
                                 }}
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                               >
@@ -4185,8 +4152,8 @@ export default function AdminDashboard({
                                   height={15}
                                 />
                                 {isInsuranceActionBusy
-                                  ? "Downloading insurance..."
-                                  : "Download insurance"}
+                                  ? "Opening insurance..."
+                                  : "Preview insurance"}
                               </button>
                               {activeEntriesHasFee ? (
                                 <button

@@ -103,7 +103,7 @@ function FileDropPanel({
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <span className="mb-2 block font-medium text-dark">{label}</span>
       <div
         onClick={() => {
@@ -121,17 +121,17 @@ function FileDropPanel({
           setDragging(false);
           handleFiles(event.dataTransfer.files);
         }}
-        className={`rounded-[1.5rem] border-2 border-dashed px-5 py-6 transition-all ${
+        className={`min-w-0 rounded-[1.25rem] border-2 border-dashed px-4 py-5 transition-all sm:rounded-[1.5rem] sm:px-5 sm:py-6 ${
           dragging
             ? "border-primary bg-primary/5 shadow-lg"
             : "border-black/10 bg-white/80"
         } ${uploading ? "cursor-progress" : "cursor-pointer"}`}
       >
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-12 sm:w-12">
             <Icon icon="ph:upload-simple-bold" width={22} height={22} />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold text-dark">
               {uploading ? "Uploading files..." : "Upload files"}
             </p>
@@ -185,8 +185,8 @@ function LinkInputPanel({
   }
 
   return (
-    <div className="mt-3 rounded-[1.5rem] border border-black/10 bg-white/80 px-5 py-5">
-      <div className="flex items-start gap-4">
+    <div className="mt-3 min-w-0 rounded-[1.25rem] border border-black/10 bg-white/80 px-4 py-4 sm:rounded-[1.5rem] sm:px-5 sm:py-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-12 sm:w-12">
           <Icon icon="ph:link-bold" width={22} height={22} />
         </div>
@@ -203,7 +203,7 @@ function LinkInputPanel({
               onChange={(event) => setUrl(event.target.value)}
               placeholder="https://example.com/document.pdf"
               disabled={busy}
-              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
+              className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
             />
             <input
               type="text"
@@ -211,7 +211,7 @@ function LinkInputPanel({
               onChange={(event) => setName(event.target.value)}
               placeholder="Display name EN (optional)"
               disabled={busy}
-              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
+              className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
             />
             <input
               type="text"
@@ -219,14 +219,14 @@ function LinkInputPanel({
               onChange={(event) => setNameBg(event.target.value)}
               placeholder="Display name BG (optional)"
               disabled={busy}
-              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
+              className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
             />
-            <div className="flex justify-end">
+            <div className="flex justify-stretch sm:justify-end">
               <Button
                 type="button"
                 onClick={handleAdd}
                 disabled={busy || !url.trim()}
-                className={`rounded-xl px-4 text-white ${interactiveButtonClass}`}
+                className={`w-full rounded-xl px-4 text-white sm:w-auto ${interactiveButtonClass}`}
               >
                 {busy ? "Adding..." : "Add link"}
               </Button>
@@ -332,7 +332,7 @@ function ExistingDocumentsMultiSelect({
                   multiple
                   value={selectedIds}
                   onChange={handleSelectionChange}
-                  className="min-h-40 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                  className="block min-h-40 w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                 >
                   {availableDocuments.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -342,7 +342,7 @@ function ExistingDocumentsMultiSelect({
                   ))}
                 </select>
 
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-dark/55">
                     Hold Cmd/Ctrl to select multiple documents.
                   </p>
@@ -350,7 +350,7 @@ function ExistingDocumentsMultiSelect({
                     type="button"
                     onClick={handleAddSelected}
                     disabled={selectedIds.length === 0}
-                    className={`rounded-xl px-4 text-white ${interactiveButtonClass}`}
+                    className={`w-full rounded-xl px-4 text-white sm:w-auto ${interactiveButtonClass}`}
                   >
                     Attach selected
                   </Button>
@@ -390,7 +390,7 @@ function ExistingDocumentsSummary({
       {documents.map((item) => (
         <div
           key={item.id}
-          className="inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm text-emerald-800"
+          className="inline-flex max-w-full min-w-0 items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm text-emerald-800"
         >
           <span className="truncate font-medium">{item.name_en}</span>
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]">
@@ -414,14 +414,14 @@ function InlineAdminField({
   required?: boolean;
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-2 block text-sm font-medium text-dark">{label}</span>
       <input
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={required}
-        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+        className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
       />
     </label>
   );
@@ -559,11 +559,11 @@ function EventAttachedDocumentCard({
 
   return (
     <div
-      className={`rounded-[1.25rem] border border-black/10 bg-white/90 p-4 shadow-sm transition-all ${
+      className={`min-w-0 rounded-[1.25rem] border border-black/10 bg-white/90 p-4 shadow-sm transition-all ${
         isDragging ? "border-primary/30 bg-primary/[0.03] shadow-md" : ""
       }`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
           <Icon icon="ph:file-text-bold" width={20} height={20} />
         </div>
@@ -621,7 +621,7 @@ function EventAttachedDocumentCard({
         </label> */}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <p
           className={`text-sm font-medium ${
             saveState === "error" || !nameEn.trim()
@@ -794,7 +794,7 @@ export default function EventDocumentReferenceField({
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <FileDropPanel
         label={label}
         multiple
@@ -818,7 +818,7 @@ export default function EventDocumentReferenceField({
       ) : null}
 
       {values.length > 0 ? (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
           {values.map((value, index) => {
             const document = documentsById.get(value);
 
@@ -828,7 +828,7 @@ export default function EventDocumentReferenceField({
                   key={`${value}-${index}`}
                   onDragOver={(event) => handleDragOver(event, value)}
                   onDrop={() => handleDrop(value)}
-                  className={`rounded-[1.35rem] transition-all ${
+                  className={`min-w-0 rounded-[1.35rem] transition-all ${
                     dragOverValue === value && draggedValue !== value
                       ? "ring-2 ring-primary/40 ring-offset-2"
                       : ""
