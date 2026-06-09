@@ -216,7 +216,7 @@
         "points": [
           {
             "title": "Refund requests",
-            "text": "A refund request should be sent to the organizers with the registration details, payment reference, and the reason for the request. Reasonable causes may include duplicate payment, administrative error, documented inability to attend, or an organizer-approved event change."
+            "text": "A refund request should be sent to the organizers with the registration details, payment reference, and the reason for the request. Cancellation may be requested up to 5 business days after the payment has been completed. Reasonable causes may include duplicate payment, administrative error, documented inability to attend, or an organizer-approved event change."
           },
           {
             "title": "Organizer approval",
@@ -228,7 +228,7 @@
           },
           {
             "title": "Processing",
-            "text": "Approved refunds are normally returned through the original payment method when possible. Bank, card, payment provider, currency conversion, or processing fees may affect the final amount or timing."
+            "text": "Approved refunds are returned to the payment account within 5 to 7 business days after confirmation from the organizers. Bank, card, payment provider, currency conversion, or processing fees may affect the final amount or timing."
           },
           {
             "title": "Event cancellation or changes",
