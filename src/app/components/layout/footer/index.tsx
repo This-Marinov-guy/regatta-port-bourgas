@@ -187,7 +187,7 @@ const Footer = () => {
           <p className="text-white/60  sm:">
             © {new Date().getFullYear()} Regatta Port Bourgas. Developed by{" "}
             <Link
-              href="https://vladislavmarinov.com/"
+              href="https://coldlaketechnology.com"
               className="hover:text-primary transition-colors duration-300"
               target="_blank"
               rel="noopener noreferrer"
