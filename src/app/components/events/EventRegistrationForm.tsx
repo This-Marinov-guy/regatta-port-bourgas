@@ -472,13 +472,13 @@ function LegalInfoModal({
   onClose: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-[140] bg-black/55 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-sm">
       <div
         className="absolute inset-0"
         aria-hidden="true"
         onClick={onClose}
       />
-      <div className="relative mx-auto flex min-h-full max-w-3xl items-center justify-center">
+      <div className="relative mx-auto w-full max-w-3xl">
         <div className="w-full rounded-[1.75rem] border border-black/10 bg-[#f8f6ef] p-6 shadow-2xl dark:border-white/10 dark:bg-[#11110f] sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>

@@ -43,7 +43,7 @@ export default function EventSubmissionStatusModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[145] bg-black/55 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[145] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-sm">
       {!isLoading ? (
         <div
           className="absolute inset-0"
@@ -51,7 +51,7 @@ export default function EventSubmissionStatusModal({
           onClick={onClose}
         />
       ) : null}
-      <div className="relative mx-auto flex min-h-full max-w-xl items-center justify-center">
+      <div className="relative mx-auto w-full max-w-xl">
         <div className="w-full rounded-[1.75rem] border border-black/10 bg-[#f8f6ef] p-6 shadow-2xl dark:border-white/10 dark:bg-[#11110f] sm:p-8">
           <div className="flex flex-col items-center text-center">
             <div

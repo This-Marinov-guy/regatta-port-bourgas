@@ -13,8 +13,9 @@ import { CLUB_PHONE } from '@/utils/defines/CONTACTS'
 import type { NavLinks } from '@/app/types/navlink'
 
 const Header: React.FC = () => {
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   const [user, setUser] = useState<{ user: string } | null>(null)
+  const [hasCheckedStoredUser, setHasCheckedStoredUser] = useState(false)
   const [sticky, setSticky] = useState(false)
   const [navbarOpen, setNavbarOpen] = useState(false)
   const pathname = usePathname()
@@ -35,8 +36,11 @@ const Header: React.FC = () => {
   const [navLinks, setNavLinks] = useState<NavLinks[]>(fallbackLinks)
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
-  const authDisplayName =
-    user?.user || session?.user?.name || session?.user?.email || null
+  const isLoggedIn =
+    sessionStatus === 'authenticated' || (hasCheckedStoredUser && Boolean(user))
+  const authDisplayName = isLoggedIn
+    ? user?.user || session?.user?.name || session?.user?.email || 'Account'
+    : null
 
   const handleClickOutside = (event: MouseEvent) => {
     if (sideMenuRef.current && !sideMenuRef.current.contains(event.target as Node)) {
@@ -95,6 +99,7 @@ const Header: React.FC = () => {
         localStorage.removeItem('user')
       }
     }
+    setHasCheckedStoredUser(true)
 
     return () => {
       window.removeEventListener('scroll', handleScroll)

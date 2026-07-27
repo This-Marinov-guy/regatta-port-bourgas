@@ -949,8 +949,8 @@ function AdminModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-dark/45 px-2 py-3 backdrop-blur-sm animate-in fade-in duration-200 sm:px-4 sm:py-8">
-      <div className="w-full min-w-0 max-w-5xl rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-[0_30px_100px_rgba(23,32,35,0.2)] animate-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:rounded-[1.75rem] sm:p-6 md:p-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-dark/45 px-2 py-3 backdrop-blur-sm animate-in fade-in duration-200 sm:px-4 sm:py-8">
+      <div className="my-auto max-h-[calc(100vh-1.5rem)] w-full min-w-0 max-w-5xl overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-[0_30px_100px_rgba(23,32,35,0.2)] animate-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:max-h-[calc(100vh-4rem)] sm:rounded-[1.75rem] sm:p-6 md:p-8">
         <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6 sm:gap-4">
           <div className="min-w-0">
             <h3 className="break-words text-xl font-semibold text-dark sm:text-2xl">{title}</h3>
