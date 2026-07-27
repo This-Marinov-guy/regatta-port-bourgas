@@ -6,7 +6,7 @@ export function formatDisplayDate(value: string | Date | null | undefined) {
   }
 
   const parsed = moment(value)
-  return parsed.isValid() ? parsed.format('DD/MM/YYYY') : ''
+  return parsed.isValid() ? parsed.format('DD-MM-YYYY') : ''
 }
 
 export function formatDisplayDateRange(

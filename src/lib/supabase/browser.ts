@@ -2,5 +2,11 @@ import { createBrowserClient } from '@supabase/ssr'
 import { getSupabasePublishableKey, getSupabaseUrl } from './config'
 
 export function createSupabaseBrowserClient() {
-  return createBrowserClient(getSupabaseUrl(), getSupabasePublishableKey())
+  return createBrowserClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    auth: {
+      experimental: {
+        passkey: true
+      }
+    }
+  })
 }

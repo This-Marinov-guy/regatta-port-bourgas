@@ -1,0 +1,15 @@
+{
+  "name": "minimatch",
+  "version": "10.2.5",
+  "private": true,
+  "main": "index.cjs",
+  "exports": {
+    ".": {
+      "require": "./index.cjs",
+      "default": "./index.cjs"
+    }
+  },
+  "dependencies": {
+    "minimatch-native": "npm:minimatch@10.2.5"
+  }
+}

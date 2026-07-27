@@ -94,7 +94,11 @@ enabled = true
 # in emails.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = [
+  "https://127.0.0.1:3000",
+  "http://127.0.0.1:3000/**",
+  "http://localhost:3000/**"
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # If disabled, the refresh token will never expire.
@@ -121,6 +125,16 @@ enable_confirmations = false
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
+
+# Passkeys are experimental and must also be enabled in the hosted project's
+# Authentication settings. These values make the local 127.0.0.1 setup usable.
+[auth.passkey]
+enabled = true
+
+[auth.webauthn]
+rp_display_name = "Regatta Port Bourgas"
+rp_id = "127.0.0.1"
+rp_origins = ["http://127.0.0.1:3000"]
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]

@@ -30,6 +30,7 @@ import {
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
 import EventDocumentReferenceField from "@/app/components/admin/EventDocumentReferenceField";
+import AdminPasskeySettings from "@/app/components/admin/AdminPasskeySettings";
 import { ExternalLink } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { validateEmail, validatePassword } from "@/lib/validation";
@@ -2006,6 +2007,8 @@ export default function AdminDashboard({
   >(null);
   const [registrationStatusFilter, setRegistrationStatusFilter] =
     useState<RegistrationStatus | null>(null);
+  const [registrationUnpaidOnlyFilter, setRegistrationUnpaidOnlyFilter] =
+    useState(false);
   const [registrationSearchQuery, setRegistrationSearchQuery] = useState("");
   const [downloadingBlanks, setDownloadingBlanks] = useState(false);
   const [downloadingPaidBlanks, setDownloadingPaidBlanks] = useState(false);
@@ -2022,7 +2025,9 @@ export default function AdminDashboard({
     string | null
   >(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<"email" | "password">("email");
+  const [settingsTab, setSettingsTab] = useState<
+    "email" | "password" | "passkeys"
+  >("email");
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [settingsCurrentPassword, setSettingsCurrentPassword] = useState("");
   const [settingsNewEmail, setSettingsNewEmail] = useState("");
@@ -2306,6 +2311,7 @@ export default function AdminDashboard({
     setRegistrationStatusBusyId(null);
     setRegistrationActionBusyKey(null);
     setRegistrationStatusFilter(null);
+    setRegistrationUnpaidOnlyFilter(false);
     setRegistrationSearchQuery("");
     setRejectionModal(null);
     setRejectionFeedback("");
@@ -2938,6 +2944,14 @@ export default function AdminDashboard({
       return false;
     }
 
+    if (
+      registrationUnpaidOnlyFilter &&
+      (!activeEntriesHasFee ||
+        getRegistrationPayment(registration)?.payment_status === "paid")
+    ) {
+      return false;
+    }
+
     if (!normalizedRegistrationSearch) {
       return true;
     }
@@ -2972,13 +2986,13 @@ export default function AdminDashboard({
       try {
         for (let index = 0; index < blankTargets.length; index += 1) {
           const registration = blankTargets[index];
-          const blankUrl = getRegistrationBlankUrl(registration);
-
-          if (!blankUrl) {
+          if (!getRegistrationBlankUrl(registration)) {
             continue;
           }
 
-          const response = await fetch(blankUrl);
+          const response = await fetch(
+            `/api/admin/registrations/${registration.id}/blank`,
+          );
 
           if (!response.ok) {
             throw new Error("Unable to download one of the blank forms.");
@@ -3924,6 +3938,24 @@ export default function AdminDashboard({
                   }{" "}
                   rejected
                 </button>
+                {activeEntriesHasFee ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRegistrationUnpaidOnlyFilter((current) => !current)
+                    }
+                    className={`rounded-full px-3 py-1 transition-all ${registrationUnpaidOnlyFilter ? "bg-red-300 font-semibold text-red-900" : "bg-red-100 text-red-700 hover:bg-red-200"}`}
+                  >
+                    {
+                      registrations.filter(
+                        (item) =>
+                          getRegistrationPayment(item)?.payment_status !==
+                          "paid",
+                      ).length
+                    }{" "}
+                    unpaid
+                  </button>
+                ) : null}
               </div>
 
               <div className="relative">
@@ -4421,9 +4453,11 @@ export default function AdminDashboard({
                                       <div className="mt-2 grid gap-2  text-dark/65 sm:grid-cols-1">
                                         <p>
                                           Date of birth:{" "}
-                                          {formatOptionalValue(
-                                            crewMember.date_of_birth ?? null,
-                                          )}
+                                          {crewMember.date_of_birth
+                                            ? formatTimestamp(
+                                                crewMember.date_of_birth,
+                                              )
+                                            : "-"}
                                         </p>
                                       </div>
                                     </div>
@@ -4670,7 +4704,7 @@ export default function AdminDashboard({
         <AdminModal
           open={settingsOpen}
           title="Account settings"
-          description="Update the email or password for this admin account."
+          description="Update your email, password, and passkeys."
           onClose={closeSettings}
         >
           <div className="mb-5 flex gap-2 rounded-2xl border border-black/10 bg-black/[0.03] p-1">
@@ -4695,6 +4729,17 @@ export default function AdminDashboard({
               }`}
             >
               Change password
+            </button>
+            <button
+              type="button"
+              onClick={() => setSettingsTab("passkeys")}
+              className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition ${
+                settingsTab === "passkeys"
+                  ? "bg-white text-dark shadow-sm"
+                  : "text-dark/60 hover:text-dark"
+              }`}
+            >
+              Passkeys
             </button>
           </div>
 
@@ -4769,7 +4814,7 @@ export default function AdminDashboard({
                 </Button>
               </div>
             </form>
-          ) : (
+          ) : settingsTab === "password" ? (
             <form className="space-y-4" onSubmit={handleChangePassword}>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-dark">
@@ -4844,6 +4889,8 @@ export default function AdminDashboard({
                 </Button>
               </div>
             </form>
+          ) : (
+            <AdminPasskeySettings open={settingsOpen} />
           )}
         </AdminModal>
       </div>
