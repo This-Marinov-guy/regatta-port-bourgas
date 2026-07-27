@@ -11,7 +11,6 @@ import Footer from '../components/layout/footer';
 import CookieBanner from '../components/layout/cookie-banner';
 import SessionProviderComp from '../../providers/SessionProvider';
 import ScrollToTop from '../components/scroll-to-top';
-import LocalePersistence from '../components/layout/LocalePersistence';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.regattaportbourgas.org'
 
@@ -186,7 +185,6 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className="site-page-bg antialiased" suppressHydrationWarning>
-        <LocalePersistence locale={locale === "bg" ? "bg" : "en"} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

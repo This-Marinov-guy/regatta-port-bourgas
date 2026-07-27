@@ -80,6 +80,114 @@ function normalizeBoolean(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : fallback
 }
 
+function normalizeRegistrationRequiredText(value: unknown, fieldName: string) {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(`${fieldName} is required.`)
+  }
+
+  return value.trim()
+}
+
+function normalizeRegistrationOptionalText(value: unknown) {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function normalizeRegistrationEmail(value: unknown) {
+  const email = normalizeRegistrationRequiredText(value, 'Contact email')
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('Contact email must be a valid email address.')
+  }
+
+  return email
+}
+
+function normalizeRegistrationDate(value: unknown, fieldName: string) {
+  const date = normalizeRegistrationOptionalText(value)
+
+  if (!date) {
+    return null
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`${fieldName} must be a valid date in YYYY-MM-DD format.`)
+  }
+
+  return date
+}
+
+function normalizeRegistrationInteger(
+  value: unknown,
+  fieldName: string,
+  required = false,
+) {
+  if (!required && (value === null || value === undefined || value === '')) {
+    return null
+  }
+
+  const normalized =
+    typeof value === 'number'
+      ? value
+      : Number(typeof value === 'string' ? value.trim() : value)
+
+  if (!Number.isInteger(normalized) || normalized <= 0) {
+    throw new Error(`${fieldName} must be a whole number.`)
+  }
+
+  return normalized
+}
+
+function normalizeRegistrationDecimal(value: unknown, fieldName: string) {
+  const normalized =
+    typeof value === 'number'
+      ? value
+      : Number(typeof value === 'string' ? value.trim() : value)
+
+  if (!Number.isFinite(normalized) || normalized <= 0) {
+    throw new Error(`${fieldName} must be a positive number.`)
+  }
+
+  return normalized
+}
+
+function normalizeRegistrationCrewList(value: unknown) {
+  if (!Array.isArray(value)) {
+    throw new Error('Crew list must be an array.')
+  }
+
+  return value
+    .map((member) => {
+      if (!member || typeof member !== 'object') {
+        return null
+      }
+
+      const payload = member as {
+        name?: unknown
+        date_of_birth?: unknown
+      }
+      const name = normalizeRegistrationOptionalText(payload.name)
+      const dateOfBirth = normalizeRegistrationDate(
+        payload.date_of_birth,
+        'Crew member date of birth',
+      )
+
+      if (!name && !dateOfBirth) {
+        return null
+      }
+
+      return {
+        name: name ?? 'Unnamed crew member',
+        ...(dateOfBirth ? { date_of_birth: dateOfBirth } : {}),
+      }
+    })
+    .filter(Boolean)
+}
+
 function normalizeEventFee(input: Record<string, unknown>) {
   const rawAmount =
     typeof input.fee_amount === 'string' ? input.fee_amount.trim() : input.fee_amount
@@ -344,6 +452,77 @@ export async function listRegistrations(eventId?: string) {
     ...reg,
     generated_form_url: reg.blank_link ?? null,
   })) as RegistrationRecord[]
+}
+
+export function parseRegistrationAdminPayload(input: Record<string, unknown>) {
+  return {
+    boat_name: normalizeRegistrationRequiredText(input.boat_name, 'Boat name'),
+    border_number: normalizeRegistrationInteger(input.border_number, 'Border number'),
+    country: normalizeRegistrationRequiredText(input.country, 'Country'),
+    certificate_of_navigation: normalizeRegistrationInteger(
+      input.certificate_of_navigation,
+      'Certificate of navigation',
+    ),
+    certificate_of_navigation_expiry: normalizeRegistrationDate(
+      input.certificate_of_navigation_expiry,
+      'Navigation certificate expiry',
+    ),
+    model_design: normalizeRegistrationRequiredText(input.model_design, 'Model / design'),
+    sail_number: normalizeRegistrationRequiredText(input.sail_number, 'Sail number'),
+    boat_age: normalizeRegistrationInteger(input.boat_age, 'Boat age', true),
+    port_of_registry: normalizeRegistrationOptionalText(input.port_of_registry),
+    gph_irc: normalizeRegistrationRequiredText(input.gph_irc, 'GPH / IRC'),
+    loa: normalizeRegistrationDecimal(input.loa, 'LOA'),
+    boat_color: normalizeRegistrationOptionalText(input.boat_color),
+    yacht_club: normalizeRegistrationOptionalText(input.yacht_club),
+    skipper_name: normalizeRegistrationRequiredText(input.skipper_name, 'Skipper name'),
+    skipper_yacht_club: normalizeRegistrationRequiredText(
+      input.skipper_yacht_club,
+      'Skipper yacht club',
+    ),
+    charterer_name: normalizeRegistrationOptionalText(input.charterer_name),
+    certificate_of_competency: normalizeRegistrationRequiredText(
+      input.certificate_of_competency,
+      'Certificate of competency',
+    ),
+    certificate_of_competency_expiry: normalizeRegistrationDate(
+      input.certificate_of_competency_expiry,
+      'Competency certificate expiry',
+    ),
+    contact_name: normalizeRegistrationRequiredText(input.contact_name, 'Contact name'),
+    contact_phone: normalizeRegistrationRequiredText(input.contact_phone, 'Contact phone'),
+    contact_email: normalizeRegistrationEmail(input.contact_email),
+    receive_documents_by_email: normalizeBoolean(input.receive_documents_by_email),
+    crew_insurance: normalizeBoolean(input.crew_insurance),
+    third_party_insurance: normalizeBoolean(input.third_party_insurance),
+    disclaimer_accepted: normalizeBoolean(input.disclaimer_accepted),
+    gdpr_accepted: normalizeBoolean(input.gdpr_accepted),
+    crew_list: normalizeRegistrationCrewList(input.crew_list),
+  }
+}
+
+export async function updateRegistrationDetails(
+  id: string,
+  input: Record<string, unknown>,
+) {
+  const supabase = createSupabaseServiceClient()
+  const updatePayload = parseRegistrationAdminPayload(input)
+  const { data, error } = await supabase
+    .from('registrations')
+    .update(updatePayload)
+    .eq('id', id)
+    .is('deleted_at', null)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    ...data,
+    generated_form_url: data.blank_link ?? null,
+  } as RegistrationRecord
 }
 
 export async function updateRegistrationStatus(

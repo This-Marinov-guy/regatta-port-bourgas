@@ -31,6 +31,9 @@ import {
 } from "@/app/components/ui/accordion";
 import EventDocumentReferenceField from "@/app/components/admin/EventDocumentReferenceField";
 import AdminPasskeySettings from "@/app/components/admin/AdminPasskeySettings";
+import RegistrationEditModal, {
+  type RegistrationEditableFields,
+} from "@/app/components/admin/RegistrationEditModal";
 import { ExternalLink } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { validateEmail, validatePassword } from "@/lib/validation";
@@ -2005,6 +2008,11 @@ export default function AdminDashboard({
   const [registrationActionBusyKey, setRegistrationActionBusyKey] = useState<
     string | null
   >(null);
+  const [editingRegistration, setEditingRegistration] =
+    useState<RegistrationRecord | null>(null);
+  const [registrationEditBusyId, setRegistrationEditBusyId] = useState<
+    string | null
+  >(null);
   const [registrationStatusFilter, setRegistrationStatusFilter] =
     useState<RegistrationStatus | null>(null);
   const [registrationUnpaidOnlyFilter, setRegistrationUnpaidOnlyFilter] =
@@ -2310,6 +2318,8 @@ export default function AdminDashboard({
     setRegistrationsLoading(false);
     setRegistrationStatusBusyId(null);
     setRegistrationActionBusyKey(null);
+    setEditingRegistration(null);
+    setRegistrationEditBusyId(null);
     setRegistrationStatusFilter(null);
     setRegistrationUnpaidOnlyFilter(false);
     setRegistrationSearchQuery("");
@@ -2494,6 +2504,34 @@ export default function AdminDashboard({
     setActiveEntriesEvent(item);
     setEntriesModalOpen(true);
     await loadRegistrations(item.id);
+  }
+
+  async function handleRegistrationDetailsSave(
+    registrationId: string,
+    fields: RegistrationEditableFields,
+  ) {
+    setRegistrationEditBusyId(registrationId);
+
+    try {
+      const payload = await readJson<{ data: RegistrationRecord }>(
+        `/api/admin/registrations/${registrationId}`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ editableFields: fields }),
+        },
+      );
+
+      setRegistrations((current) =>
+        current.map((item) =>
+          item.id === registrationId ? payload.data : item,
+        ),
+      );
+      setEditingRegistration(null);
+      toast.success("Registration details updated.");
+    } finally {
+      setRegistrationEditBusyId(null);
+    }
   }
 
   function updateEventDocumentRefs(
@@ -4034,6 +4072,8 @@ export default function AdminDashboard({
                   const isInsuranceActionBusy =
                     registrationActionBusyKey ===
                     `${registration.id}:insurance`;
+                  const isRegistrationEditBusy =
+                    registrationEditBusyId === registration.id;
                   return (
                     <AccordionItem
                       key={registration.id}
@@ -4142,6 +4182,21 @@ export default function AdminDashboard({
                               Actions
                             </p>
                             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+                              <button
+                                type="button"
+                                disabled={
+                                  isRegistrationEditBusy ||
+                                  isPaymentActionBusy ||
+                                  isInvoiceActionBusy ||
+                                  isMarkPaidActionBusy ||
+                                  isInsuranceActionBusy
+                                }
+                                onClick={() => setEditingRegistration(registration)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 font-medium text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/10 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Icon icon="ph:pencil-simple-bold" width={15} height={15} />
+                                Edit
+                              </button>
                               <button
                                 type="button"
                                 disabled={
@@ -4502,6 +4557,19 @@ export default function AdminDashboard({
             </div>
           )}
         </AdminModal>
+
+        <RegistrationEditModal
+          registration={editingRegistration}
+          saving={registrationEditBusyId === editingRegistration?.id}
+          onClose={() => {
+            if (!registrationEditBusyId) {
+              setEditingRegistration(null);
+            }
+          }}
+          onSave={(fields) =>
+            handleRegistrationDetailsSave(editingRegistration!.id, fields)
+          }
+        />
 
         <AdminModal
           open={eventDocumentsModalOpen}

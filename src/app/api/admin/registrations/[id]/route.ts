@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/adminAuth'
 import {
   deleteRegistration,
+  updateRegistrationDetails,
   updateRegistrationPaymentStatus,
   updateRegistrationStatus,
 } from '@/lib/adminContent'
@@ -18,7 +19,8 @@ export async function PATCH(
 
   try {
     const { id } = await params
-    const { status, feedback, paymentStatus } = (await request.json()) as {
+    const body = (await request.json()) as Record<string, unknown>
+    const { status, feedback, paymentStatus } = body as {
       status?: RegistrationRecord['status']
       feedback?: string | null
       paymentStatus?: 'paid'
@@ -30,6 +32,18 @@ export async function PATCH(
       }
 
       const data = await updateRegistrationPaymentStatus(id, paymentStatus)
+      return NextResponse.json({ data })
+    }
+
+    if (body.editableFields) {
+      if (!body.editableFields || typeof body.editableFields !== 'object') {
+        return NextResponse.json({ error: 'Invalid registration fields.' }, { status: 400 })
+      }
+
+      const data = await updateRegistrationDetails(
+        id,
+        body.editableFields as Record<string, unknown>,
+      )
       return NextResponse.json({ data })
     }
 
