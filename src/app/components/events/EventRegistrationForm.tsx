@@ -10,6 +10,7 @@ import { useLocale } from 'next-intl'
 import { Button } from '@/app/components/ui/button'
 import EventSubmissionStatusModal from '@/app/components/events/EventSubmissionStatusModal'
 import { PAYMENTS_ENABLED_DEFAULT } from '@/utils/defines/PAYMENTS'
+import { MANAGER_EMAIL } from '@/utils/defines/CONTACTS'
 
 type CrewMemberDraft = {
   name: string
@@ -69,13 +70,36 @@ type PaymentStatusResponse = {
   }
 }
 
-const MAX_INSURANCE_FILE_SIZE = 10 * 1024 * 1024
-const MAX_IMAGE_DIMENSION = 2400
-const IMAGE_COMPRESSION_QUALITY_STEPS = [0.82, 0.72, 0.62, 0.5, 0.4]
+const MAX_INSURANCE_FILE_SIZE = 3 * 1024 * 1024
+const TARGET_INSURANCE_FILE_SIZE = 2.75 * 1024 * 1024
+const MAX_IMAGE_DIMENSION = 2000
+const IMAGE_DIMENSIONS = [MAX_IMAGE_DIMENSION, 1800, 1600, 1400, 1200]
+const IMAGE_COMPRESSION_QUALITY_STEPS = [0.82, 0.72, 0.62, 0.52, 0.42, 0.32]
 
 type InsuranceDocumentMessages = {
   insuranceDocumentTooLarge: string
   insuranceDocumentCompressionFailed: string
+}
+
+class InsuranceDocumentSizeError extends Error {}
+
+type InsuranceUploadError = {
+  message: string
+  canEmail: boolean
+}
+
+function getInsuranceEmailHref(eventId: string) {
+  const subject = 'Insurance document – Regatta Port Bourgas'
+  const body = [
+    'Hello,',
+    '',
+    'I could not upload an insurance document through the registration form.',
+    'Please find the document attached to this email.',
+    '',
+    `Event ID: ${eventId}`,
+  ].join('\n')
+
+  return `mailto:${MANAGER_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
 
 function syncSkipperIntoCrew(
@@ -192,16 +216,18 @@ const content = {
     insuranceBanner:
       "Please provide the insurance policies at the regatta email",
     insuranceDocumentsHelp:
-      "Upload one or more insurance files. Maximum 10 MB per file. Large images are compressed automatically before upload.",
+      "Upload one or more insurance files. Maximum 3 MB per file. Images are resized and compressed automatically before upload.",
     addInsuranceDocuments: "Add insurance documents",
     insuranceDocumentsDropzone:
       "Drag and drop insurance files here, or click to browse.",
     insuranceDocumentsRequired: "Please upload the insurance documents.",
     uploadingInsuranceDocuments: "Uploading insurance documents...",
     insuranceDocumentTooLarge:
-      "This file is too large. Please keep each document under 10 MB.",
+      "This file is still larger than 3 MB. Please choose another file or send this file by email.",
     insuranceDocumentCompressionFailed:
-      "We could not compress this image enough. Please upload a smaller file under 10 MB.",
+      "We could not resize this image below 3 MB. Please choose another file or send this file by email.",
+    insuranceDocumentEmailLink: "Email this file to the regatta team",
+    insuranceDocumentEmailHint: "Please attach the file to the email.",
     success:
       "Registration submitted successfully. Your local draft has been cleared. If you have not paid the entry fee, you can do it here.",
     successWithoutPayment:
@@ -297,16 +323,18 @@ const content = {
     insuranceBanner:
       "Моля изпратете застраховките и екипажния списък на емейла на регатата",
     insuranceDocumentsHelp:
-      "Качете един или повече файла със застраховки. Максимум 10 MB на файл. Големите изображения се компресират автоматично преди качване.",
+      "Качете един или повече файла със застраховки. Максимум 3 MB на файл. Изображенията се преоразмеряват и компресират автоматично преди качване.",
     addInsuranceDocuments: "Добави застрахователни документи",
     insuranceDocumentsDropzone:
       "Пуснете застрахователните файлове тук или натиснете, за да изберете.",
     insuranceDocumentsRequired: "Моля, качете застрахователните документи.",
     uploadingInsuranceDocuments: "Качване на застрахователни документи...",
     insuranceDocumentTooLarge:
-      "Файлът е твърде голям. Моля, всеки документ да бъде под 10 MB.",
+      "Файлът остава по-голям от 3 MB. Моля, изберете друг файл или го изпратете по имейл.",
     insuranceDocumentCompressionFailed:
-      "Не успяхме да компресираме това изображение достатъчно. Моля, качете по-малък файл под 10 MB.",
+      "Не успяхме да преоразмерим това изображение под 3 MB. Моля, изберете друг файл или го изпратете по имейл.",
+    insuranceDocumentEmailLink: "Изпратете файла по имейл до екипа на регатата",
+    insuranceDocumentEmailHint: "Моля, прикачете файла към имейла.",
     success:
       "Регистрацията е изпратена успешно. Локалната чернова беше изчистена. Ако все още не сте платили таксата за участие, можете да го направите оттук.",
     successWithoutPayment:
@@ -479,7 +507,7 @@ function LegalInfoModal({
         onClick={onClose}
       />
       <div className="relative mx-auto w-full max-w-3xl">
-        <div className="w-full rounded-[1.75rem] border border-black/10 bg-[#f8f6ef] p-6 shadow-2xl dark:border-white/10 dark:bg-[#11110f] sm:p-8">
+        <div className="max-h-[calc(100vh-3rem)] w-full overflow-y-auto rounded-[1.75rem] border border-black/10 bg-[#f8f6ef] p-6 shadow-2xl dark:border-white/10 dark:bg-[#11110f] sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-2xl font-semibold text-dark dark:text-white">
@@ -522,7 +550,12 @@ function scrollToElement(element: HTMLElement | null) {
 }
 
 function isCompressibleImage(file: File) {
-  return ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
+  return (
+    ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+    ['jpg', 'jpeg', 'png', 'webp'].includes(
+      file.name.split('.').pop()?.toLowerCase() ?? ''
+    )
+  )
 }
 
 function renameWithJpegExtension(name: string) {
@@ -557,39 +590,40 @@ async function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
 
 async function compressInsuranceImage(file: File) {
   const image = await loadImage(file)
-  const scale = Math.min(
-    1,
-    MAX_IMAGE_DIMENSION / Math.max(image.width, image.height)
-  )
-  const width = Math.max(1, Math.round(image.width * scale))
-  const height = Math.max(1, Math.round(image.height * scale))
-  const canvas = document.createElement('canvas')
+  const sourceDimension = Math.max(image.width, image.height)
 
-  canvas.width = width
-  canvas.height = height
+  for (const maxDimension of IMAGE_DIMENSIONS) {
+    const scale = Math.min(1, maxDimension / sourceDimension)
+    const width = Math.max(1, Math.round(image.width * scale))
+    const height = Math.max(1, Math.round(image.height * scale))
+    const canvas = document.createElement('canvas')
 
-  const context = canvas.getContext('2d')
+    canvas.width = width
+    canvas.height = height
 
-  if (!context) {
-    throw new Error('Unable to prepare the image for upload.')
-  }
+    const context = canvas.getContext('2d')
 
-  context.fillStyle = '#ffffff'
-  context.fillRect(0, 0, width, height)
-  context.drawImage(image, 0, 0, width, height)
-
-  for (const quality of IMAGE_COMPRESSION_QUALITY_STEPS) {
-    const blob = await canvasToBlob(canvas, quality)
-
-    if (!blob) {
-      continue
+    if (!context) {
+      throw new Error('Unable to prepare the image for upload.')
     }
 
-    if (blob.size <= MAX_INSURANCE_FILE_SIZE) {
-      return new File([blob], renameWithJpegExtension(file.name), {
-        type: 'image/jpeg',
-        lastModified: Date.now(),
-      })
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, width, height)
+    context.drawImage(image, 0, 0, width, height)
+
+    for (const quality of IMAGE_COMPRESSION_QUALITY_STEPS) {
+      const blob = await canvasToBlob(canvas, quality)
+
+      if (
+        blob?.size &&
+        blob.size <= TARGET_INSURANCE_FILE_SIZE &&
+        (blob.size <= file.size || sourceDimension > MAX_IMAGE_DIMENSION)
+      ) {
+        return new File([blob], renameWithJpegExtension(file.name), {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        })
+      }
     }
   }
 
@@ -601,23 +635,43 @@ async function prepareInsuranceDocument(
   t: InsuranceDocumentMessages
 ) {
   if (file.size <= MAX_INSURANCE_FILE_SIZE) {
-    return file
+    if (!isCompressibleImage(file)) {
+      return file
+    }
   }
 
   if (!isCompressibleImage(file)) {
-    throw new Error(t.insuranceDocumentTooLarge)
+    throw new InsuranceDocumentSizeError(t.insuranceDocumentTooLarge)
   }
 
-  const compressed = await compressInsuranceImage(file)
+  let compressed: File | null = null
+
+  try {
+    compressed = await compressInsuranceImage(file)
+  } catch {
+    if (file.size <= MAX_INSURANCE_FILE_SIZE) {
+      return file
+    }
+
+    throw new InsuranceDocumentSizeError(t.insuranceDocumentCompressionFailed)
+  }
 
   if (!compressed) {
-    throw new Error(t.insuranceDocumentCompressionFailed)
+    if (file.size <= MAX_INSURANCE_FILE_SIZE) {
+      return file
+    }
+
+    throw new InsuranceDocumentSizeError(t.insuranceDocumentCompressionFailed)
   }
 
   return compressed
 }
 
-async function uploadInsuranceDocument(file: File, eventId: string) {
+async function uploadInsuranceDocument(
+  file: File,
+  eventId: string,
+  messages: InsuranceDocumentMessages
+) {
   const formData = new FormData()
   formData.set('event_id', eventId)
   formData.set('file', file)
@@ -632,6 +686,13 @@ async function uploadInsuranceDocument(file: File, eventId: string) {
     | null
 
   if (!response.ok || !payload?.data?.url) {
+    if (
+      response.status === 413 ||
+      payload?.error?.toLowerCase().includes('too large')
+    ) {
+      throw new InsuranceDocumentSizeError(messages.insuranceDocumentTooLarge)
+    }
+
     throw new Error(payload?.error || 'Unable to upload the insurance document.')
   }
 
@@ -652,6 +713,8 @@ export default function EventRegistrationForm({
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [paymentsEnabled, setPaymentsEnabled] = useState(PAYMENTS_ENABLED_DEFAULT)
   const [insuranceUploading, setInsuranceUploading] = useState(false)
+  const [insuranceUploadError, setInsuranceUploadError] =
+    useState<InsuranceUploadError | null>(null)
   const [insuranceDragging, setInsuranceDragging] = useState(false)
   const [invalidFields, setInvalidFields] = useState<string[]>([])
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle')
@@ -660,6 +723,10 @@ export default function EventRegistrationForm({
   const [activeLegalModal, setActiveLegalModal] = useState<LegalModalKey | null>(null)
   const insuranceInputRef = useRef<HTMLInputElement>(null)
   const hydratedRef = useRef(false)
+  const insuranceEmailHref = useMemo(
+    () => getInsuranceEmailHref(eventId),
+    [eventId]
+  )
 
   useEffect(() => {
     if (!feeRequired) {
@@ -839,12 +906,13 @@ export default function EventRegistrationForm({
     }
 
     setInsuranceUploading(true)
+    setInsuranceUploadError(null)
 
     try {
       const uploadedUrls = await Promise.all(
         Array.from(files).map(async (file) => {
           const preparedFile = await prepareInsuranceDocument(file, t)
-          return uploadInsuranceDocument(preparedFile, eventId)
+          return uploadInsuranceDocument(preparedFile, eventId, t)
         })
       )
 
@@ -859,7 +927,10 @@ export default function EventRegistrationForm({
         ],
       }))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.error)
+      const isSizeError = error instanceof InsuranceDocumentSizeError
+      const message = error instanceof Error ? error.message : t.error
+      setInsuranceUploadError({ message, canEmail: isSizeError })
+      toast.error(message)
     } finally {
       setInsuranceUploading(false)
     }
@@ -1489,6 +1560,26 @@ export default function EventRegistrationForm({
                     </div>
                   </div>
                 </button>
+
+                {insuranceUploadError ? (
+                  <div
+                    role="alert"
+                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300"
+                  >
+                    <p>{insuranceUploadError.message}</p>
+                    {insuranceUploadError.canEmail ? (
+                      <p className="mt-1">
+                        {t.insuranceDocumentEmailHint}{' '}
+                        <a
+                          href={insuranceEmailHref}
+                          className="font-semibold underline underline-offset-2"
+                        >
+                          {t.insuranceDocumentEmailLink}
+                        </a>
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {form.insurance_documents.length > 0 ? (
                   <div className="space-y-3">

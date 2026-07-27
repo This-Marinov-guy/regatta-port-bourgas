@@ -5,7 +5,9 @@ import { createSupabaseServiceClient } from '@/lib/supabase/service'
 export const runtime = 'nodejs'
 
 const DOCUMENTS_BUCKET = 'documents'
-const MAX_FILE_SIZE = 10 * 1024 * 1024
+// Keep this below the platform's function request limit. The client also
+// optimizes images to this budget before sending the multipart request.
+const MAX_FILE_SIZE = 3 * 1024 * 1024
 const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
   'application/msword',
@@ -83,8 +85,11 @@ export async function POST(request: Request) {
 
     if (fileEntry.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'File is too large. The maximum size is 10 MB.' },
-        { status: 400 }
+        {
+          error: 'File is too large. The maximum size is 3 MB.',
+          code: 'FILE_TOO_LARGE',
+        },
+        { status: 413 }
       )
     }
 

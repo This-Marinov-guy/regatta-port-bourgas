@@ -114,7 +114,7 @@ export default function EventRegistrationModal({
 
   return (
     <div
-      className={`fixed inset-0 z-[100] backdrop-blur-sm transition-all duration-200 ease-out ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto backdrop-blur-sm transition-all duration-200 ease-out ${
         isVisible ? 'bg-black/65 opacity-100' : 'bg-black/0 opacity-0'
       }`}
     >
@@ -124,7 +124,7 @@ export default function EventRegistrationModal({
         onClick={closeModal}
       />
 
-      <div className="relative flex min-h-full w-full items-center justify-center overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+      <div className="relative flex min-h-full w-full items-center justify-center px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
         <div
           className={`mx-auto flex max-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col rounded-[2rem] border border-black/10 bg-[#f8f6ef] shadow-2xl transition-all duration-200 ease-out dark:border-white/10 dark:bg-[#11110f] sm:max-h-[calc(100vh-3rem)] ${
             isVisible

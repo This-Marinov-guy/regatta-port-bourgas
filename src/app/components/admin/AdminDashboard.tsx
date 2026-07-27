@@ -4592,7 +4592,7 @@ export default function AdminDashboard({
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => setRejectionModal(null)}
             />
-            <div className="relative w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-2xl">
+            <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
               <h3 className="text-xl font-semibold text-dark">
                 Reject registration
               </h3>
@@ -4656,7 +4656,7 @@ export default function AdminDashboard({
                 setDeleteRegistrationModal(null);
               }}
             />
-            <div className="relative w-full max-w-md rounded-[1.5rem] bg-white p-6 shadow-2xl">
+            <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-[1.5rem] bg-white p-6 shadow-2xl">
               <h3 className="text-xl font-semibold text-dark">
                 Delete registration
               </h3>

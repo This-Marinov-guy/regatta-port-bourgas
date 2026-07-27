@@ -52,7 +52,7 @@ export default function EventSubmissionStatusModal({
         />
       ) : null}
       <div className="relative mx-auto w-full max-w-xl">
-        <div className="w-full rounded-[1.75rem] border border-black/10 bg-[#f8f6ef] p-6 shadow-2xl dark:border-white/10 dark:bg-[#11110f] sm:p-8">
+        <div className="max-h-[calc(100vh-3rem)] w-full overflow-y-auto rounded-[1.75rem] border border-black/10 bg-[#f8f6ef] p-6 shadow-2xl dark:border-white/10 dark:bg-[#11110f] sm:p-8">
           <div className="flex flex-col items-center text-center">
             <div
               className={`inline-flex h-16 w-16 items-center justify-center rounded-full ${
