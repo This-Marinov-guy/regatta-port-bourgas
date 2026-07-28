@@ -500,7 +500,7 @@ function LegalInfoModal({
   onClose: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-sm">
+    <div data-modal-root className="fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-sm">
       <div
         className="absolute inset-0"
         aria-hidden="true"
@@ -1621,7 +1621,7 @@ export default function EventRegistrationForm({
               type="button"
               variant="outline"
               onClick={onCancel}
-              className="rounded-xl border-black/10 bg-white text-dark"
+              className="rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
             >
               {t.cancel}
             </Button>

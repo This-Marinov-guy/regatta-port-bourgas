@@ -43,7 +43,7 @@ export default function EventSubmissionStatusModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[145] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-sm">
+    <div data-modal-root className="fixed inset-0 z-[145] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-sm">
       {!isLoading ? (
         <div
           className="absolute inset-0"

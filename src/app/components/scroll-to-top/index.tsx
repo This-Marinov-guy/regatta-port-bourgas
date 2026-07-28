@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 
 export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const t = useTranslations('common');
 
   const scrollToTop = () => {
@@ -27,11 +28,24 @@ export default function ScrollToTop() {
     return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
 
+  useEffect(() => {
+    const toggleModalVisibility = () => {
+      setIsModalOpen(Boolean(document.querySelector('[data-modal-root]')));
+    };
+
+    toggleModalVisibility();
+
+    const observer = new MutationObserver(toggleModalVisibility);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="fixed bottom-8 right-8 z-999">
       <div className="flex items-center gap-2.5">
     
-        {isVisible && (
+        {isVisible && !isModalOpen && (
           <div
             onClick={scrollToTop}
             aria-label={t('scrollToTop')}

@@ -259,7 +259,7 @@ export default function RegistrationEditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-dark/45 px-2 py-3 backdrop-blur-sm sm:px-4 sm:py-8">
+    <div data-modal-root className="fixed inset-0 z-[60] flex items-center justify-center bg-dark/45 px-2 py-3 backdrop-blur-sm sm:px-4 sm:py-8">
       <div className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[1.25rem] border border-black/10 bg-white shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[1.75rem]">
         <div className="shrink-0 p-4 pb-0 sm:p-6 sm:pb-0 md:p-8 md:pb-0">
           <div className="mb-5 flex items-start justify-between gap-4">
@@ -365,7 +365,7 @@ export default function RegistrationEditModal({
         </div>
 
           <div className="flex shrink-0 flex-wrap justify-center gap-3 border-t border-black/10 bg-white px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700">
               Cancel
             </Button>
             <Button

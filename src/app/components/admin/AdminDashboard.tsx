@@ -958,7 +958,7 @@ function AdminModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-dark/45 px-2 py-3 backdrop-blur-sm animate-in fade-in duration-200 sm:px-4 sm:py-8">
+    <div data-modal-root className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-dark/45 px-2 py-3 backdrop-blur-sm animate-in fade-in duration-200 sm:px-4 sm:py-8">
       <div className="my-auto flex max-h-[calc(100vh-1.5rem)] w-full min-w-0 max-w-5xl flex-col overflow-hidden rounded-[1.25rem] border border-black/10 bg-white shadow-[0_30px_100px_rgba(23,32,35,0.2)] animate-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:max-h-[calc(100vh-4rem)] sm:rounded-[1.75rem]">
         <div className="shrink-0 p-4 pb-0 sm:p-6 sm:pb-0 md:p-8 md:pb-0">
           <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6 sm:gap-4">
@@ -4682,7 +4682,7 @@ export default function AdminDashboard({
 
         {/* Rejection confirmation modal */}
         {rejectionModal ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div data-modal-root className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => setRejectionModal(null)}
@@ -4718,7 +4718,7 @@ export default function AdminDashboard({
                   disabled={
                     registrationStatusBusyId === rejectionModal.registrationId
                   }
-                  className="w-auto min-w-32 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  className="w-auto min-w-32 rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
@@ -4755,7 +4755,7 @@ export default function AdminDashboard({
 
         {/* Delete registration confirmation modal */}
         {deleteRegistrationModal ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div data-modal-root className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => {
@@ -4782,7 +4782,7 @@ export default function AdminDashboard({
                     deletingRegistrationId ===
                     deleteRegistrationModal.registrationId
                   }
-                  className="w-auto min-w-32 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  className="w-auto min-w-32 rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
@@ -4916,7 +4916,7 @@ export default function AdminDashboard({
                   variant="outline"
                   onClick={closeSettings}
                   disabled={settingsBusy}
-                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  className="rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
@@ -4996,7 +4996,7 @@ export default function AdminDashboard({
                   variant="outline"
                   onClick={closeSettings}
                   disabled={settingsBusy}
-                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  className="rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
