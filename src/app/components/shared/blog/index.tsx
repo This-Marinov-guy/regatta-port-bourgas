@@ -44,7 +44,7 @@ const BlogSmall: React.FC = () => {
                             Stay ahead in the property market with expert advice and updates
                         </p>
                     </div>
-                    <Link href="/blogs" className='bg-dark dark:bg-white text-white dark:text-dark py-4 px-8 rounded-full hover:bg-primary duration-300' aria-label="Read all blog articles">
+                    <Link href="/blogs" className='bg-dark dark:bg-white text-white dark:text-dark py-4 px-6 rounded-full hover:bg-primary duration-300' aria-label="Read all blog articles">
                         Read all articles
                     </Link>
                 </div>

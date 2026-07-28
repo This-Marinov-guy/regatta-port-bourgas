@@ -40,7 +40,7 @@ export default function TermsTabs() {
             <TabsTrigger
               key={tab}
               value={tab}
-              className="min-w-0 flex-1 px-2 sm:min-w-[150px] sm:flex-none sm:px-4 md:px-6"
+              className="min-w-0 flex-1 px-2 sm:min-w-[150px] sm:flex-none sm:px-4 md:px-4"
             >
               <span className="truncate">{t(`tabs.${tab}`)}</span>
             </TabsTrigger>

@@ -59,7 +59,7 @@ export default function RegistrationPaymentAction({
       type="button"
       onClick={startCheckout}
       disabled={loading}
-      className="rounded-xl px-6 py-3 text-white"
+      className="rounded-xl px-4 py-3 text-white"
     >
       {loading ? loadingLabel : buttonLabel}
     </Button>

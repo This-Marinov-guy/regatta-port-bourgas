@@ -113,7 +113,7 @@ export default function GalleryAccordionClient({
             value={year}
             className="border-b border-black/10 dark:border-white/10 transition-all duration-300"
           >
-            <AccordionTrigger className="px-4 sm:px-6 transition-all duration-300 hover:bg-dark/5 dark:hover:bg-white/5">
+            <AccordionTrigger className="px-4 sm:px-4 transition-all duration-300 hover:bg-dark/5 dark:hover:bg-white/5">
               <div className="flex items-center justify-between w-full">
                 <span className="text-base sm:text-lg md:text-xl font-semibold transition-colors duration-200">
                   {year}
@@ -124,7 +124,7 @@ export default function GalleryAccordionClient({
               </div>
             </AccordionTrigger>
 
-            <AccordionContent className="px-4 sm:px-6 pb-6 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <AccordionContent className="px-4 sm:px-4 pb-6 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
               <GalleryPhotoGrid
                 photos={photosByYear[year]}
                 year={year}

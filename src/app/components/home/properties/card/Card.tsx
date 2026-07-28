@@ -60,7 +60,7 @@ const PropertyCard: React.FC<{ item: PropertyHomes }> = ({ item }) => {
                 {beds} Bedrooms
               </p>
             </div>
-            <div className='flex flex-col gap-2 border-e border-black/10 dark:border-white/20 px-2 xs:px-4 mobile:px-8'>
+            <div className='flex flex-col gap-2 border-e border-black/10 dark:border-white/20 px-2 xs:px-4 mobile:px-6'>
               <Icon icon={'solar:bath-linear'} width={20} height={20} />
               <p className=' mobile:text-base font-normal text-black dark:text-white'>
                 {baths} Bathrooms

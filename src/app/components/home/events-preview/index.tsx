@@ -30,7 +30,7 @@ export default async function EventsPreview() {
 
           <Link
             href="/events"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-primary bg-primary text-white hover:bg-primary/90 transition-colors duration-300 font-semibold  sm:text-base"
+            className="inline-flex items-center justify-center px-4 py-3 rounded-md border border-primary bg-primary text-white hover:bg-primary/90 transition-colors duration-300 font-semibold  sm:text-base"
           >
             {t("events.seeMore")}
             <Image src="/images/SVGs/arrow-right.svg" alt="Arrow Right" className='ml-2 brightness-0 invert' width={24} height={24} />

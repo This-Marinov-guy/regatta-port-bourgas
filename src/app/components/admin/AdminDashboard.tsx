@@ -129,6 +129,12 @@ const statusOptions = [
 const interactiveButtonClass =
   "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md";
 
+const adminModalFooterClassName =
+  "sticky bottom-0 z-20 -mx-4 -mb-4 mt-6 border-t border-black/10 bg-white/95 px-4 pb-4 pt-3 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6 md:-mx-8 md:-mb-8 md:px-8 md:pb-8";
+
+const adminConfirmFooterClassName =
+  "sticky bottom-0 z-20 -mx-6 -mb-6 mt-5 border-t border-black/10 bg-white/95 px-6 pb-6 pt-4 backdrop-blur";
+
 const imageUrlPattern = /\.(avif|bmp|gif|ico|jpe?g|png|svg|webp)(?:[?#].*)?$/i;
 
 const editorImageSizes = {
@@ -953,25 +959,29 @@ function AdminModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-dark/45 px-2 py-3 backdrop-blur-sm animate-in fade-in duration-200 sm:px-4 sm:py-8">
-      <div className="my-auto max-h-[calc(100vh-1.5rem)] w-full min-w-0 max-w-5xl overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-[0_30px_100px_rgba(23,32,35,0.2)] animate-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:max-h-[calc(100vh-4rem)] sm:rounded-[1.75rem] sm:p-6 md:p-8">
-        <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6 sm:gap-4">
-          <div className="min-w-0">
-            <h3 className="break-words text-xl font-semibold text-dark sm:text-2xl">{title}</h3>
-            <p className="mt-1  leading-6 text-dark/60">{description}</p>
-          </div>
+      <div className="my-auto flex max-h-[calc(100vh-1.5rem)] w-full min-w-0 max-w-5xl flex-col overflow-hidden rounded-[1.25rem] border border-black/10 bg-white shadow-[0_30px_100px_rgba(23,32,35,0.2)] animate-in zoom-in-95 slide-in-from-bottom-6 duration-300 sm:max-h-[calc(100vh-4rem)] sm:rounded-[1.75rem]">
+        <div className="shrink-0 p-4 pb-0 sm:p-6 sm:pb-0 md:p-8 md:pb-0">
+          <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6 sm:gap-4">
+            <div className="min-w-0">
+              <h3 className="break-words text-xl font-semibold text-dark sm:text-2xl">{title}</h3>
+              <p className="mt-1  leading-6 text-dark/60">{description}</p>
+            </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-red-600 ${interactiveButtonClass}`}
-          >
-            <Icon icon="ph:x-bold" width={22} height={22} />
-          </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              title="Close"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-red-600 ${interactiveButtonClass}`}
+            >
+              <Icon icon="ph:x-bold" width={22} height={22} />
+            </button>
+          </div>
         </div>
 
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-0 sm:p-6 sm:pt-0 md:p-8 md:pt-0">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -1546,7 +1556,7 @@ function HtmlEditor({
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className={`${adminModalFooterClassName} flex flex-wrap items-center justify-center gap-3`}>
             <Button type="submit" className="rounded-xl px-5 text-white">
               Save link
             </Button>
@@ -1564,7 +1574,7 @@ function HtmlEditor({
               type="button"
               variant="outline"
               onClick={closeLinkModal}
-              className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+              className={`rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700 ${interactiveButtonClass}`}
             >
               Cancel
             </Button>
@@ -3063,7 +3073,7 @@ export default function AdminDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_46%,#ffffff_100%)] px-5 py-6 text-dark md:px-8 md:py-8">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_46%,#ffffff_100%)] px-5 py-6 text-dark md:px-6 md:py-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 rounded-[2rem] border border-black/10 bg-white/90 p-6 shadow-[0_24px_80px_rgba(23,32,35,0.1)] backdrop-blur md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
@@ -3758,14 +3768,15 @@ export default function AdminDashboard({
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <div className={`${adminModalFooterClassName} flex flex-col items-center justify-center gap-3 sm:flex-row sm:items-center`}>
               <Button
                 type="submit"
                 disabled={eventsBusy}
-                className="w-full rounded-xl px-5 text-white sm:w-auto"
+                aria-label={eventsBusy ? "Saving event" : undefined}
+                className="w-auto rounded-xl px-5 text-white"
               >
                 {eventsBusy
-                  ? "Saving..."
+                  ? <Icon icon="ph:spinner-gap-bold" width={18} height={18} className="animate-spin" aria-hidden="true" />
                   : eventForm.id
                     ? "Update event"
                     : "Create event"}
@@ -3774,7 +3785,8 @@ export default function AdminDashboard({
                 type="button"
                 variant="outline"
                 onClick={closeEventEditor}
-                className={`w-full rounded-xl border-black/10 bg-white text-dark sm:w-auto ${interactiveButtonClass}`}
+                disabled={eventsBusy}
+                className={`w-auto rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700 ${interactiveButtonClass}`}
               >
                 Cancel
               </Button>
@@ -3887,14 +3899,15 @@ export default function AdminDashboard({
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-3">
+            <div className={`${adminModalFooterClassName} flex items-center justify-center gap-3`}>
               <Button
                 type="submit"
                 disabled={newsBusy}
+                aria-label={newsBusy ? "Saving news item" : undefined}
                 className="rounded-xl px-5 text-white"
               >
                 {newsBusy
-                  ? "Saving..."
+                  ? <Icon icon="ph:spinner-gap-bold" width={18} height={18} className="animate-spin" aria-hidden="true" />
                   : newsForm.id
                     ? "Update news item"
                     : "Create news item"}
@@ -3903,7 +3916,8 @@ export default function AdminDashboard({
                 type="button"
                 variant="outline"
                 onClick={closeNewsEditor}
-                className={`rounded-xl border-black/10 bg-white text-dark ${interactiveButtonClass}`}
+                disabled={newsBusy}
+                className={`rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700 ${interactiveButtonClass}`}
               >
                 Cancel
               </Button>
@@ -4138,7 +4152,7 @@ export default function AdminDashboard({
                             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
                               Registration status
                             </p>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
                               {(
                                 [
                                   "pending",
@@ -4166,12 +4180,12 @@ export default function AdminDashboard({
                                       );
                                     }
                                   }}
-                                  className={`rounded-full border px-3 py-1  font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${getRegistrationStatusButtonClasses(
+                                  className={`inline-flex w-full min-w-0 items-center justify-center rounded-full border px-1.5 py-1 text-xs font-semibold leading-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-3 sm:text-base ${getRegistrationStatusButtonClasses(
                                     status,
                                     registration.status,
                                   )}`}
                                 >
-                                  {status}
+                                  <span className="min-w-0 truncate">{status}</span>
                                 </button>
                               ))}
                             </div>
@@ -4181,7 +4195,7 @@ export default function AdminDashboard({
                             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
                               Actions
                             </p>
-                            <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+                            <div className="grid max-w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                               <button
                                 type="button"
                                 disabled={
@@ -4192,10 +4206,10 @@ export default function AdminDashboard({
                                   isInsuranceActionBusy
                                 }
                                 onClick={() => setEditingRegistration(registration)}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 font-medium text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/10 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 font-medium text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/10 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                               >
-                                <Icon icon="ph:pencil-simple-bold" width={15} height={15} />
-                                Edit
+                                <Icon className="shrink-0" icon="ph:pencil-simple-bold" width={15} height={15} />
+                                <span className="min-w-0 truncate">Edit</span>
                               </button>
                               <button
                                 type="button"
@@ -4209,14 +4223,15 @@ export default function AdminDashboard({
                                 onClick={() =>
                                   previewRegistrationForm(registration)
                                 }
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5 font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                               >
                                 <Icon
+                                  className="shrink-0"
                                   icon="ph:file-pdf-bold"
                                   width={15}
                                   height={15}
                                 />
-                                Preview form
+                                <span className="min-w-0 truncate">Preview form</span>
                               </button>
                               <button
                                 type="button"
@@ -4231,16 +4246,19 @@ export default function AdminDashboard({
                                 onClick={() => {
                                   handlePreviewInsuranceDocuments(registration);
                                 }}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5 font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                               >
                                 <Icon
+                                  className="shrink-0"
                                   icon="ph:shield-check-bold"
                                   width={15}
                                   height={15}
                                 />
-                                {isInsuranceActionBusy
-                                  ? "Opening insurance..."
-                                  : "Preview insurance"}
+                                <span className="min-w-0 truncate">
+                                  {isInsuranceActionBusy
+                                    ? "Opening insurance..."
+                                    : "Preview insurance"}
+                                </span>
                               </button>
                               {activeEntriesHasFee ? (
                                 <button
@@ -4258,18 +4276,21 @@ export default function AdminDashboard({
                                       registration,
                                     );
                                   }}
-                                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5 font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                                 >
                                   <Icon
+                                    className="shrink-0"
                                     icon="ph:credit-card-bold"
                                     width={15}
                                     height={15}
                                   />
-                                  {isPaymentActionBusy
-                                    ? "Generating payment link..."
-                                    : paymentsEnabled
-                                      ? "Generate payment link"
-                                      : "Payments unavailable"}
+                                  <span className="min-w-0 truncate">
+                                    {isPaymentActionBusy
+                                      ? "Generating payment link..."
+                                      : paymentsEnabled
+                                        ? "Generate payment link"
+                                        : "Payments unavailable"}
+                                  </span>
                                 </button>
                               ) : null}
                               {isUnpaid ? (
@@ -4286,16 +4307,19 @@ export default function AdminDashboard({
                                       registration.id,
                                     );
                                   }}
-                                  className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5  font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5 font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                                 >
                                   <Icon
+                                    className="shrink-0"
                                     icon="ph:check-circle-bold"
                                     width={15}
                                     height={15}
                                   />
-                                  {isMarkPaidActionBusy
-                                    ? "Marking as paid..."
-                                    : "Mark as paid"}
+                                  <span className="min-w-0 truncate">
+                                    {isMarkPaidActionBusy
+                                      ? "Marking as paid..."
+                                      : "Mark as paid"}
+                                  </span>
                                 </button>
                               ) : null}
 
@@ -4314,16 +4338,19 @@ export default function AdminDashboard({
                                     boatName: registration.boat_name,
                                   })
                                 }
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 font-medium text-red-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 font-medium text-red-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                               >
                                 <Icon
+                                  className="shrink-0"
                                   icon="ph:trash-bold"
                                   width={15}
                                   height={15}
                                 />
-                                {deletingRegistrationId === registration.id
-                                  ? "Deleting..."
-                                  : "Delete"}
+                                <span className="min-w-0 truncate">
+                                  {deletingRegistrationId === registration.id
+                                    ? "Deleting..."
+                                    : "Delete"}
+                                </span>
                               </button>
                             </div>
                           </div>
@@ -4684,17 +4711,25 @@ export default function AdminDashboard({
                   className="mt-2 w-full rounded-xl border border-black/15 bg-black/[0.02] px-4 py-3 text-dark placeholder:text-dark/30 focus:border-black/30 focus:outline-none"
                 />
               </div>
-              <div className="mt-5 flex gap-3">
+              <div className={`${adminConfirmFooterClassName} flex justify-center gap-3`}>
                 <Button
                   variant="outline"
                   onClick={() => setRejectionModal(null)}
-                  className="flex-1 rounded-xl border-black/10"
+                  disabled={
+                    registrationStatusBusyId === rejectionModal.registrationId
+                  }
+                  className="w-auto min-w-32 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
                 <Button
                   disabled={
                     registrationStatusBusyId === rejectionModal.registrationId
+                  }
+                  aria-label={
+                    registrationStatusBusyId === rejectionModal.registrationId
+                      ? "Confirming rejection"
+                      : undefined
                   }
                   onClick={() => {
                     const { registrationId } = rejectionModal;
@@ -4705,9 +4740,13 @@ export default function AdminDashboard({
                       rejectionFeedback.trim() || undefined,
                     );
                   }}
-                  className="flex-1 rounded-xl bg-red-600 text-white hover:bg-red-700"
+                  className="w-auto min-w-32 rounded-xl bg-red-600 text-white hover:bg-red-700"
                 >
-                  Confirm rejection
+                  {registrationStatusBusyId === rejectionModal.registrationId ? (
+                    <Icon icon="ph:spinner-gap-bold" width={18} height={18} className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    "Confirm rejection"
+                  )}
                 </Button>
               </div>
             </div>
@@ -4735,7 +4774,7 @@ export default function AdminDashboard({
                 row remains in the database and can be restored by clearing
                 its <code className="text-xs">deleted_at</code> field.
               </p>
-              <div className="mt-5 flex gap-3">
+              <div className={`${adminConfirmFooterClassName} flex justify-center gap-3`}>
                 <Button
                   variant="outline"
                   onClick={() => setDeleteRegistrationModal(null)}
@@ -4743,7 +4782,7 @@ export default function AdminDashboard({
                     deletingRegistrationId ===
                     deleteRegistrationModal.registrationId
                   }
-                  className="flex-1 rounded-xl border-black/10"
+                  className="w-auto min-w-32 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
@@ -4757,12 +4796,20 @@ export default function AdminDashboard({
                       deleteRegistrationModal.registrationId,
                     );
                   }}
-                  className="flex-1 rounded-xl bg-red-600 text-white hover:bg-red-700"
+                  aria-label={
+                    deletingRegistrationId ===
+                    deleteRegistrationModal.registrationId
+                      ? "Deleting registration"
+                      : undefined
+                  }
+                  className="w-auto min-w-32 rounded-xl bg-red-600 text-white hover:bg-red-700"
                 >
                   {deletingRegistrationId ===
-                  deleteRegistrationModal.registrationId
-                    ? "Deleting..."
-                    : "Confirm delete"}
+                  deleteRegistrationModal.registrationId ? (
+                    <Icon icon="ph:spinner-gap-bold" width={18} height={18} className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    "Confirm delete"
+                  )}
                 </Button>
               </div>
             </div>
@@ -4863,22 +4910,27 @@ export default function AdminDashboard({
                 well). The email is only updated after the link is opened.
               </p>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className={`${adminModalFooterClassName} flex justify-center gap-3`}>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={closeSettings}
                   disabled={settingsBusy}
-                  className="rounded-xl border-black/10"
+                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={settingsBusy}
+                  aria-label={settingsBusy ? "Saving email" : undefined}
                   className="rounded-xl bg-primary text-white hover:bg-primary/90"
                 >
-                  {settingsBusy ? "Saving..." : "Update email"}
+                  {settingsBusy ? (
+                    <Icon icon="ph:spinner-gap-bold" width={18} height={18} className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    "Update email"
+                  )}
                 </Button>
               </div>
             </form>
@@ -4938,22 +4990,27 @@ export default function AdminDashboard({
                 Minimum 6 characters. You will stay signed in after the change.
               </p>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className={`${adminModalFooterClassName} flex justify-center gap-3`}>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={closeSettings}
                   disabled={settingsBusy}
-                  className="rounded-xl border-black/10"
+                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={settingsBusy}
+                  aria-label={settingsBusy ? "Saving password" : undefined}
                   className="rounded-xl bg-primary text-white hover:bg-primary/90"
                 >
-                  {settingsBusy ? "Saving..." : "Update password"}
+                  {settingsBusy ? (
+                    <Icon icon="ph:spinner-gap-bold" width={18} height={18} className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    "Update password"
+                  )}
                 </Button>
               </div>
             </form>

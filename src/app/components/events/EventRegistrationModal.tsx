@@ -124,7 +124,7 @@ export default function EventRegistrationModal({
         onClick={closeModal}
       />
 
-      <div className="relative flex min-h-full w-full items-center justify-center px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+      <div className="relative flex min-h-full w-full items-center justify-center px-4 py-4 sm:px-4 sm:py-6 lg:px-10 lg:py-8">
         <div
           className={`mx-auto flex max-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col rounded-[2rem] border border-black/10 bg-[#f8f6ef] shadow-2xl transition-all duration-200 ease-out dark:border-white/10 dark:bg-[#11110f] sm:max-h-[calc(100vh-3rem)] ${
             isVisible
@@ -132,7 +132,7 @@ export default function EventRegistrationModal({
               : 'translate-y-6 scale-[0.985] opacity-0'
           }`}
         >
-          <div className="sticky top-0 z-10 rounded-t-[2rem] border-b border-black/10 bg-[#f8f6ef]/95 px-5 py-5 pr-16 backdrop-blur dark:border-white/10 dark:bg-[#11110f]/95 sm:px-8 sm:pr-20">
+          <div className="sticky top-0 z-10 rounded-t-[2rem] border-b border-black/10 bg-[#f8f6ef]/95 px-5 py-5 pr-16 backdrop-blur dark:border-white/10 dark:bg-[#11110f]/95 sm:px-6 sm:pr-20">
             <button
               type="button"
               onClick={closeModal}
@@ -152,7 +152,7 @@ export default function EventRegistrationModal({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6">
+          <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-6">
             <EventRegistrationForm
               eventId={eventId}
               feeRequired={feeRequired}

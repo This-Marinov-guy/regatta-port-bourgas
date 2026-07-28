@@ -7,6 +7,8 @@ export const CLIENT_REGION_STORAGE_KEY = 'regatta-ip-region'
 export const CLIENT_MANUAL_LOCALE_STORAGE_KEY = 'regatta-manual-locale'
 export const CLIENT_LOCALE_HEADER = 'x-regatta-locale'
 export const CLIENT_LOCALE_COOKIE = 'NEXT_LOCALE'
+export const CLIENT_REGION_COOKIE = 'REGATTA_REGION'
+export const CLIENT_MANUAL_LOCALE_COOKIE = 'REGATTA_MANUAL_LOCALE'
 
 export type ClientRegion = {
   countryCode: string
@@ -93,6 +95,7 @@ export function persistClientRegion(countryCode: string, locale: AppLocale) {
         locale,
       } satisfies ClientRegion),
     )
+    document.cookie = `${CLIENT_REGION_COOKIE}=${countryCode.toUpperCase()}; path=/; max-age=31536000; SameSite=Lax`
   } catch {
     // Ignore localStorage failures and keep the current locale for this visit.
   }
@@ -121,6 +124,7 @@ export function persistManualClientLocale(locale: AppLocale) {
 
   try {
     window.localStorage.setItem(CLIENT_MANUAL_LOCALE_STORAGE_KEY, locale)
+    document.cookie = `${CLIENT_MANUAL_LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; SameSite=Lax`
   } catch {
     // Ignore localStorage failures and keep the current locale for this visit.
   }

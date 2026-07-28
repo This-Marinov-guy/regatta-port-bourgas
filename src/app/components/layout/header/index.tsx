@@ -290,7 +290,7 @@ const Header: React.FC = () => {
                   <li className="mt-6">
                     <button
                       onClick={() => handleSignOut()}
-                      className="inline-flex items-center gap-3 rounded-full border border-primary bg-primary px-6 py-3 text-base font-semibold leading-4 text-white transition duration-300 hover:bg-transparent hover:text-primary"
+                      className="inline-flex items-center gap-3 rounded-full border border-primary bg-primary px-4 py-3 text-base font-semibold leading-4 text-white transition duration-300 hover:bg-transparent hover:text-primary"
                     >
                       <Icon icon="ph:sign-out-bold" width={18} height={18} />
                       Sign Out

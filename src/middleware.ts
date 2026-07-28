@@ -2,9 +2,10 @@ import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import { routing } from './i18n/routing';
 import {
+  CLIENT_MANUAL_LOCALE_COOKIE,
   CLIENT_LOCALE_COOKIE,
+  CLIENT_REGION_COOKIE,
   isAppLocale,
-  type AppLocale,
 } from './lib/locale';
 
 const intlMiddleware = createMiddleware(routing);
@@ -18,26 +19,47 @@ function getCountryCode(request: Request) {
   ).trim().toUpperCase();
 }
 
-function getServerLocale(request: Request): AppLocale {
-  const savedLocale = request.headers.get('cookie')?.match(
-    new RegExp(`(?:^|;\\s*)${CLIENT_LOCALE_COOKIE}=([^;]+)`),
+function getCookie(request: Request, name: string) {
+  return request.headers.get('cookie')?.match(
+    new RegExp(`(?:^|;\\s*)${name}=([^;]+)`),
   )?.[1];
+}
 
-  if (isAppLocale(savedLocale)) {
-    return savedLocale;
+function getServerLocale(request: Request) {
+  const manualLocale = getCookie(request, CLIENT_MANUAL_LOCALE_COOKIE);
+  if (isAppLocale(manualLocale)) {
+    return { locale: manualLocale, countryCode: 'MANUAL' } as const;
   }
 
-  if (getCountryCode(request) === 'BG') {
-    return 'bg';
+  const countryCode = getCountryCode(request);
+  if (countryCode) {
+    return {
+      locale: countryCode === 'BG' ? 'bg' : 'en',
+      countryCode,
+    } as const;
+  }
+
+  const cachedCountryCode = getCookie(request, CLIENT_REGION_COOKIE)?.toUpperCase();
+  if (cachedCountryCode && cachedCountryCode !== 'UNKNOWN') {
+    return {
+      locale: cachedCountryCode === 'BG' ? 'bg' : 'en',
+      countryCode: cachedCountryCode,
+    } as const;
   }
 
   const acceptLanguage = request.headers.get('accept-language') || '';
-  return /(?:^|,|-)bg(?:-|,|;|$)/i.test(acceptLanguage) ? 'bg' : 'en';
+  const locale = /(?:^|,|-)bg(?:-|,|;|$)/i.test(acceptLanguage) ? 'bg' : 'en';
+  const savedLocale = getCookie(request, CLIENT_LOCALE_COOKIE);
+
+  return {
+    locale: isAppLocale(savedLocale) ? savedLocale : locale,
+    countryCode: 'UNKNOWN',
+  } as const;
 }
 
 export default function middleware(request: Parameters<typeof intlMiddleware>[0]) {
   if (request.nextUrl.pathname === '/') {
-    const locale = getServerLocale(request);
+    const { locale, countryCode } = getServerLocale(request);
     const target = request.nextUrl.clone();
     target.pathname = `/${locale}`;
 
@@ -47,6 +69,13 @@ export default function middleware(request: Parameters<typeof intlMiddleware>[0]
       maxAge: 31536000,
       sameSite: 'lax',
     });
+    if (countryCode !== 'MANUAL') {
+      response.cookies.set(CLIENT_REGION_COOKIE, countryCode, {
+        path: '/',
+        maxAge: 31536000,
+        sameSite: 'lax',
+      });
+    }
     return response;
   }
 

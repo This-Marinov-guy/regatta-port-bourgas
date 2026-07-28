@@ -259,27 +259,30 @@ export default function RegistrationEditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-dark/45 px-2 py-3 backdrop-blur-sm sm:px-4 sm:py-8">
-      <div className="my-auto max-h-[calc(100vh-1.5rem)] w-full max-w-5xl overflow-y-auto rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[1.75rem] sm:p-6 md:p-8">
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-semibold text-dark sm:text-2xl">Edit entry</h3>
-            <p className="mt-1 text-sm leading-6 text-dark/60">
-              Update the submitted boat, skipper, contact, crew and declaration fields.
-            </p>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-dark/45 px-2 py-3 backdrop-blur-sm sm:px-4 sm:py-8">
+      <div className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[1.25rem] border border-black/10 bg-white shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[1.75rem]">
+        <div className="shrink-0 p-4 pb-0 sm:p-6 sm:pb-0 md:p-8 md:pb-0">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-semibold text-dark sm:text-2xl">Edit entry</h3>
+              <p className="mt-1 text-sm leading-6 text-dark/60">
+                Update the submitted boat, skipper, contact, crew and declaration fields.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              aria-label="Close"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Icon icon="ph:x-bold" width={22} height={22} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            aria-label="Close"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Icon icon="ph:x-bold" width={22} height={22} />
-          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 pt-0 sm:p-6 sm:pt-0 md:p-8 md:pt-0">
           <Section title="Boat information">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Boat name" value={fields.boat_name} onChange={(value) => updateField("boat_name", value)} required />
@@ -359,13 +362,23 @@ export default function RegistrationEditModal({
               {error}
             </p>
           ) : null}
+        </div>
 
-          <div className="flex flex-wrap justify-end gap-3 border-t border-black/10 pt-5">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="rounded-xl border-black/10">
+          <div className="flex shrink-0 flex-wrap justify-center gap-3 border-t border-black/10 bg-white px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="rounded-xl bg-primary px-5 text-white hover:bg-primary/90">
-              {saving ? "Saving..." : "Save changes"}
+            <Button
+              type="submit"
+              disabled={saving}
+              aria-label={saving ? "Saving changes" : undefined}
+              className="rounded-xl bg-primary px-5 text-white hover:bg-primary/90"
+            >
+              {saving ? (
+                <Icon icon="ph:spinner-gap-bold" width={18} height={18} className="animate-spin" aria-hidden="true" />
+              ) : (
+                "Save changes"
+              )}
             </Button>
           </div>
         </form>

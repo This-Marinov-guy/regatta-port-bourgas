@@ -56,13 +56,13 @@ export default async function NotFoundPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
               <Link
                 href="/en"
-                className="px-8 py-4 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer"
+                className="px-6 py-4 border border-primary bg-primary text-white duration-300 hover:bg-primary/90 text-base font-semibold rounded-md hover:cursor-pointer"
               >
                 {t("goHome")}
               </Link>
               <Link
                 href="/en/contact-us"
-                className="px-8 py-4 border border-dark dark:border-white bg-transparent text-dark dark:text-white hover:bg-dark dark:hover:bg-white hover:text-white dark:hover:text-dark duration-300 text-base font-semibold rounded-md hover:cursor-pointer"
+                className="px-6 py-4 border border-dark dark:border-white bg-transparent text-dark dark:text-white hover:bg-dark dark:hover:bg-white hover:text-white dark:hover:text-dark duration-300 text-base font-semibold rounded-md hover:cursor-pointer"
               >
                 {t("contactUs")}
               </Link>

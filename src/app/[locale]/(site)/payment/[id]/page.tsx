@@ -123,7 +123,7 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
             ) : null}
             <Link
               href={`/events/${registration.event.slug}`}
-              className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-6 py-3 font-medium text-dark transition hover:border-primary hover:text-primary dark:border-white/10 dark:bg-black/20 dark:text-white"
+              className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-4 py-3 font-medium text-dark transition hover:border-primary hover:text-primary dark:border-white/10 dark:bg-black/20 dark:text-white"
             >
               {t('backToEvent')}
             </Link>

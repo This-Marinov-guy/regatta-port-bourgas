@@ -36,7 +36,7 @@ const Services = () => {
             <p className="text-dark/50 dark:text-white/50 text-lg lg:max-w-full leading-[1.3] md:max-w-3/4">
               Discover a diverse range of premium properties, from luxurious apartments  to spacious villas, tailored to your needs
             </p>
-            <Link href="/properties" className="py-4 px-8 bg-primary text-base leading-4 block w-fit text-white rounded-full font-semibold mt-8 hover:bg-dark duration-300">
+            <Link href="/properties" className="py-4 px-6 bg-primary text-base leading-4 block w-fit text-white rounded-full font-semibold mt-8 hover:bg-dark duration-300">
               View properties
             </Link>
           </div>

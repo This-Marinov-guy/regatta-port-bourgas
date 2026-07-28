@@ -1428,7 +1428,7 @@ export default function EventRegistrationForm({
             <Button
               type="button"
               onClick={addCrewMember}
-              className="rounded-xl bg-primary px-6 text-white hover:bg-primary/90"
+              className="rounded-xl bg-primary px-4 text-white hover:bg-primary/90"
             >
               {t.addCrew}
             </Button>
@@ -1538,7 +1538,7 @@ export default function EventRegistrationForm({
                     }
                   }}
                   disabled={insuranceUploading}
-                  className={`w-full rounded-[1.5rem] border-2 border-dashed px-6 py-8 text-left transition-all ${
+                  className={`w-full rounded-[1.5rem] border-2 border-dashed px-4 py-8 text-left transition-all ${
                     insuranceDragging
                       ? 'border-primary bg-primary/5 shadow-lg'
                       : 'border-black/10 bg-white/90 dark:border-white/10 dark:bg-black/20'
@@ -1613,7 +1613,7 @@ export default function EventRegistrationForm({
         </SectionCard>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button type="submit" disabled={submitting} className="rounded-xl px-6 text-white">
+          <Button type="submit" disabled={submitting} className="rounded-xl px-4 text-white">
             {submitting ? t.submitting : t.submit}
           </Button>
           {onCancel ? (

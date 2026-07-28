@@ -249,19 +249,19 @@ export default function EventTabs({
             <TabsList className="w-full sm:w-auto flex-wrap sm:flex-nowrap">
               <TabsTrigger
                 value="noticeBoard"
-                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-6"
+                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-4"
               >
                 <span className="truncate">{t("tabs.noticeBoard")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="entryList"
-                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-6"
+                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-4"
               >
                 <span className="truncate">{t("tabs.entryList")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="results"
-                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-6"
+                className="flex-1 sm:flex-none min-w-0 sm:min-w-[120px]  sm: md:text-base px-2 sm:px-4 md:px-4"
               >
                 <span className="truncate">{t("tabs.results")}</span>
               </TabsTrigger>

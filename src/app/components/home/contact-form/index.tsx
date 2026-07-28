@@ -167,7 +167,7 @@ const ContactForm: React.FC = () => {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
+                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-4 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
                     />
                     <input
                       type="tel"
@@ -178,7 +178,7 @@ const ContactForm: React.FC = () => {
                       value={formData.mobile}
                       onChange={handleChange}
                       required
-                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
+                      className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-4 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
                     />
                   </div>
                   <input
@@ -190,7 +190,7 @@ const ContactForm: React.FC = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
+                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-4 md:py-3.5 border border-black/10 dark:border-white/10 rounded-md outline-primary focus:outline w-full  sm:text-base"
                   />
                   <textarea
                     rows={6}
@@ -201,9 +201,9 @@ const ContactForm: React.FC = () => {
                     value={formData.message}
                     onChange={handleChange}
                     required
-                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 border border-black/10 dark:border-white/10 rounded-2xl outline-primary focus:outline w-full  sm:text-base resize-none"
+                    className="px-4 py-2.5 sm:px-5 sm:py-3 md:px-4 md:py-3.5 border border-black/10 dark:border-white/10 rounded-2xl outline-primary focus:outline w-full  sm:text-base resize-none"
                   ></textarea>
-                  <button className="px-6 py-3 sm:px-7 sm:py-3.5 md:px-8 md:py-4 rounded-md bg-primary text-white  sm:text-base font-semibold w-full sm:w-fit hover:cursor-pointer hover:bg-primary/90 duration-300">
+                  <button className="px-4 py-3 sm:px-7 sm:py-3.5 md:px-6 md:py-4 rounded-md bg-primary text-white  sm:text-base font-semibold w-full sm:w-fit hover:cursor-pointer hover:bg-primary/90 duration-300">
                     {t("sendButton")}
                   </button>
                 </div>
