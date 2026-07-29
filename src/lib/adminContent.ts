@@ -2,6 +2,7 @@ import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { extractNewsAttachmentUrls } from '@/lib/newsAttachments'
 import { ensureSlug, slugify } from '@/lib/slug'
 import { getRegistrationWithEvent } from '@/lib/registrations/data'
+import { normalizeRegistrationInvoiceData } from '@/lib/registrations/invoice'
 import { sendRegistrationStatusEmail } from '@/lib/registrations/email'
 import { hasEventFee } from '@/lib/eventFees'
 import type {
@@ -553,6 +554,35 @@ export async function updateRegistrationDetails(
   const { data, error } = await supabase
     .from('registrations')
     .update(updatePayload)
+    .eq('id', id)
+    .is('deleted_at', null)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    ...data,
+    generated_form_url: data.blank_link ?? null,
+  } as RegistrationRecord
+}
+
+export async function updateRegistrationInvoice(
+  id: string,
+  value: unknown,
+) {
+  const invoiceData = normalizeRegistrationInvoiceData(value)
+
+  if (!invoiceData) {
+    throw new Error('Invoice details are required.')
+  }
+
+  const supabase = createSupabaseServiceClient()
+  const { data, error } = await supabase
+    .from('registrations')
+    .update({ invoice_data: invoiceData })
     .eq('id', id)
     .is('deleted_at', null)
     .select('*')

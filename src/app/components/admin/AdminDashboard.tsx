@@ -48,6 +48,7 @@ import type {
   AdminNewsRecord,
 } from "@/types/admin";
 import type { RegistrationRecord, RegistrationStatus } from "@/types/admin";
+import type { RegistrationInvoiceData } from "@/types/admin";
 import moment from "moment";
 
 type AdminDashboardProps = {
@@ -944,6 +945,161 @@ function RegistrationDetailRow({
         ) : null}
       </div>
     </div>
+  );
+}
+
+const emptyAdminInvoiceData: RegistrationInvoiceData = {
+  company_name: "",
+  vat_number: "",
+  company_registration_number: "",
+  address: "",
+  city: "",
+  country: "",
+};
+
+const adminInvoiceInputClassName =
+  "block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10";
+
+function getInvoiceIdentifier(invoiceData: RegistrationInvoiceData) {
+  const vatNumber = invoiceData.vat_number.trim();
+  const registrationNumber = invoiceData.company_registration_number.trim();
+
+  if (vatNumber === registrationNumber) {
+    return vatNumber;
+  }
+
+  return [vatNumber, registrationNumber].filter(Boolean).join(" / ");
+}
+
+function AdminInvoiceForm({
+  registration,
+  onClose,
+  onSaved,
+}: {
+  registration: RegistrationRecord;
+  onClose: () => void;
+  onSaved: (registration: RegistrationRecord) => void;
+}) {
+  const [invoiceData, setInvoiceData] = useState<RegistrationInvoiceData>(
+    registration.invoice_data ?? emptyAdminInvoiceData,
+  );
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setInvoiceData(registration.invoice_data ?? emptyAdminInvoiceData);
+  }, [registration]);
+
+  function updateField<K extends keyof RegistrationInvoiceData>(
+    field: K,
+    value: RegistrationInvoiceData[K],
+  ) {
+    setInvoiceData((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateInvoiceIdentifier(value: string) {
+    setInvoiceData((current) => ({
+      ...current,
+      vat_number: value,
+      company_registration_number: value,
+    }));
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+
+    try {
+      const payload = await readJson<{ data: RegistrationRecord }>(
+        `/api/admin/registrations/${registration.id}/invoice`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ invoice_data: invoiceData }),
+        },
+      );
+
+      onSaved(payload.data);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save invoice details.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-dark">
+          Company / recipient name *
+        </span>
+        <input
+          required
+          value={invoiceData.company_name}
+          onChange={(event) => updateField("company_name", event.target.value)}
+          className={adminInvoiceInputClassName}
+        />
+      </label>
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-dark">
+          VAT number / EIK *
+        </span>
+        <input
+          required
+          value={getInvoiceIdentifier(invoiceData)}
+          onChange={(event) => updateInvoiceIdentifier(event.target.value)}
+          className={adminInvoiceInputClassName}
+        />
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="mb-2 block text-sm font-medium text-dark">
+          Invoice address *
+        </span>
+        <input
+          required
+          value={invoiceData.address}
+          onChange={(event) => updateField("address", event.target.value)}
+          className={adminInvoiceInputClassName}
+        />
+      </label>
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-dark">City *</span>
+        <input
+          required
+          value={invoiceData.city}
+          onChange={(event) => updateField("city", event.target.value)}
+          className={adminInvoiceInputClassName}
+        />
+      </label>
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-dark">Country *</span>
+        <input
+          required
+          value={invoiceData.country}
+          onChange={(event) => updateField("country", event.target.value)}
+          className={adminInvoiceInputClassName}
+        />
+      </label>
+      <div className="flex justify-end gap-3 sm:col-span-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={saving}
+          className="rounded-xl border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={saving}
+          className="rounded-xl bg-primary px-5 text-white hover:bg-primary/90"
+        >
+          {saving ? "Saving..." : "Save invoice"}
+        </Button>
+      </div>
+    </form>
   );
 }
 
@@ -2058,6 +2214,7 @@ export default function AdminDashboard({
     useState<RegistrationRecord | null>(null);
   const [invoiceRegistration, setInvoiceRegistration] =
     useState<RegistrationRecord | null>(null);
+  const [invoiceEditing, setInvoiceEditing] = useState(false);
   const [registrationEditBusyId, setRegistrationEditBusyId] = useState<
     string | null
   >(null);
@@ -4289,21 +4446,33 @@ export default function AdminDashboard({
                                 <Icon className="shrink-0" icon="ph:pencil-simple-bold" width={15} height={15} />
                                 <span className="min-w-0 truncate">Edit</span>
                               </button>
-                              {hasRegistrationInvoiceData(registration) ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setInvoiceRegistration(registration)}
-                                  className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 font-medium text-blue-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-md sm:w-auto"
-                                >
-                                  <Icon
-                                    className="shrink-0"
-                                    icon="ph:receipt-bold"
-                                    width={15}
-                                    height={15}
-                                  />
-                                  <span className="min-w-0 truncate">Invoice</span>
-                                </button>
-                              ) : null}
+                              <button
+                                type="button"
+                                disabled={
+                                  isRegistrationEditBusy ||
+                                  isPaymentActionBusy ||
+                                  isInvoiceActionBusy ||
+                                  isMarkPaidActionBusy ||
+                                  isInsuranceActionBusy
+                                }
+                                onClick={() => {
+                                  setInvoiceRegistration(registration);
+                                  setInvoiceEditing(
+                                    !hasRegistrationInvoiceData(registration),
+                                  );
+                                }}
+                                className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 font-medium text-blue-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                              >
+                                <Icon
+                                  className="shrink-0"
+                                  icon="ph:receipt-bold"
+                                  width={15}
+                                  height={15}
+                                />
+                                <span className="min-w-0 truncate">
+                                  Invoice
+                                </span>
+                              </button>
                               <button
                                 type="button"
                                 disabled={
@@ -4704,52 +4873,97 @@ export default function AdminDashboard({
 
         <AdminModal
           open={Boolean(invoiceRegistration)}
-          title="Invoice details"
+          title={
+            invoiceEditing &&
+            invoiceRegistration &&
+            hasRegistrationInvoiceData(invoiceRegistration)
+              ? "Edit invoice details"
+              : invoiceRegistration && hasRegistrationInvoiceData(invoiceRegistration)
+                ? "Invoice details"
+                : "Add invoice details"
+          }
           description={
             invoiceRegistration
               ? `Invoice information for ${invoiceRegistration.boat_name}.`
               : "Invoice information."
           }
-          onClose={() => setInvoiceRegistration(null)}
+          onClose={() => {
+            setInvoiceRegistration(null);
+            setInvoiceEditing(false);
+          }}
         >
-          {invoiceRegistration?.invoice_data ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <RegistrationDetailRow
-                label="Company / recipient name"
-                value={invoiceRegistration.invoice_data.company_name}
-                copyValue={invoiceRegistration.invoice_data.company_name}
-              />
-              <RegistrationDetailRow
-                label="VAT number / EIK"
-                value={
-                  invoiceRegistration.invoice_data.vat_number ===
-                  invoiceRegistration.invoice_data.company_registration_number
-                    ? invoiceRegistration.invoice_data.vat_number
-                    : `${invoiceRegistration.invoice_data.vat_number} / ${invoiceRegistration.invoice_data.company_registration_number}`
+          {invoiceRegistration && invoiceEditing ? (
+            <AdminInvoiceForm
+              registration={invoiceRegistration}
+              onClose={() => {
+                if (hasRegistrationInvoiceData(invoiceRegistration)) {
+                  setInvoiceEditing(false);
+                } else {
+                  setInvoiceRegistration(null);
+                  setInvoiceEditing(false);
                 }
-                copyValue={
-                  invoiceRegistration.invoice_data.vat_number ===
-                  invoiceRegistration.invoice_data.company_registration_number
-                    ? invoiceRegistration.invoice_data.vat_number
-                    : `${invoiceRegistration.invoice_data.vat_number} / ${invoiceRegistration.invoice_data.company_registration_number}`
-                }
-              />
-              <RegistrationDetailRow
-                label="Invoice address"
-                value={invoiceRegistration.invoice_data.address}
-                copyValue={invoiceRegistration.invoice_data.address}
-              />
-              <RegistrationDetailRow
-                label="City"
-                value={invoiceRegistration.invoice_data.city}
-                copyValue={invoiceRegistration.invoice_data.city}
-              />
-              <RegistrationDetailRow
-                label="Country"
-                value={invoiceRegistration.invoice_data.country}
-                copyValue={invoiceRegistration.invoice_data.country}
-              />
-            </div>
+              }}
+              onSaved={(registration) => {
+                setRegistrations((current) =>
+                  current.map((item) =>
+                    item.id === registration.id ? registration : item,
+                  ),
+                );
+                setInvoiceRegistration(null);
+                setInvoiceEditing(false);
+                toast.success("Invoice details saved.");
+              }}
+            />
+          ) : null}
+          {invoiceRegistration && !invoiceEditing ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <RegistrationDetailRow
+                  label="Company / recipient name"
+                  value={invoiceRegistration.invoice_data?.company_name ?? ""}
+                  copyValue={invoiceRegistration.invoice_data?.company_name}
+                />
+                <RegistrationDetailRow
+                  label="VAT number / EIK"
+                  value={
+                    invoiceRegistration.invoice_data
+                      ? getInvoiceIdentifier(invoiceRegistration.invoice_data)
+                      : ""
+                  }
+                  copyValue={
+                    invoiceRegistration.invoice_data
+                      ? getInvoiceIdentifier(invoiceRegistration.invoice_data)
+                      : undefined
+                  }
+                />
+                <RegistrationDetailRow
+                  label="Invoice address"
+                  value={invoiceRegistration.invoice_data?.address ?? ""}
+                  copyValue={invoiceRegistration.invoice_data?.address}
+                />
+                <RegistrationDetailRow
+                  label="City"
+                  value={invoiceRegistration.invoice_data?.city ?? ""}
+                  copyValue={invoiceRegistration.invoice_data?.city}
+                />
+                <RegistrationDetailRow
+                  label="Country"
+                  value={invoiceRegistration.invoice_data?.country ?? ""}
+                  copyValue={invoiceRegistration.invoice_data?.country}
+                />
+              </div>
+              <div className="mt-6 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setInvoiceEditing(true)}
+                  className="rounded-xl border-primary bg-white text-primary hover:bg-primary/5 hover:text-primary"
+                >
+                  <Icon icon="ph:pencil-simple-bold" width={16} height={16} />
+                  Edit
+                </Button>
+              </div>
+            </>
           ) : null}
         </AdminModal>
 
