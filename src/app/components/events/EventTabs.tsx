@@ -15,6 +15,7 @@ type EventEntry = {
   sailNumber: string
   model: string | null
   yachtClub: string | null
+  skipperYachtClub: string | null
   skipperName: string
 }
 
@@ -197,9 +198,9 @@ function EntryList({ entries }: { entries: EventEntry[] }) {
         <thead>
           <tr className="text-sm uppercase tracking-[0.08em] text-dark/55 dark:text-white/55">
             <th className="px-4 py-3 font-semibold">{t("entryList.boat")}</th>
-            <th className="px-4 py-3 font-semibold">{t("entryList.nationality")}</th>
-            <th className="px-4 py-3 font-semibold">{t("entryList.sailNumber")}</th>
             <th className="px-4 py-3 font-semibold">{t("entryList.model")}</th>
+            <th className="px-4 py-3 font-semibold">{t("entryList.sailNumber")}</th>
+            <th className="px-4 py-3 font-semibold">{t("entryList.nationality")}</th>
             <th className="px-4 py-3 font-semibold">{t("entryList.yachtClub")}</th>
             <th className="px-4 py-3 font-semibold">{t("entryList.skipper")}</th>
           </tr>
@@ -211,16 +212,16 @@ function EntryList({ entries }: { entries: EventEntry[] }) {
                 {entry.boatName}
               </td>
               <td className="px-4 py-4 text-dark/70 dark:text-white/70">
-                {entry.nationality}
+                {entry.model || "—"}
               </td>
               <td className="px-4 py-4 text-dark/70 dark:text-white/70">
                 {entry.sailNumber}
               </td>
               <td className="px-4 py-4 text-dark/70 dark:text-white/70">
-                {entry.model || "—"}
+                {entry.nationality}
               </td>
               <td className="px-4 py-4 text-dark/70 dark:text-white/70">
-                {entry.yachtClub || "—"}
+                {entry.yachtClub ?? entry.skipperYachtClub ?? "—"}
               </td>
               <td className="px-4 py-4 text-dark/70 dark:text-white/70">
                 {entry.skipperName}

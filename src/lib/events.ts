@@ -148,3 +148,16 @@ export function isEventRegistrationOpen(
   const cutoff = addDays(startOfDay(parseISO(startDate)), 1)
   return now < cutoff
 }
+
+export function hasPassedEventDayRegisterButtonCutoff(
+  startDate: string,
+  now = new Date()
+) {
+  const cutoff = Date.parse(`${startDate}T13:00:00.000Z`)
+
+  if (!Number.isFinite(cutoff)) {
+    return false
+  }
+
+  return now.getTime() >= cutoff
+}

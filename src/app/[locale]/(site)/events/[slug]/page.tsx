@@ -7,6 +7,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import {
   getEvent,
   getEventDocumentsByRefs,
+  hasPassedEventDayRegisterButtonCutoff,
   isEventRegistrationOpen,
 } from "@/lib/events";
 import EventTabs from "@/app/components/events/EventTabs";
@@ -69,6 +70,8 @@ export default async function EventDetailsPage({ params }: Props) {
     event.description_bg
   );
   const registrationOpen = isEventRegistrationOpen(event.start_date)
+  const hasEventStarted =
+    registrationOpen && hasPassedEventDayRegisterButtonCutoff(event.start_date)
   const fee = formatEventFee(event, locale, t("events.perCrewMember"))
   const [noticeBoardDocuments, resultDocuments] = await Promise.all([
     getEventDocumentsByRefs(event.notice_board),
@@ -82,6 +85,7 @@ export default async function EventDetailsPage({ params }: Props) {
       sailNumber: registration.sail_number,
       model: registration.model_design,
       yachtClub: registration.yacht_club,
+      skipperYachtClub: registration.skipper_yacht_club,
       skipperName: registration.skipper_name,
     }))
     .sort((left, right) => left.boatName.localeCompare(right.boatName))
@@ -108,6 +112,24 @@ export default async function EventDetailsPage({ params }: Props) {
     ...(event.thumbnail_img && { image: event.thumbnail_img }),
     url: `${siteUrl}/${locale}/events/${event.slug}`,
   }
+  const registerButton = registrationOpen ? (
+    <Link
+      href={`/events/${event.slug}?register=1`}
+      scroll={false}
+      className="pointer-events-auto relative inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-primary py-3 pl-3 pr-7 text-base font-medium text-white shadow-[0_18px_40px_rgba(0,87,184,0.32)] transition hover:bg-primary/90 sm:text-lg"
+    >
+      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-white/15 ring-2 ring-white/40">
+        <Image
+          src="/images/logos/logo.jpg"
+          alt=""
+          width={36}
+          height={36}
+          className="h-full w-full object-cover"
+        />
+      </span>
+      {t("events.register")}
+    </Link>
+  ) : null
 
   return (
     <main className="site-page-bg">
@@ -179,6 +201,12 @@ export default async function EventDetailsPage({ params }: Props) {
           </div>
         </div>
 
+        {hasEventStarted ? (
+          <div className="mt-8 flex justify-center px-4 sm:mt-12 sm:px-0">
+            {registerButton}
+          </div>
+        ) : null}
+
         <EventTabs
           locale={locale}
           noticeBoard={noticeBoardDocuments}
@@ -194,17 +222,11 @@ export default async function EventDetailsPage({ params }: Props) {
           />
         ) : null}
 
-        {registrationOpen ? (
+        {registrationOpen && !hasEventStarted ? (
           <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 sm:bottom-6">
             <div className="relative">
               <div className="absolute inset-x-[-2.5rem] inset-y-[-1.25rem] rounded-[999px] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0.18)_72%,rgba(255,255,255,0)_100%)] blur-xl dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.10)_42%,rgba(255,255,255,0.04)_72%,rgba(255,255,255,0)_100%)]" />
-              <Link
-                href={`/events/${event.slug}?register=1`}
-                scroll={false}
-                className="pointer-events-auto relative inline-flex min-h-14 items-center justify-center rounded-2xl bg-primary px-7 py-4 text-base font-medium text-white shadow-[0_18px_40px_rgba(0,87,184,0.32)] transition hover:bg-primary/90 sm:text-lg"
-              >
-                {t("events.register")}
-              </Link>
+              {registerButton}
             </div>
           </div>
         ) : null}

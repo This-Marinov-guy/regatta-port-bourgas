@@ -153,13 +153,15 @@ export default function EventRegistrationModal({
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-6">
-            <EventRegistrationForm
-              eventId={eventId}
-              feeRequired={feeRequired}
-              onCancel={closeModal}
-              onSuccess={closeModal}
-            />
+          <div className="min-h-0 flex-1 overflow-hidden rounded-b-[2rem]">
+            <div className="h-full min-h-0 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-6">
+              <EventRegistrationForm
+                eventId={eventId}
+                feeRequired={feeRequired}
+                onCancel={closeModal}
+                onSuccess={closeModal}
+              />
+            </div>
           </div>
         </div>
       </div>
