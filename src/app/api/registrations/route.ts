@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { publishRegistrationCreated } from '@/lib/registrations/publish'
+import { normalizeRegistrationInvoiceData } from '@/lib/registrations/invoice'
 import { isEventRegistrationOpen } from '@/lib/events'
 import { readLocaleFromRequest } from '@/lib/locale'
 
@@ -39,6 +40,7 @@ type RegistrationPayload = {
   disclaimer_accepted?: unknown
   gdpr_accepted?: unknown
   crew_list?: unknown
+  invoice_data?: unknown
 }
 
 function requireText(value: unknown, label: string) {
@@ -221,6 +223,7 @@ export async function POST(request: Request) {
       disclaimer_accepted: toBoolean(body.disclaimer_accepted),
       gdpr_accepted: toBoolean(body.gdpr_accepted),
       crew_list: normalizeCrewList(body.crew_list),
+      invoice_data: normalizeRegistrationInvoiceData(body.invoice_data),
       preferred_language: locale,
     }
 

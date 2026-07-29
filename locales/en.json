@@ -168,7 +168,22 @@
     "payAction": "Pay entry fee",
     "payLoading": "Opening secure checkout...",
     "payError": "We could not start the payment. Please try again.",
-    "backToEvent": "Back to event"
+    "backToEvent": "Back to event",
+    "invoiceSection": "Invoice details",
+    "invoiceDescription": "Add or update the invoice information for this registration.",
+    "invoiceAdd": "Add invoice details",
+    "invoiceCollapse": "Hide details",
+    "invoiceSave": "Save invoice details",
+    "invoiceSaving": "Saving...",
+    "invoiceSaved": "Invoice details saved.",
+    "invoiceError": "Unable to save invoice details.",
+    "invoiceLabels": {
+      "companyName": "Company / recipient name",
+      "vatNumber": "VAT number / EIK",
+      "address": "Invoice address",
+      "city": "City",
+      "country": "Country"
+    }
   },
   "terms": {
     "title": "Terms & Conditions",

@@ -73,6 +73,15 @@ export type CrewMember = {
   date_of_birth?: string
 }
 
+export type RegistrationInvoiceData = {
+  company_name: string
+  vat_number: string
+  company_registration_number: string
+  address: string
+  city: string
+  country: string
+}
+
 export type RegistrationPaymentData = {
   stripe?: {
     checkout_session_id?: string
@@ -164,6 +173,7 @@ export type RegistrationRecord = {
 
   crew_list: CrewMember[]
   insurance_documents: string[]
+  invoice_data: RegistrationInvoiceData | null
   generated_form_url: string | null
   blank_link: string | null
   payment_data: RegistrationPaymentData

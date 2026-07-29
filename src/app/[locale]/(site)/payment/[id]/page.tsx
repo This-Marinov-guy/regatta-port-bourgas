@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import RegistrationPaymentAction from '@/app/components/payments/RegistrationPaymentAction'
+import RegistrationInvoiceForm from '@/app/components/payments/RegistrationInvoiceForm'
 import StickyActionBar from '@/app/components/payments/StickyActionBar'
 import { Link } from '@/i18n/routing'
 import { calculateEventFeeCents, hasEventFee } from '@/lib/eventFees'
@@ -109,6 +110,12 @@ export default async function RegistrationPaymentPage({ params, searchParams }: 
               {t('cancelled')}
             </p>
           ) : null}
+
+          <RegistrationInvoiceForm
+            registrationId={registration.id}
+            session={query.session}
+            initialData={registration.invoice_data}
+          />
 
           <StickyActionBar>
             {!paid ? (

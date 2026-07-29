@@ -1,6 +1,7 @@
 'use client'
 import { useLocale } from 'next-intl'
 import { useRouter, usePathname } from '@/i18n/routing'
+import { useSearchParams } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { Icon } from '@iconify/react'
 import { persistManualClientLocale, type AppLocale } from '@/lib/locale'
@@ -20,6 +21,7 @@ export default function LanguageSwitcher({
 }: LanguageSwitcherProps) {
   const locale = useLocale()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
 
   const switchLocale = (newLocale: string) => {
@@ -27,8 +29,12 @@ export default function LanguageSwitcher({
     persistManualClientLocale(resolvedLocale)
     // Remove current locale from pathname
     const pathWithoutLocale = pathname.replace(`/${locale}`, '') || '/'
+    const queryString = searchParams.toString()
+    const pathWithQuery = queryString
+      ? `${pathWithoutLocale}?${queryString}`
+      : pathWithoutLocale
     // Navigate to new locale using next-intl router
-    router.replace(pathWithoutLocale, { locale: newLocale })
+    router.replace(pathWithQuery, { locale: resolvedLocale })
     // Call callback if provided (e.g., to close mobile menu)
     if (onLanguageChange) {
       onLanguageChange()

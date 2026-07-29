@@ -501,6 +501,49 @@ export function parseRegistrationAdminPayload(input: Record<string, unknown>) {
   }
 }
 
+function normalizeRegistrationDocumentUrls(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .map((item) => normalizeRegistrationOptionalText(item))
+    .filter((item): item is string => Boolean(item))
+}
+
+export async function createRegistrationFromAdmin(
+  eventId: string,
+  input: Record<string, unknown>,
+) {
+  const supabase = createSupabaseServiceClient()
+  const registrationPayload = parseRegistrationAdminPayload(input)
+  const preferredLanguage =
+    input.preferred_language === 'bg' || input.preferred_language === 'en'
+      ? input.preferred_language
+      : 'en'
+
+  const { data, error } = await supabase
+    .from('registrations')
+    .insert({
+      event_id: normalizeRegistrationRequiredText(eventId, 'Event'),
+      ...registrationPayload,
+      email: registrationPayload.contact_email,
+      insurance_documents: normalizeRegistrationDocumentUrls(input.insurance_documents),
+      preferred_language: preferredLanguage,
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    ...data,
+    generated_form_url: data.blank_link ?? null,
+  } as RegistrationRecord
+}
+
 export async function updateRegistrationDetails(
   id: string,
   input: Record<string, unknown>,

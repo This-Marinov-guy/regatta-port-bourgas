@@ -17,6 +17,15 @@ type CrewMemberDraft = {
   date_of_birth: string
 }
 
+type InvoiceDataDraft = {
+  company_name: string
+  vat_number: string
+  company_registration_number: string
+  address: string
+  city: string
+  country: string
+}
+
 type RegistrationDraft = {
   boat_name: string
   border_number: string
@@ -46,6 +55,8 @@ type RegistrationDraft = {
   disclaimer_accepted: boolean
   gdpr_accepted: boolean
   crew_list: CrewMemberDraft[]
+  invoice_requested: boolean
+  invoice_data: InvoiceDataDraft
 }
 
 type Props = {
@@ -147,7 +158,16 @@ const defaultDraft = (): RegistrationDraft => ({
   insurance_documents: [],
   disclaimer_accepted: false,
   gdpr_accepted: false,
-  crew_list: [{ name: '', date_of_birth: '' }]
+  crew_list: [{ name: '', date_of_birth: '' }],
+  invoice_requested: false,
+  invoice_data: {
+    company_name: '',
+    vat_number: '',
+    company_registration_number: '',
+    address: '',
+    city: '',
+    country: '',
+  },
 })
 
 const content = {
@@ -165,6 +185,16 @@ const content = {
     contactSection: "Contact person",
     preferencesSection: "Preferences and declarations",
     crewSection: "Crew list",
+    invoiceSection: "Invoice details",
+    invoiceDescription: "Add invoice details if you need an invoice for this registration.",
+    invoiceRequested: "I need an invoice",
+    invoiceLabels: {
+      company_name: "Company / recipient name",
+      vat_number: "VAT number / EIK",
+      address: "Invoice address",
+      city: "City",
+      country: "Country",
+    },
     skipperCrewTitle: "Skipper",
     crewMemberTitle: "Crew member",
     labels: {
@@ -272,6 +302,16 @@ const content = {
     contactSection: "Лице за контакт",
     preferencesSection: "Предпочитания и декларации",
     crewSection: "Екипаж",
+    invoiceSection: "Данни за фактура",
+    invoiceDescription: "Добавете данни за фактура, ако ви е необходима фактура за тази регистрация.",
+    invoiceRequested: "Необходима ми е фактура",
+    invoiceLabels: {
+      company_name: "Име на фирма / получател",
+      vat_number: "ДДС номер / ЕИК",
+      address: "Адрес за фактура",
+      city: "Град",
+      country: "Държава",
+    },
     skipperCrewTitle: "Шкипер",
     crewMemberTitle: "Член на екипажа",
     labels: {
@@ -771,10 +811,15 @@ export default function EventRegistrationForm({
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as Partial<RegistrationDraft>
+        const draft = defaultDraft()
         const skipperName = parsed.skipper_name ?? ''
         setForm({
-          ...defaultDraft(),
+          ...draft,
           ...parsed,
+          invoice_data: {
+            ...draft.invoice_data,
+            ...(parsed.invoice_data ?? {}),
+          },
           crew_list: syncSkipperIntoCrew(parsed.crew_list, skipperName),
         })
       } catch {
@@ -844,6 +889,51 @@ export default function EventRegistrationForm({
         [field]: value,
       }
     })
+  }
+
+  function updateInvoiceField<K extends keyof InvoiceDataDraft>(
+    field: K,
+    value: InvoiceDataDraft[K]
+  ) {
+    const fieldKey = `invoice_data.${field}`
+    setInvalidFields((current) => current.filter((item) => item !== fieldKey))
+    setForm((current) => ({
+      ...current,
+      invoice_data: {
+        ...current.invoice_data,
+        [field]: value,
+      },
+    }))
+  }
+
+  function updateInvoiceIdentifier(value: string) {
+    setInvalidFields((current) =>
+      current.filter(
+        (item) =>
+          item !== 'invoice_data.vat_number' &&
+          item !== 'invoice_data.company_registration_number'
+      )
+    )
+    setForm((current) => ({
+      ...current,
+      invoice_data: {
+        ...current.invoice_data,
+        vat_number: value,
+        company_registration_number: value,
+      },
+    }))
+  }
+
+  function toggleInvoiceRequested() {
+    setInvalidFields((current) =>
+      form.invoice_requested
+        ? current.filter((item) => !item.startsWith('invoice_data.'))
+        : current
+    )
+    setForm((current) => ({
+      ...current,
+      invoice_requested: !current.invoice_requested,
+    }))
   }
 
   function updateCrewMember(
@@ -1025,6 +1115,7 @@ export default function EventRegistrationForm({
         body: JSON.stringify({
           event_id: eventId,
           ...form,
+          invoice_data: form.invoice_requested ? form.invoice_data : null,
         }),
       })
 
@@ -1611,6 +1702,118 @@ export default function EventRegistrationForm({
             </DraftField>
           </div>
         </SectionCard>
+
+        <section className="rounded-[1.75rem] border border-black/10 bg-white/85 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/20 sm:p-6">
+          <button
+            type="button"
+            onClick={toggleInvoiceRequested}
+            aria-expanded={form.invoice_requested}
+            className="flex w-full items-start justify-between gap-4 text-left"
+          >
+            <span>
+              <span className="block text-2xl font-semibold text-dark dark:text-white">
+                {t.invoiceSection}
+              </span>
+              <span className="mt-2 block leading-7 text-dark/65 dark:text-white/65">
+                {t.invoiceDescription}
+              </span>
+            </span>
+            <Icon
+              icon="ph:caret-down-bold"
+              width={22}
+              height={22}
+              className={`mt-1 shrink-0 text-primary transition-transform ${
+                form.invoice_requested ? 'rotate-180' : ''
+              }`}
+              aria-hidden="true"
+            />
+          </button>
+
+          <label className="mt-5 flex items-start gap-3 rounded-2xl border border-black/10 bg-white/70 px-4 py-4 text-dark dark:border-white/10 dark:bg-black/20 dark:text-white">
+            <input
+              type="checkbox"
+              checked={form.invoice_requested}
+              onChange={toggleInvoiceRequested}
+              className="mt-1 h-4 w-4 rounded border-black/20 text-primary focus:ring-primary"
+            />
+            <span>{t.invoiceRequested}</span>
+          </label>
+
+          {form.invoice_requested ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <DraftField label={t.invoiceLabels.company_name} required>
+                <input
+                  name="invoice_data.company_name"
+                  value={form.invoice_data.company_name}
+                  onChange={(event) =>
+                    updateInvoiceField('company_name', event.target.value)
+                  }
+                  required
+                  className={inputClassName(
+                    invalidFields.includes('invoice_data.company_name')
+                  )}
+                />
+              </DraftField>
+              <DraftField label={t.invoiceLabels.vat_number} required>
+                <input
+                  name="invoice_data.vat_number"
+                  value={
+                    form.invoice_data.vat_number ||
+                    form.invoice_data.company_registration_number
+                  }
+                  onChange={(event) =>
+                    updateInvoiceIdentifier(event.target.value)
+                  }
+                  required
+                  className={inputClassName(
+                    invalidFields.includes('invoice_data.vat_number')
+                  )}
+                />
+              </DraftField>
+              <div className="md:col-span-2">
+                <DraftField label={t.invoiceLabels.address} required>
+                  <input
+                    name="invoice_data.address"
+                    value={form.invoice_data.address}
+                    onChange={(event) =>
+                      updateInvoiceField('address', event.target.value)
+                    }
+                    required
+                    className={inputClassName(
+                      invalidFields.includes('invoice_data.address')
+                    )}
+                  />
+                </DraftField>
+              </div>
+              <DraftField label={t.invoiceLabels.city} required>
+                <input
+                  name="invoice_data.city"
+                  value={form.invoice_data.city}
+                  onChange={(event) =>
+                    updateInvoiceField('city', event.target.value)
+                  }
+                  required
+                  className={inputClassName(
+                    invalidFields.includes('invoice_data.city')
+                  )}
+                />
+              </DraftField>
+              <DraftField label={t.invoiceLabels.country} required>
+                <input
+                  name="invoice_data.country"
+                  value={form.invoice_data.country}
+                  onChange={(event) =>
+                    updateInvoiceField('country', event.target.value)
+                  }
+                  required
+                  className={inputClassName(
+                    invalidFields.includes('invoice_data.country')
+                  )}
+                />
+              </DraftField>
+            </div>
+          ) : null}
+        </section>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button type="submit" disabled={submitting} className="rounded-xl px-4 text-white">

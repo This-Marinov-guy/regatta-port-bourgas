@@ -30,6 +30,7 @@ import {
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
 import EventDocumentReferenceField from "@/app/components/admin/EventDocumentReferenceField";
+import EventRegistrationImportModal from "@/app/components/admin/EventRegistrationImportModal";
 import AdminPasskeySettings from "@/app/components/admin/AdminPasskeySettings";
 import RegistrationEditModal, {
   type RegistrationEditableFields,
@@ -871,6 +872,13 @@ function getRegistrationStatusBadgeClasses(status: RegistrationStatus) {
   }
 }
 
+function hasRegistrationInvoiceData(registration: RegistrationRecord) {
+  return Boolean(
+    registration.invoice_data &&
+      Object.values(registration.invoice_data).some((value) => value.trim()),
+  );
+}
+
 function getRegistrationStatusButtonClasses(
   buttonValue: RegistrationStatus,
   activeValue: RegistrationStatus,
@@ -897,17 +905,43 @@ function getRegistrationStatusButtonClasses(
 function RegistrationDetailRow({
   label,
   value,
+  copyValue,
 }: {
   label: string;
   value: ReactNode;
+  copyValue?: string;
 }) {
+  async function copyValueToClipboard() {
+    if (!copyValue) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(copyValue);
+      toast.success("Copied.");
+    } catch {
+      toast.error("Unable to copy.");
+    }
+  }
+
   return (
     <div className="">
       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dark/45">
         {label}
       </p>
-      <div className="rounded-[1.25rem] border border-black/10 bg-white/80 py-2 pl-4 w-auto">
-        {value}
+      <div className="flex items-center justify-between gap-3 rounded-[1.25rem] border border-black/10 bg-white/80 py-2 pl-4 pr-2 w-auto">
+        <span className="min-w-0 break-words">{value}</span>
+        {copyValue ? (
+          <button
+            type="button"
+            onClick={() => void copyValueToClipboard()}
+            aria-label={`Copy ${label}`}
+            title={`Copy ${label}`}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
+          >
+            <Icon icon="ph:copy-bold" width={17} height={17} aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -2008,6 +2042,8 @@ export default function AdminDashboard({
   const eventDocumentsAutosaveRequestRef = useRef(0);
   const [activeEntriesEvent, setActiveEntriesEvent] =
     useState<AdminEventRecord | null>(null);
+  const [registrationImportEvent, setRegistrationImportEvent] =
+    useState<AdminEventRecord | null>(null);
   const [activeEventDocumentsEvent, setActiveEventDocumentsEvent] =
     useState<AdminEventRecord | null>(null);
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
@@ -2019,6 +2055,8 @@ export default function AdminDashboard({
     string | null
   >(null);
   const [editingRegistration, setEditingRegistration] =
+    useState<RegistrationRecord | null>(null);
+  const [invoiceRegistration, setInvoiceRegistration] =
     useState<RegistrationRecord | null>(null);
   const [registrationEditBusyId, setRegistrationEditBusyId] = useState<
     string | null
@@ -2514,6 +2552,34 @@ export default function AdminDashboard({
     setActiveEntriesEvent(item);
     setEntriesModalOpen(true);
     await loadRegistrations(item.id);
+  }
+
+  function openRegistrationImport(item: AdminEventRecord) {
+    setRegistrationImportEvent(item);
+  }
+
+  function handleImportedRegistrationCreated(registration: RegistrationRecord) {
+    setEvents((current) =>
+      current.map((item) =>
+        item.id === registration.event_id
+          ? { ...item, total_entries: item.total_entries + 1 }
+          : item,
+      ),
+    );
+
+    setActiveEntriesEvent((current) =>
+      current?.id === registration.event_id
+        ? { ...current, total_entries: current.total_entries + 1 }
+        : current,
+    );
+
+    setRegistrations((current) =>
+      activeEntriesEvent?.id === registration.event_id
+        ? [registration, ...current]
+        : current,
+    );
+
+    toast.success("Registration imported.");
   }
 
   async function handleRegistrationDetailsSave(
@@ -3196,6 +3262,13 @@ export default function AdminDashboard({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => openRegistrationImport(item)}
+                        className={`rounded-xl border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:text-white ${interactiveButtonClass}`}
+                      >
+                        Import
+                      </Button>
                       <Button
                         variant="outline"
                         onClick={() => void openEventEntries(item)}
@@ -4122,6 +4195,11 @@ export default function AdminDashboard({
                             >
                               {registration.status}
                             </span>
+                            {hasRegistrationInvoiceData(registration) ? (
+                              <span className="rounded-full bg-blue-100 px-3 py-1 font-semibold text-blue-700">
+                                Invoice
+                              </span>
+                            ) : null}
                             {/* <span className="rounded-full bg-black/5 px-3 py-1  text-dark/60">
                             {registration.crew_list.length} crew
                           </span> */}
@@ -4211,6 +4289,21 @@ export default function AdminDashboard({
                                 <Icon className="shrink-0" icon="ph:pencil-simple-bold" width={15} height={15} />
                                 <span className="min-w-0 truncate">Edit</span>
                               </button>
+                              {hasRegistrationInvoiceData(registration) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setInvoiceRegistration(registration)}
+                                  className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 font-medium text-blue-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-md sm:w-auto"
+                                >
+                                  <Icon
+                                    className="shrink-0"
+                                    icon="ph:receipt-bold"
+                                    width={15}
+                                    height={15}
+                                  />
+                                  <span className="min-w-0 truncate">Invoice</span>
+                                </button>
+                              ) : null}
                               <button
                                 type="button"
                                 disabled={
@@ -4261,37 +4354,48 @@ export default function AdminDashboard({
                                 </span>
                               </button>
                               {activeEntriesHasFee ? (
-                                <button
-                                  type="button"
-                                  disabled={
-                                    isUnpaid === false ||
-                                    !paymentsEnabled ||
-                                    isPaymentActionBusy ||
-                                    isInvoiceActionBusy ||
-                                    isMarkPaidActionBusy ||
-                                    isInsuranceActionBusy
-                                  }
-                                  onClick={() => {
-                                    void handleGeneratePaymentLink(
-                                      registration,
-                                    );
-                                  }}
-                                  className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5 font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                                >
-                                  <Icon
-                                    className="shrink-0"
-                                    icon="ph:credit-card-bold"
-                                    width={15}
-                                    height={15}
-                                  />
-                                  <span className="min-w-0 truncate">
-                                    {isPaymentActionBusy
-                                      ? "Generating payment link..."
-                                      : paymentsEnabled
-                                        ? "Generate payment link"
-                                        : "Payments unavailable"}
+                                isUnpaid ? (
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      !paymentsEnabled ||
+                                      isPaymentActionBusy ||
+                                      isInvoiceActionBusy ||
+                                      isMarkPaidActionBusy ||
+                                      isInsuranceActionBusy
+                                    }
+                                    onClick={() => {
+                                      void handleGeneratePaymentLink(
+                                        registration,
+                                      );
+                                    }}
+                                    className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5 font-medium text-dark shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                                  >
+                                    <Icon
+                                      className="shrink-0"
+                                      icon="ph:credit-card-bold"
+                                      width={15}
+                                      height={15}
+                                    />
+                                    <span className="min-w-0 truncate">
+                                      {isPaymentActionBusy
+                                        ? "Generating payment link..."
+                                        : paymentsEnabled
+                                          ? "Generate payment link"
+                                          : "Payments unavailable"}
+                                    </span>
+                                  </button>
+                                ) : (
+                                  <span className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-medium text-emerald-700 sm:w-auto">
+                                    <Icon
+                                      className="shrink-0"
+                                      icon="ph:check-circle-bold"
+                                      width={15}
+                                      height={15}
+                                    />
+                                    <span className="min-w-0 truncate">Paid</span>
                                   </span>
-                                </button>
+                                )
                               ) : null}
                               {isUnpaid ? (
                                 <button
@@ -4596,6 +4700,64 @@ export default function AdminDashboard({
           onSave={(fields) =>
             handleRegistrationDetailsSave(editingRegistration!.id, fields)
           }
+        />
+
+        <AdminModal
+          open={Boolean(invoiceRegistration)}
+          title="Invoice details"
+          description={
+            invoiceRegistration
+              ? `Invoice information for ${invoiceRegistration.boat_name}.`
+              : "Invoice information."
+          }
+          onClose={() => setInvoiceRegistration(null)}
+        >
+          {invoiceRegistration?.invoice_data ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <RegistrationDetailRow
+                label="Company / recipient name"
+                value={invoiceRegistration.invoice_data.company_name}
+                copyValue={invoiceRegistration.invoice_data.company_name}
+              />
+              <RegistrationDetailRow
+                label="VAT number / EIK"
+                value={
+                  invoiceRegistration.invoice_data.vat_number ===
+                  invoiceRegistration.invoice_data.company_registration_number
+                    ? invoiceRegistration.invoice_data.vat_number
+                    : `${invoiceRegistration.invoice_data.vat_number} / ${invoiceRegistration.invoice_data.company_registration_number}`
+                }
+                copyValue={
+                  invoiceRegistration.invoice_data.vat_number ===
+                  invoiceRegistration.invoice_data.company_registration_number
+                    ? invoiceRegistration.invoice_data.vat_number
+                    : `${invoiceRegistration.invoice_data.vat_number} / ${invoiceRegistration.invoice_data.company_registration_number}`
+                }
+              />
+              <RegistrationDetailRow
+                label="Invoice address"
+                value={invoiceRegistration.invoice_data.address}
+                copyValue={invoiceRegistration.invoice_data.address}
+              />
+              <RegistrationDetailRow
+                label="City"
+                value={invoiceRegistration.invoice_data.city}
+                copyValue={invoiceRegistration.invoice_data.city}
+              />
+              <RegistrationDetailRow
+                label="Country"
+                value={invoiceRegistration.invoice_data.country}
+                copyValue={invoiceRegistration.invoice_data.country}
+              />
+            </div>
+          ) : null}
+        </AdminModal>
+
+        <EventRegistrationImportModal
+          open={Boolean(registrationImportEvent)}
+          event={registrationImportEvent}
+          onClose={() => setRegistrationImportEvent(null)}
+          onCreated={handleImportedRegistrationCreated}
         />
 
         <AdminModal
