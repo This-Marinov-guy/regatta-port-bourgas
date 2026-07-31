@@ -122,6 +122,7 @@ export async function sendEventDocumentUpdateNotifications(args: {
   })
   const documentsById = new Map(documents.map((document) => [document.id, document]))
   const dates = eventDates(event)
+  let shouldIncludeBcc = true
 
   for (const recipient of recipients) {
     const to = recipient.contact_email.trim()
@@ -142,6 +143,7 @@ export async function sendEventDocumentUpdateNotifications(args: {
 
       await sendNoticeBoardDocumentUpdateEmail({
         to,
+        includeBcc: shouldIncludeBcc,
         locale,
         recipientName,
         eventName: localizedEventName,
@@ -150,6 +152,7 @@ export async function sendEventDocumentUpdateNotifications(args: {
         documentName: localizeText(locale, document.name_en, document.name_bg),
         documentUrl: document.source,
       })
+      shouldIncludeBcc = false
     }
 
     for (const documentId of args.resultDocumentIds) {
@@ -160,6 +163,7 @@ export async function sendEventDocumentUpdateNotifications(args: {
 
       await sendResultsPublishedEmail({
         to,
+        includeBcc: shouldIncludeBcc,
         locale,
         recipientName,
         eventName: localizedEventName,
@@ -168,6 +172,7 @@ export async function sendEventDocumentUpdateNotifications(args: {
         documentName: localizeText(locale, document.name_en, document.name_bg),
         documentUrl: document.source,
       })
+      shouldIncludeBcc = false
     }
   }
 }

