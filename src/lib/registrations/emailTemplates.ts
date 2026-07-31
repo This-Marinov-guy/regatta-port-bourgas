@@ -19,6 +19,16 @@ type NewEventTemplateArgs = {
   prefillReferenceId?: string | null
 }
 
+export type EventDocumentUpdateTemplateArgs = {
+  locale?: TemplateLocale
+  recipientName?: string | null
+  eventName: string
+  eventDates?: string | null
+  eventUrl: string
+  documentName: string
+  documentUrl: string
+}
+
 type SummaryItem = {
   label: string
   value: string
@@ -192,6 +202,64 @@ const registrationEmailCopy = {
       textComplete: 'Вашата регистрация за {eventName} вече е завършена.',
       paidFallback: 'Платено',
       eventDatesLabel: 'Дати на събитието: {eventDates}',
+    },
+  },
+} as const
+
+const eventDocumentUpdateCopy = {
+  en: {
+    noticeBoard: {
+      subject: 'New notice board document: {eventName}',
+      preview: 'A new document has been added to the notice board for {eventName}.',
+      eyebrow: 'Notice Board Update',
+      title: 'New notice board document',
+      intro: 'A new document has been uploaded in the {eventName} notice board panel.',
+      buttonLabel: 'Open document',
+      textGreeting: 'Hello {recipientName},',
+      textBody:
+        'A new document has been added to the notice board for {eventName}: {documentName}',
+      textEventPage: 'Event page: {eventUrl}',
+      textDocument: 'Document: {documentUrl}',
+    },
+    results: {
+      subject: 'New results published: {eventName}',
+      preview: 'New results have been published for {eventName}.',
+      eyebrow: 'Results Published',
+      title: 'New results published',
+      intro: 'A new document has been uploaded in the {eventName} results panel.',
+      buttonLabel: 'Open results',
+      textGreeting: 'Hello {recipientName},',
+      textBody: 'New results have been published for {eventName}: {documentName}',
+      textEventPage: 'Event page: {eventUrl}',
+      textDocument: 'Results document: {documentUrl}',
+    },
+  },
+  bg: {
+    noticeBoard: {
+      subject: 'Нов документ в нотис борда: {eventName}',
+      preview: 'Добавен е нов документ в нотис борда за {eventName}.',
+      eyebrow: 'Обновление в Нотис Борда',
+      title: 'Нов документ в нотис борда',
+      intro: 'Нов документ беше качен в панела на нотис борда на {eventName}.',
+      buttonLabel: 'Отвори документа',
+      textGreeting: 'Здравейте, {recipientName},',
+      textBody:
+        'Добавен е нов документ в нотис борда за {eventName}: {documentName}',
+      textEventPage: 'Страница на събитието: {eventUrl}',
+      textDocument: 'Документ: {documentUrl}',
+    },
+    results: {
+      subject: 'Публикувани са нови резултати: {eventName}',
+      preview: 'Публикувани са нови резултати за {eventName}.',
+      eyebrow: 'Публикувани Резултати',
+      title: 'Публикувани са нови резултати',
+      intro: 'Нов документ беше качен в панела с резултати на {eventName}.',
+      buttonLabel: 'Отвори резултатите',
+      textGreeting: 'Здравейте, {recipientName},',
+      textBody:
+        'Публикувани са нови резултати за {eventName}: {documentName}',
+      textEventPage: 'Страница на събитието: {eventUrl}',
+      textDocument: 'Документ с резултати: {documentUrl}',
     },
   },
 } as const
@@ -792,6 +860,51 @@ export function buildRegistrationStatusChangeTemplate(args: {
     }),
     text: textLines.join('\n'),
   } satisfies EmailTemplate
+}
+
+function buildEventDocumentUpdateTemplate(
+  args: EventDocumentUpdateTemplateArgs,
+  kind: 'noticeBoard' | 'results'
+) {
+  const locale = args.locale === 'bg' ? 'bg' : 'en'
+  const copy = eventDocumentUpdateCopy[locale][kind]
+  const recipientName =
+    args.recipientName?.trim() || (locale === 'bg' ? 'екипаж' : 'Sailor')
+
+  return {
+    subject: interpolate(copy.subject, { eventName: args.eventName }),
+    html: renderEmailShell({
+      previewText: interpolate(copy.preview, { eventName: args.eventName }),
+      eyebrow: copy.eyebrow,
+      title: copy.title,
+      intro: interpolate(copy.intro, { eventName: escapeHtml(args.eventName) }),
+      sections: [],
+      buttonLabel: copy.buttonLabel,
+      buttonUrl: args.documentUrl,
+    }),
+    text: [
+      interpolate(copy.textGreeting, { recipientName }),
+      '',
+      interpolate(copy.textBody, {
+        eventName: args.eventName,
+        documentName: args.documentName,
+      }),
+      interpolate(copy.textDocument, { documentUrl: args.documentUrl }),
+      interpolate(copy.textEventPage, { eventUrl: args.eventUrl }),
+    ].join('\n'),
+  } satisfies EmailTemplate
+}
+
+export function buildNoticeBoardDocumentUpdateTemplate(
+  args: EventDocumentUpdateTemplateArgs
+) {
+  return buildEventDocumentUpdateTemplate(args, 'noticeBoard')
+}
+
+export function buildResultsPublishedTemplate(
+  args: EventDocumentUpdateTemplateArgs
+) {
+  return buildEventDocumentUpdateTemplate(args, 'results')
 }
 
 export function buildNewEventAnnouncementTemplate(args: NewEventTemplateArgs) {

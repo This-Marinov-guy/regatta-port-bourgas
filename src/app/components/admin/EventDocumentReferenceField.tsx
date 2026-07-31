@@ -13,11 +13,14 @@ type EventDocumentReferenceFieldProps = {
   label: string;
   values: string[];
   documents: AdminDocumentRecord[];
+  draftDocumentIds?: string[];
   onChange: (values: string[]) => void;
   onReorder?: (values: string[]) => void | Promise<void>;
   onError: (msg: string) => void;
   onDocumentsCreated: (docs: AdminDocumentRecord[]) => void;
   onDocumentUpdated: (doc: AdminDocumentRecord) => void;
+  onDraftDocumentCreated?: (doc: AdminDocumentRecord) => void;
+  onDraftDocumentUpdated?: (doc: AdminDocumentRecord) => void;
   onCreateDocuments: (args: {
     files: File[];
     generalUse?: boolean;
@@ -76,6 +79,30 @@ function formatTimestamp(value: string) {
   const year = date.getFullYear();
 
   return `${day}-${month}-${year}`;
+}
+
+function isValidDocumentUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function createDraftDocumentFromUrl(url: string): AdminDocumentRecord {
+  const fallbackName = getDocumentNameFromUrl(url) || url;
+  const timestamp = new Date().toISOString();
+
+  return {
+    id: `draft-link-${crypto.randomUUID()}`,
+    name_en: fallbackName,
+    name_bg: "",
+    source: url,
+    general_use: false,
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
 }
 
 function FileDropPanel({
@@ -165,24 +192,31 @@ function LinkInputPanel({
   busy?: boolean;
 }) {
   const [url, setUrl] = useState("");
-  const [name, setName] = useState("");
-  const [nameBg, setNameBg] = useState("");
+  const onSubmitRef = useRef(onSubmit);
 
-  function handleAdd() {
+  useEffect(() => {
+    onSubmitRef.current = onSubmit;
+  }, [onSubmit]);
+
+  useEffect(() => {
     const trimmedUrl = url.trim();
-    if (!trimmedUrl || busy) {
+    if (!trimmedUrl || busy || !isValidDocumentUrl(trimmedUrl)) {
       return;
     }
 
-    onSubmit({
-      url: trimmedUrl,
-      name: name.trim(),
-      nameBg: nameBg.trim(),
-    });
-    setUrl("");
-    setName("");
-    setNameBg("");
-  }
+    const timeout = window.setTimeout(() => {
+      onSubmitRef.current({
+        url: trimmedUrl,
+        name: "",
+        nameBg: "",
+      });
+      setUrl("");
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [busy, url]);
 
   return (
     <div className="mt-3 min-w-0 rounded-[1.25rem] border border-black/10 bg-white/80 px-4 py-4 sm:rounded-[1.5rem] sm:px-5 sm:py-5">
@@ -193,7 +227,7 @@ function LinkInputPanel({
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-dark">Or paste a direct link</p>
           <p className="mt-1 text-dark/60">
-            Attach a document by URL instead of uploading a file.
+            Paste a valid URL and a draft card will be added below.
           </p>
 
           <div className="mt-3 grid gap-2">
@@ -205,32 +239,6 @@ function LinkInputPanel({
               disabled={busy}
               className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
             />
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Display name EN (optional)"
-              disabled={busy}
-              className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
-            />
-            <input
-              type="text"
-              value={nameBg}
-              onChange={(event) => setNameBg(event.target.value)}
-              placeholder="Display name BG (optional)"
-              disabled={busy}
-              className="block w-full min-w-0 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-black/5"
-            />
-            <div className="flex justify-stretch sm:justify-end">
-              <Button
-                type="button"
-                onClick={handleAdd}
-                disabled={busy || !url.trim()}
-                className={`w-full rounded-xl px-4 text-white sm:w-auto ${interactiveButtonClass}`}
-              >
-                {busy ? "Adding..." : "Add link"}
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -364,11 +372,8 @@ function ExistingDocumentsMultiSelect({
   );
 }
 
-function addUniqueValues(values: string[], ids: string[]) {
-  return [
-    ...values,
-    ...ids.filter((id) => !values.includes(id)),
-  ];
+function prependUniqueValues(values: string[], ids: string[]) {
+  return [...ids.filter((id) => !values.includes(id)), ...values];
 }
 
 function addExistingDocumentDetails(
@@ -427,6 +432,20 @@ function InlineAdminField({
   );
 }
 
+function isInteractiveDragTarget(target: EventTarget | null) {
+  if (
+    target instanceof HTMLElement &&
+    target.closest("[data-card-drag-handle]")
+  ) {
+    return false;
+  }
+
+  return (
+    target instanceof HTMLElement &&
+    Boolean(target.closest("a, button, input, select, textarea"))
+  );
+}
+
 function EventAttachedDocumentCard({
   document,
   onRemove,
@@ -435,6 +454,8 @@ function EventAttachedDocumentCard({
   onDragStart,
   onDragEnd,
   onSaveDocument,
+  onDraftDocumentUpdated,
+  isDraft = false,
   isDragging = false,
 }: {
   document: AdminDocumentRecord;
@@ -444,10 +465,13 @@ function EventAttachedDocumentCard({
   onDragStart?: () => void;
   onDragEnd?: () => void;
   onSaveDocument: EventDocumentReferenceFieldProps["onSaveDocument"];
+  onDraftDocumentUpdated?: (doc: AdminDocumentRecord) => void;
+  isDraft?: boolean;
   isDragging?: boolean;
 }) {
   const [nameEn, setNameEn] = useState(document.name_en);
   const [nameBg, setNameBg] = useState(document.name_bg ?? "");
+  const [source, setSource] = useState(document.source);
   const [generalUse, setGeneralUse] = useState(document.general_use);
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -468,16 +492,45 @@ function EventAttachedDocumentCard({
     syncedDocumentIdRef.current = document.id;
     setNameEn(document.name_en);
     setNameBg(document.name_bg ?? "");
+    setSource(document.source);
     setGeneralUse(document.general_use);
     setSaveState("idle");
-  }, [document.general_use, document.id, document.name_bg, document.name_en]);
+  }, [document.general_use, document.id, document.name_bg, document.name_en, document.source]);
 
   const dirty =
     nameEn !== document.name_en ||
     nameBg !== (document.name_bg ?? "") ||
+    source !== document.source ||
     generalUse !== document.general_use;
 
   useEffect(() => {
+    if (!isDraft) {
+      return;
+    }
+
+    if (
+      nameEn === document.name_en &&
+      nameBg === (document.name_bg ?? "") &&
+      source === document.source &&
+      generalUse === document.general_use
+    ) {
+      return;
+    }
+
+    onDraftDocumentUpdated?.({
+      ...document,
+      name_en: nameEn,
+      name_bg: nameBg,
+      source,
+      general_use: generalUse,
+    });
+  }, [document, generalUse, isDraft, nameBg, nameEn, onDraftDocumentUpdated, source]);
+
+  useEffect(() => {
+    if (isDraft) {
+      return;
+    }
+
     if (!dirty) {
       return;
     }
@@ -498,7 +551,7 @@ function EventAttachedDocumentCard({
         id: document.id,
         name_en: nameEn,
         name_bg: nameBg,
-        source: document.source,
+        source,
         general_use: generalUse,
       })
         .then((updated) => {
@@ -527,15 +580,24 @@ function EventAttachedDocumentCard({
   }, [
     dirty,
     document.id,
-    document.source,
     generalUse,
+    isDraft,
     nameBg,
     nameEn,
+    source,
   ]);
 
   function getSaveLabel() {
     if (!nameEn.trim()) {
       return "Name is required";
+    }
+
+    if (isDraft) {
+      if (!isValidDocumentUrl(source)) {
+        return "Valid link is required";
+      }
+
+      return "Will be created when you save";
     }
 
     if (saveState === "saving") {
@@ -557,10 +619,24 @@ function EventAttachedDocumentCard({
     return "";
   }
 
+  function handleCardDragStart(event: DragEvent<HTMLDivElement>) {
+    if (isInteractiveDragTarget(event.target)) {
+      event.preventDefault();
+      return;
+    }
+
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", document.id);
+    onDragStart?.();
+  }
+
   return (
     <div
-      className={`min-w-0 rounded-[1.25rem] border border-black/10 bg-white/90 p-4 shadow-sm transition-all ${
-        isDragging ? "border-primary/30 bg-primary/[0.03] shadow-md" : ""
+      draggable
+      onDragStart={handleCardDragStart}
+      onDragEnd={onDragEnd}
+      className={`min-w-0 cursor-grab rounded-[1.25rem] border border-black/10 bg-white/90 p-4 shadow-sm transition-all active:cursor-grabbing ${
+        isDragging ? "border-primary/30 bg-primary/[0.03] shadow-md ring-2 ring-primary/30" : ""
       }`}
     >
       <div className="flex min-w-0 items-start gap-3">
@@ -568,29 +644,37 @@ function EventAttachedDocumentCard({
           <Icon icon="ph:file-text-bold" width={20} height={20} />
         </div>
         <div className="min-w-0 flex-1">
-          <a
-            href={document.source}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block truncate font-semibold text-primary hover:underline"
-          >
-            Click to open
-          </a>
+          {isDraft ? (
+            <p className="block truncate font-semibold text-primary">
+              Draft link document
+            </p>
+          ) : (
+            <a
+              href={source}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block truncate font-semibold text-primary hover:underline"
+            >
+              Click to open
+            </a>
+          )}
           <p className="mt-1 text-sm text-dark/50">
-            Uploaded {formatTimestamp(document.updated_at)}
+            {isDraft
+              ? "Created when you save this event"
+              : `Uploaded ${formatTimestamp(document.updated_at)}`}
           </p>
         </div>
-        <button
-          type="button"
-          draggable
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          className="inline-flex cursor-grab items-center gap-2 rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-sm font-medium text-dark/70 active:cursor-grabbing"
-          aria-label={`Drag to reorder ${document.name_en}`}
-          title="Drag to reorder"
-        >
-          <Icon icon="ph:dots-six-vertical-bold" width={16} height={16} />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            data-card-drag-handle
+            className="inline-flex cursor-grab select-none items-center gap-2 rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-sm font-medium text-dark/70 active:cursor-grabbing"
+            aria-label={`Drag to reorder ${document.name_en}`}
+            title="Drag to reorder"
+          >
+            <Icon icon="ph:dots-six-vertical-bold" width={16} height={16} />
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3">
@@ -605,6 +689,14 @@ function EventAttachedDocumentCard({
           value={nameBg}
           onChange={setNameBg}
         />
+        {isDraft ? (
+          <InlineAdminField
+            label="Link"
+            value={source}
+            onChange={setSource}
+            required
+          />
+        ) : null}
         {/* <label className="inline-flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3 text-dark">
           <input
             type="checkbox"
@@ -649,11 +741,14 @@ export default function EventDocumentReferenceField({
   label,
   values,
   documents,
+  draftDocumentIds = [],
   onChange,
   onReorder,
   onError,
   onDocumentsCreated,
   onDocumentUpdated,
+  onDraftDocumentCreated,
+  onDraftDocumentUpdated,
   onCreateDocuments,
   onCreateDocumentFromUrl,
   onSaveDocument,
@@ -664,6 +759,7 @@ export default function EventDocumentReferenceField({
   const [draggedValue, setDraggedValue] = useState<string | null>(null);
   const [dragOverValue, setDragOverValue] = useState<string | null>(null);
 
+  const draftDocumentIdSet = new Set(draftDocumentIds);
   const documentsById = new Map(documents.map((item) => [item.id, item]));
   const attachedReusableDocuments = values
     .map((value) => documentsById.get(value))
@@ -680,12 +776,7 @@ export default function EventDocumentReferenceField({
         generalUse: false,
       });
       onDocumentsCreated(createdDocs);
-      onChange([
-        ...values,
-        ...createdDocs
-          .map((item) => item.id)
-          .filter((id) => !values.includes(id)),
-      ]);
+      onChange(prependUniqueValues(values, createdDocs.map((item) => item.id)));
     } catch (error) {
       onError(error instanceof Error ? error.message : "Upload failed.");
     } finally {
@@ -719,6 +810,17 @@ export default function EventDocumentReferenceField({
 
     try {
       const fallbackName = name || getDocumentNameFromUrl(url) || url;
+      if (onDraftDocumentCreated) {
+        const draft = createDraftDocumentFromUrl(url);
+        onDraftDocumentCreated({
+          ...draft,
+          name_en: fallbackName,
+          name_bg: nameBg,
+        });
+        onChange(prependUniqueValues(values, [draft.id]));
+        return;
+      }
+
       const created = await onCreateDocumentFromUrl({
         url,
         name: fallbackName,
@@ -727,7 +829,7 @@ export default function EventDocumentReferenceField({
       });
       onDocumentsCreated([created]);
       if (!values.includes(created.id)) {
-        onChange([...values, created.id]);
+        onChange(prependUniqueValues(values, [created.id]));
       }
     } catch (error) {
       onError(error instanceof Error ? error.message : "Unable to add link.");
@@ -746,7 +848,9 @@ export default function EventDocumentReferenceField({
       return;
     }
 
-    onChange(addUniqueValues(values, selectedDocuments.map((item) => item.id)));
+    onChange(
+      prependUniqueValues(values, selectedDocuments.map((item) => item.id)),
+    );
   }
 
   function remove(index: number) {
@@ -821,6 +925,7 @@ export default function EventDocumentReferenceField({
         <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
           {values.map((value, index) => {
             const document = documentsById.get(value);
+            const isDraft = draftDocumentIdSet.has(value);
 
             if (document) {
               return (
@@ -842,6 +947,8 @@ export default function EventDocumentReferenceField({
                     onDragStart={() => handleDragStart(value)}
                     onDragEnd={handleDragEnd}
                     onSaveDocument={onSaveDocument}
+                    onDraftDocumentUpdated={onDraftDocumentUpdated}
+                    isDraft={isDraft}
                     isDragging={draggedValue === value}
                   />
                 </div>

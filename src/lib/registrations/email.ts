@@ -5,9 +5,12 @@ import type { RegistrationWithEvent } from './data'
 import type { AppLocale } from '@/lib/locale'
 import {
   buildNewEventAnnouncementTemplate,
+  buildNoticeBoardDocumentUpdateTemplate,
   buildRegistrationConfirmationTemplate,
   buildRegistrationPaymentConfirmationTemplate,
   buildRegistrationStatusChangeTemplate,
+  buildResultsPublishedTemplate,
+  type EventDocumentUpdateTemplateArgs,
 } from './emailTemplates'
 
 let transport: nodemailer.Transporter | null = null
@@ -138,6 +141,36 @@ export async function sendNewEventAnnouncementEmail(args: {
     eventUrl: args.eventUrl,
     prefillReferenceId: args.prefillReferenceId,
   })
+
+  await getTransport().sendMail({
+    from: getFromAddress(),
+    replyTo: getReplyToAddress(),
+    to: args.to,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  })
+}
+
+export async function sendNoticeBoardDocumentUpdateEmail(args: {
+  to: string
+} & EventDocumentUpdateTemplateArgs) {
+  const template = buildNoticeBoardDocumentUpdateTemplate(args)
+
+  await getTransport().sendMail({
+    from: getFromAddress(),
+    replyTo: getReplyToAddress(),
+    to: args.to,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  })
+}
+
+export async function sendResultsPublishedEmail(args: {
+  to: string
+} & EventDocumentUpdateTemplateArgs) {
+  const template = buildResultsPublishedTemplate(args)
 
   await getTransport().sendMail({
     from: getFromAddress(),
