@@ -1,4 +1,3 @@
-import { addDays, parseISO, startOfDay } from 'date-fns'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import type { AdminDocumentRecord, EventFeeType } from '@/types/admin'
@@ -141,12 +140,71 @@ export async function getEventDocumentsByRefs(
     })
 }
 
+const REGISTRATION_CUTOFF_TIME_ZONE = 'Europe/Sofia'
+const REGISTRATION_CUTOFF_HOUR = 13
+
+// Registration for an event stays open through the day after it starts,
+// closing at 13:00 local (Bulgaria) time on that day.
+function addDaysToDateOnly(dateOnly: string, days: number) {
+  const [year, month, day] = dateOnly.split('-').map(Number)
+  const utcMs = Date.UTC(year, month - 1, day) + days * 24 * 60 * 60 * 1000
+  return new Date(utcMs).toISOString().slice(0, 10)
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date)
+
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value)
+  const asUtc = Date.UTC(
+    value('year'),
+    value('month') - 1,
+    value('day'),
+    value('hour'),
+    value('minute'),
+    value('second')
+  )
+
+  return asUtc - date.getTime()
+}
+
+function zonedTimeToUtcMs(
+  dateOnly: string,
+  hour: number,
+  minute: number,
+  timeZone: string
+) {
+  const guessMs = Date.parse(
+    `${dateOnly}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00.000Z`
+  )
+  const offsetMs = getTimeZoneOffsetMs(new Date(guessMs), timeZone)
+  return guessMs - offsetMs
+}
+
 export function isEventRegistrationOpen(
   startDate: string,
   now = new Date()
 ) {
-  const cutoff = addDays(startOfDay(parseISO(startDate)), 1)
-  return now < cutoff
+  if (process.env.NODE_ENV === 'development') {
+    return true
+  }
+
+  const cutoffDate = addDaysToDateOnly(startDate.slice(0, 10), 1)
+  const cutoffMs = zonedTimeToUtcMs(
+    cutoffDate,
+    REGISTRATION_CUTOFF_HOUR,
+    0,
+    REGISTRATION_CUTOFF_TIME_ZONE
+  )
+  return now.getTime() < cutoffMs
 }
 
 export function hasPassedEventDayRegisterButtonCutoff(

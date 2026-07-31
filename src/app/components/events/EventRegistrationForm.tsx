@@ -1453,7 +1453,7 @@ export default function EventRegistrationForm({
             {form.crew_list.map((member, index) => (
               <div
                 key={`crew-${index}`}
-                className="rounded-[1.5rem] border border-black/10 bg-white/70 p-4 dark:border-white/10 dark:bg-black/20"
+                className="rounded-[1.5rem] border-black/10 bg-white/70 py-4 dark:border-white/10 dark:bg-black/20"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <p className=" font-semibold uppercase tracking-[0.18em] text-dark/50 dark:text-white/50">
@@ -1538,7 +1538,7 @@ export default function EventRegistrationForm({
             ).map((field) => (
               <div
                 key={field}
-                className={`flex items-start gap-3 rounded-2xl border bg-white/70 px-4 py-4  text-dark dark:bg-black/20 dark:text-white ${
+                className={`flex items-start gap-3 rounded-2xl bg-white/70 py-4  text-dark dark:bg-black/20 dark:text-white ${
                   invalidFields.includes(field)
                     ? 'border-red-500 dark:border-red-500'
                     : 'border-black/10 dark:border-white/10'
@@ -1582,7 +1582,7 @@ export default function EventRegistrationForm({
 
           <div
             id="insurance_documents"
-            className={`mt-4 rounded-2xl border bg-white/70 p-4 dark:bg-black/20 ${
+            className={`mt-4 rounded-2xl bg-white/70 py-4 dark:bg-black/20 ${
               invalidFields.includes('insurance_documents')
                 ? 'border-red-500 dark:border-red-500'
                 : 'border-black/10 dark:border-white/10'
@@ -1729,7 +1729,7 @@ export default function EventRegistrationForm({
             />
           </button>
 
-          <label className="mt-5 flex items-start gap-3 rounded-2xl border border-black/10 bg-white/70 px-4 py-4 text-dark dark:border-white/10 dark:bg-black/20 dark:text-white">
+          <label className="mt-5 flex items-start gap-3 rounded-2xl border-black/10 bg-white/70 py-4 text-dark dark:border-white/10 dark:bg-black/20 dark:text-white">
             <input
               type="checkbox"
               checked={form.invoice_requested}
