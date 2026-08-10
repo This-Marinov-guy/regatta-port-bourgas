@@ -34,7 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     event.description_en,
     event.description_bg
   )
-  const image = event.thumbnail_img || `${siteUrl}/images/banner.png`
+  const pageUrl = `${siteUrl}/${locale}/events/${slug}`
+  const imageUrl = new URL(
+    `/api/events/${encodeURIComponent(slug)}/share-image`,
+    siteUrl
+  )
+  imageUrl.searchParams.set('v', event.updated_at)
+  const image = imageUrl.toString()
 
   return {
     title,
@@ -43,11 +49,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       type: 'article',
-      images: [{ url: image, width: 1200, height: 630, alt: title }],
+      url: pageUrl,
+      images: [
+        {
+          url: image,
+          secureUrl: image,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
-    twitter: { card: 'summary_large_image', title, description, images: [image] },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [{ url: image, alt: title }],
+    },
     alternates: {
-      canonical: `${siteUrl}/${locale}/events/${slug}`,
+      canonical: pageUrl,
       languages: { en: `${siteUrl}/en/events/${slug}`, bg: `${siteUrl}/bg/events/${slug}` },
     },
   }
