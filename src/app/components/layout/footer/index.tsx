@@ -67,11 +67,12 @@ const Footer = () => {
       <div className="container mx-auto max-w-8xl pt-10 md:pt-14 px-5 2xl:px-0">
         {/* Audi banner - mobile only, at the top on its own row */}
         <a
-          href="https://www.westauto-m.com/novini/audi-q4-e-tron-elektricheskiyat-bestselar-stava-oshte-po-funktsionalen"
+          href="https://www.audi.bg/q7/q7-suv-2/faszination"
           target="_blank"
+          rel="noopener noreferrer"
         >
           <Image
-            src="/images/brands/audi_banner.jpg"
+            src="/images/brands/audi.gif"
             alt="Audi"
             width={1000}
             height={300}
@@ -128,11 +129,12 @@ const Footer = () => {
               </div>
 
               <a
-                href="https://www.westauto-m.com/novini/audi-q4-e-tron-elektricheskiyat-bestselar-stava-oshte-po-funktsionalen"
+                href="https://www.audi.bg/q7/q7-suv-2/faszination"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 <Image
-                  src="/images/brands/audi_banner.jpg"
+                  src="/images/brands/audi.gif"
                   alt="Audi"
                   width={700}
                   height={300}
