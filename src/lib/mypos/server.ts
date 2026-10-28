@@ -58,11 +58,12 @@ export function toMyposCountryCode(
   return undefined
 }
 
-const REQUIRED_MYPOS_ENV_KEYS = [
-  'NEXT_PUBLIC_SITE_URL',
-  'MYPOS_CONFIGURATION_PACK',
-  'MYPOS_KEY_INDEX',
-] as const
+export type MyposProfile = 'registrations' | 'donations'
+
+const MYPOS_PROFILE_ENV = {
+  registrations: { pack: 'MYPOS_CONFIGURATION_PACK', keyIndex: 'MYPOS_KEY_INDEX' },
+  donations: { pack: 'MYPOS_CONFIGURATION_PACK_2', keyIndex: 'MYPOS_KEY_INDEX_2' },
+} as const
 
 function requireEnv(name: string) {
   const value = process.env[name]?.trim()
@@ -92,11 +93,12 @@ function normalizePem(value: string) {
     .replace(/\r\n/g, '\n')
 }
 
-function getConfiguredMyposKeyIndex() {
-  const keyIndex = requireEnv('MYPOS_KEY_INDEX')
+function getConfiguredMyposKeyIndex(profile: MyposProfile = 'registrations') {
+  const name = MYPOS_PROFILE_ENV[profile].keyIndex
+  const keyIndex = requireEnv(name)
 
   if (!/^[1-9]\d*$/.test(keyIndex)) {
-    throw new Error('MYPOS_KEY_INDEX must be a positive integer.')
+    throw new Error(`${name} must be a positive integer.`)
   }
 
   return keyIndex
@@ -142,7 +144,7 @@ function readPackField(
   return String(value).trim()
 }
 
-function parseMyposConfigurationPack(value: string): MyposConfig {
+function parseMyposConfigurationPack(value: string, name = 'MYPOS_CONFIGURATION_PACK'): MyposConfig {
   let pack: unknown
 
   try {
@@ -150,12 +152,12 @@ function parseMyposConfigurationPack(value: string): MyposConfig {
     pack = JSON.parse(decoded)
   } catch {
     throw new Error(
-      'MYPOS_CONFIGURATION_PACK is not a valid Base64-encoded JSON configuration pack.'
+      `${name} is not a valid Base64-encoded JSON configuration pack.`
     )
   }
 
   if (!pack || typeof pack !== 'object' || Array.isArray(pack)) {
-    throw new Error('MYPOS_CONFIGURATION_PACK must decode to a JSON object.')
+    throw new Error(`${name} must decode to a JSON object.`)
   }
 
   const fields = pack as Record<string, unknown>
@@ -194,19 +196,20 @@ export function getMyposCheckoutEndpoint() {
   return MYPOS_ENDPOINTS[getMyposEnvironment()]
 }
 
-export function getMyposConfigurationStatus(): MyposConfigurationStatus {
+export function getMyposConfigurationStatus(profile: MyposProfile = 'registrations'): MyposConfigurationStatus {
   if (isMyposDisabled()) {
     return { enabled: false, disabled: true, missing: [], invalid: [] }
   }
 
-  const missing: string[] = REQUIRED_MYPOS_ENV_KEYS.filter(
+  const env = MYPOS_PROFILE_ENV[profile]
+  const missing: string[] = ['NEXT_PUBLIC_SITE_URL', env.pack, env.keyIndex].filter(
     (name) => !process.env[name]?.trim()
   )
 
   const invalid: string[] = []
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
-  const configurationPack = process.env.MYPOS_CONFIGURATION_PACK?.trim()
-  const keyIndex = process.env.MYPOS_KEY_INDEX?.trim()
+  const configurationPack = process.env[env.pack]?.trim()
+  const keyIndex = process.env[env.keyIndex]?.trim()
 
   if (siteUrl) {
     try {
@@ -222,7 +225,7 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
 
   if (configurationPack) {
     try {
-      parseMyposConfigurationPack(configurationPack)
+      parseMyposConfigurationPack(configurationPack, env.pack)
     } catch (error) {
       invalid.push(
         error instanceof Error ? error.message : 'Invalid myPOS configuration pack.'
@@ -232,7 +235,7 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
 
   if (keyIndex) {
     try {
-      getConfiguredMyposKeyIndex()
+      getConfiguredMyposKeyIndex(profile)
     } catch (error) {
       invalid.push(
         error instanceof Error ? error.message : 'Invalid myPOS key index.'
@@ -248,8 +251,8 @@ export function getMyposConfigurationStatus(): MyposConfigurationStatus {
   }
 }
 
-export function assertMyposConfigured() {
-  const status = getMyposConfigurationStatus()
+export function assertMyposConfigured(profile: MyposProfile = 'registrations') {
+  const status = getMyposConfigurationStatus(profile)
 
   if (!status.enabled) {
     if (status.disabled) {
@@ -269,10 +272,11 @@ export function assertMyposConfigured() {
   }
 }
 
-export function getMyposConfig() {
+export function getMyposConfig(profile: MyposProfile = 'registrations') {
+  const env = MYPOS_PROFILE_ENV[profile]
   return {
-    ...parseMyposConfigurationPack(requireEnv('MYPOS_CONFIGURATION_PACK')),
-    keyIndex: getConfiguredMyposKeyIndex(),
+    ...parseMyposConfigurationPack(requireEnv(env.pack), env.pack),
+    keyIndex: getConfiguredMyposKeyIndex(profile),
   }
 }
 
@@ -280,15 +284,15 @@ function valuesForSigning(fields: MyposFieldMap) {
   return Object.values(fields).map((value) => String(value))
 }
 
-export function signMyposFields(fields: MyposFieldMap) {
-  const { privateKey } = getMyposConfig()
+export function signMyposFields(fields: MyposFieldMap, profile: MyposProfile = 'registrations') {
+  const { privateKey } = getMyposConfig(profile)
   const payload = Buffer.from(valuesForSigning(fields).join('-')).toString('base64')
 
   return createSign('RSA-SHA256').update(payload, 'utf8').sign(privateKey, 'base64')
 }
 
-export function verifyMyposFields(fields: MyposFieldMap, signature: string) {
-  const { publicCertificate } = getMyposConfig()
+export function verifyMyposFields(fields: MyposFieldMap, signature: string, profile: MyposProfile = 'registrations') {
+  const { publicCertificate } = getMyposConfig(profile)
   const payload = Buffer.from(valuesForSigning(fields).join('-')).toString('base64')
 
   return createVerify('RSA-SHA256')
@@ -363,6 +367,7 @@ export function buildMyposReturnUrls(args: {
 }
 
 export function buildMyposPurchaseFields(args: {
+  profile?: MyposProfile
   locale?: AppLocale
   amountCents: number
   currency: string
@@ -379,9 +384,9 @@ export function buildMyposPurchaseFields(args: {
   itemUnitAmountCents: number
   note?: string
 }) {
-  const config = getMyposConfig()
+  const config = getMyposConfig(args.profile)
   const [firstName, ...familyNameParts] = args.customerName.trim().split(/\s+/)
-  const familyName = familyNameParts.join(' ') || firstName || 'Customer'
+  const familyName = familyNameParts.join(' ') || firstName
   const currency = args.currency.toUpperCase()
 
   // Fields MUST be built in myPOS' canonical IPCPurchase order: the signature is
@@ -415,7 +420,7 @@ export function buildMyposPurchaseFields(args: {
   setField('PaymentParametersRequired', '2')
   setField('PaymentMethod', '3')
   setField('CustomerEmail', args.customerEmail)
-  setField('CustomerFirstNames', firstName || 'Customer')
+  setField('CustomerFirstNames', firstName)
   setField('CustomerFamilyName', familyName)
   setField('CustomerPhone', args.customerPhone)
   setField('CustomerCountry', toMyposCountryCode(args.customerCountry))
@@ -430,6 +435,6 @@ export function buildMyposPurchaseFields(args: {
 
   return {
     ...fields,
-    Signature: signMyposFields(fields),
+    Signature: signMyposFields(fields, args.profile),
   }
 }

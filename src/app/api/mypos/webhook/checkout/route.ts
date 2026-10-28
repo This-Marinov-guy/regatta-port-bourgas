@@ -12,6 +12,7 @@ import {
 import { normalizeLocale } from '@/lib/locale'
 import { recordFailedJob, resolveFailedJob } from '@/lib/failedJobs'
 import type { RegistrationPaymentData } from '@/types/admin'
+import { donationIdFromOrderId, parseDonationAmount } from '@/lib/donations'
 
 export const runtime = 'nodejs'
 
@@ -245,6 +246,48 @@ async function updateRegistrationFromNotify(payload: MyposNotifyPayload) {
   }
 }
 
+async function updateDonationFromNotify(payload: MyposNotifyPayload) {
+  const orderId = getPayloadValue(payload, 'OrderID')
+  const id = orderId ? donationIdFromOrderId(orderId) : null
+  const method = getPayloadValue(payload, 'IPCmethod')
+  if (!id || (method !== 'IPCPurchaseNotify' && method !== 'IPCPurchaseRollback')) {
+    throw new Error('Invalid donation notification order or method.')
+  }
+
+  const supabase = createSupabaseServiceClient()
+  const { data, error } = await supabase.from('donations')
+    .select('id, amount_cents, currency, order_id, status')
+    .eq('id', id).maybeSingle()
+  if (error) throw error
+  if (!data || data.order_id !== orderId) throw new Error('Donation checkout not found.')
+  if (getPayloadValue(payload, 'SID') !== getMyposConfig('donations').sid) {
+    throw new Error('myPOS notification SID does not match this store.')
+  }
+  if (parseDonationAmount(getPayloadValue(payload, 'Amount')) !== data.amount_cents) {
+    throw new Error('myPOS notification amount does not match the donation.')
+  }
+  if (getPayloadValue(payload, 'Currency')?.toUpperCase() !== data.currency) {
+    throw new Error('myPOS notification currency does not match the donation.')
+  }
+  const transactionRef = getPayloadValue(payload, 'IPC_Trnref')
+  if (method === 'IPCPurchaseNotify' && !transactionRef) {
+    throw new Error('myPOS notification is missing the transaction reference.')
+  }
+
+  // A replay must not turn a rolled-back order into a paid one.
+  if (method === 'IPCPurchaseNotify' && data.status === 'pending') {
+    const { error: updateError } = await supabase.from('donations').update({
+      status: 'paid', transaction_ref: transactionRef, paid_at: new Date().toISOString(),
+    }).eq('id', id).eq('status', 'pending')
+    if (updateError) throw updateError
+  } else if (method === 'IPCPurchaseRollback' && data.status !== 'rolled_back') {
+    const { error: updateError } = await supabase.from('donations').update({
+      status: 'rolled_back', rolled_back_at: new Date().toISOString(),
+    }).eq('id', id).neq('status', 'rolled_back')
+    if (updateError) throw updateError
+  }
+}
+
 export async function POST(request: Request) {
   const payload = await request.text()
   const { fields, signature } = parseFormPayload(payload)
@@ -255,8 +298,22 @@ export async function POST(request: Request) {
       throw new Error('Missing myPOS signature.')
     }
 
-    if (!verifyMyposFields(fields, signature)) {
+    const orderId = getPayloadValue(fields, 'OrderID')
+    const isDonation = orderId?.startsWith('don_') ?? false
+    if (!verifyMyposFields(fields, signature, isDonation ? 'donations' : 'registrations')) {
       throw new Error('Invalid myPOS signature.')
+    }
+
+    if (isDonation) {
+      await updateDonationFromNotify(fields)
+      await resolveFailedJob({
+        source: 'webhook',
+        dedupeKey,
+        response: { status_code: 200, body: 'OK' },
+      })
+      return new Response('OK', {
+        headers: { 'content-type': 'text/plain; charset=utf-8' },
+      })
     }
 
     const result = await updateRegistrationFromNotify(fields)
