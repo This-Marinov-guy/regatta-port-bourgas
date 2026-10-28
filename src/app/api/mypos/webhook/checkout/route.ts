@@ -12,7 +12,8 @@ import {
 import { normalizeLocale } from '@/lib/locale'
 import { recordFailedJob, resolveFailedJob } from '@/lib/failedJobs'
 import type { RegistrationPaymentData } from '@/types/admin'
-import { donationIdFromOrderId, parseDonationAmount } from '@/lib/donations'
+import { donationIdFromOrderId, donationNameFromMyposFields, parseDonationAmount } from '@/lib/donations'
+import { sendPaidDonationNotificationToAdmins } from '@/lib/donations/email'
 
 export const runtime = 'nodejs'
 
@@ -256,7 +257,7 @@ async function updateDonationFromNotify(payload: MyposNotifyPayload) {
 
   const supabase = createSupabaseServiceClient()
   const { data, error } = await supabase.from('donations')
-    .select('id, amount_cents, currency, order_id, status')
+    .select('id, amount_cents, currency, name, order_id, status')
     .eq('id', id).maybeSingle()
   if (error) throw error
   if (!data || data.order_id !== orderId) throw new Error('Donation checkout not found.')
@@ -274,18 +275,37 @@ async function updateDonationFromNotify(payload: MyposNotifyPayload) {
     throw new Error('myPOS notification is missing the transaction reference.')
   }
 
+  let becamePaid = false
+
   // A replay must not turn a rolled-back order into a paid one.
   if (method === 'IPCPurchaseNotify' && data.status === 'pending') {
-    const { error: updateError } = await supabase.from('donations').update({
+    const { data: updated, error: updateError } = await supabase.from('donations').update({
       status: 'paid', transaction_ref: transactionRef, paid_at: new Date().toISOString(),
-    }).eq('id', id).eq('status', 'pending')
+    }).eq('id', id).eq('status', 'pending').select('id').maybeSingle()
     if (updateError) throw updateError
+    becamePaid = updated !== null
   } else if (method === 'IPCPurchaseRollback' && data.status !== 'rolled_back') {
     const { error: updateError } = await supabase.from('donations').update({
       status: 'rolled_back', rolled_back_at: new Date().toISOString(),
     }).eq('id', id).neq('status', 'rolled_back')
     if (updateError) throw updateError
   }
+
+  if (method === 'IPCPurchaseNotify' && !data.name) {
+    const paymentName = donationNameFromMyposFields(payload)
+
+    if (paymentName) {
+      // Optional metadata must never prevent payment confirmation.
+      const { error: nameError } = await supabase.from('donations')
+        .update({ name: paymentName })
+        .eq('id', id)
+        .eq('status', 'paid')
+        .is('name', null)
+      if (nameError) console.error('Unable to save donation payer name:', nameError)
+    }
+  }
+
+  return { donationId: id, notifyAdmins: becamePaid }
 }
 
 export async function POST(request: Request) {
@@ -305,7 +325,16 @@ export async function POST(request: Request) {
     }
 
     if (isDonation) {
-      await updateDonationFromNotify(fields)
+      const result = await updateDonationFromNotify(fields)
+      if (result.notifyAdmins) {
+        after(async () => {
+          try {
+            await sendPaidDonationNotificationToAdmins(result.donationId)
+          } catch (error) {
+            console.error('Unable to send paid donation notification:', error)
+          }
+        })
+      }
       await resolveFailedJob({
         source: 'webhook',
         dedupeKey,

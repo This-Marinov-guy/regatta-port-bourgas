@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (!isDonationId(id)) return new Response('Checkout not found.', { status: 404 })
     const supabase = createSupabaseServiceClient()
     const { data, error } = await supabase.from('donations')
-      .select('id, amount_cents, currency, note, order_id, status')
+      .select('id, amount_cents, currency, name, order_id, status')
       .eq('id', id).maybeSingle()
     if (error) throw error
     if (!data) return new Response('Checkout not found.', { status: 404 })
@@ -36,11 +36,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       cancelUrl,
       notifyUrl,
       customerEmail: '',
-      customerName: '',
-      itemName: 'Donation to Yacht Club Port Bourgas',
+      customerName: data.name ?? '',
+      itemName: '50 Години Яхт Клуб "Порт Бургас"',
       itemQuantity: 1,
       itemUnitAmountCents: data.amount_cents,
-      note: data.note ?? undefined,
     })
     return new Response(donationCheckoutPage(getMyposCheckoutEndpoint(), fields), {
       headers: {

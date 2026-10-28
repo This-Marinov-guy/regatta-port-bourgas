@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Regatta Port Bourgas donation checkout API reference" />
+    <title>Donation API · Regatta Port Bourgas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.33.1/swagger-ui.css" />
+    <style>
+      :root {
+        --surface: #f7f9fa;
+        --paper: #ffffff;
+        --ink: #10283a;
+        --muted: #536775;
+        --line: #d8e0e5;
+        --accent: #0057b8;
+        --accent-foreground: #ffffff;
+        --radius: 8px;
+        --space-tight: 8px;
+        --space-normal: 20px;
+        --space-wide: 44px;
+        font-family: Manrope, Arial, sans-serif;
+        color: var(--ink);
+        background: var(--surface);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      a { color: var(--accent); }
+      a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      .masthead {
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+      }
+      .masthead-inner {
+        max-width: 1280px;
+        margin: auto;
+        padding: var(--space-normal) 24px var(--space-wide);
+      }
+      .eyebrow {
+        margin: 0 0 var(--space-tight);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 3vw, 42px);
+        line-height: 1.15;
+        letter-spacing: -.035em;
+      }
+      .intro {
+        max-width: 60ch;
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.65;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-normal);
+        margin-top: 24px;
+      }
+      .spec-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: var(--radius);
+        background: var(--accent);
+        color: var(--accent-foreground);
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .spec-link:hover { filter: brightness(.9); }
+      .note { color: var(--muted); font-size: 13px; line-height: 1.5; }
+      main { max-width: 1280px; margin: auto; padding: 20px 12px 60px; }
+      .swagger-ui .topbar { display: none; }
+      .swagger-ui .info { margin-top: 12px; }
+      .swagger-ui .wrapper { max-width: 100%; }
+      .load-error { padding: 24px; color: var(--ink); }
+      @media (max-width: 640px) {
+        .masthead-inner { padding: 20px 20px 32px; }
+        .meta { align-items: flex-start; gap: 12px; }
+        main { padding-inline: 0; }
+      }
+    </style>
+    <script src="https://unpkg.com/swagger-ui-dist@5.33.1/swagger-ui-bundle.js" defer></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', function () {
+        if (!window.SwaggerUIBundle) {
+          document.getElementById('swagger-ui').innerHTML = '<p class="load-error">Swagger UI could not load. Use the OpenAPI YAML link above.</p>';
+          return;
+        }
+        window.SwaggerUIBundle({
+          url: '/api-docs/donations/openapi.yaml',
+          dom_id: '#swagger-ui',
+          deepLinking: true,
+          docExpansion: 'list',
+          filter: true,
+          presets: [window.SwaggerUIBundle.presets.apis],
+          supportedSubmitMethods: [],
+          validatorUrl: null
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="masthead-inner">
+        <p class="eyebrow">Regatta Port Bourgas · Developer reference</p>
+        <h1>Donation checkout API</h1>
+        <p class="intro">Create a prefilled EUR donation checkout, redirect the donor to myPOS, and check the verified payment status.</p>
+        <div class="meta">
+          <a class="spec-link" href="/api-docs/donations/openapi.yaml" download="donation-checkout.openapi.yaml">Download OpenAPI YAML</a>
+          <span class="note">Interactive requests are disabled here. Browser API calls are accepted from ycpb.netlify.app.</span>
+        </div>
+      </div>
+    </header>
+    <main><div id="swagger-ui" aria-label="Donation API reference"></div></main>
+  </body>
+</html>

@@ -2,6 +2,22 @@ export const DONATION_ORIGIN = 'https://ycpb.netlify.app'
 
 export type DonationStatus = 'pending' | 'paid' | 'rolled_back'
 
+export function normalizeDonationName(value: string) {
+  return value.trim().replace(/\s+/g, ' ')
+}
+
+export function donationNameFromMyposFields(fields: Record<string, string>) {
+  const name = normalizeDonationName(
+    [fields.CustomerFirstNames, fields.CustomerFamilyName]
+      .filter((part) => typeof part === 'string' && part.trim())
+      .join(' ')
+  )
+
+  return name && name.length <= 200 && !/[\u0000-\u001f\u007f]/.test(name)
+    ? name
+    : null
+}
+
 export function donationCorsHeaders(origin: string | null): Record<string, string> {
   return origin === DONATION_ORIGIN
     ? {

@@ -6,6 +6,7 @@ import {
   donationBaseUrl,
   donationCorsHeaders,
   donationOrderId,
+  normalizeDonationName,
   parseDonationAmount,
   parseDonationRedirect,
 } from '@/lib/donations'
@@ -55,6 +56,11 @@ export async function POST(request: Request) {
   const failureUrl = parseDonationRedirect(body.failureUrl === undefined
     ? `${DONATION_ORIGIN}/?donation=failure` : body.failureUrl)
   const note = body.note === undefined || body.note === null ? null : body.note
+  const rawName = body.name
+  if (rawName !== undefined && rawName !== null && typeof rawName !== 'string') {
+    return json({ error: 'name must be a string of at most 200 characters.' }, 400, origin)
+  }
+  const name = typeof rawName === 'string' ? normalizeDonationName(rawName) || null : null
 
   if (amountCents === null) {
     return json({ error: 'amount must be a positive EUR amount with at most two decimal places (maximum 999999.99).' }, 400, origin)
@@ -64,6 +70,9 @@ export async function POST(request: Request) {
   }
   if (note !== null && (typeof note !== 'string' || note.length > 500)) {
     return json({ error: 'note must be a string of at most 500 characters.' }, 400, origin)
+  }
+  if (name && (name.length > 200 || /[\u0000-\u001f\u007f]/.test(name))) {
+    return json({ error: 'name must be a string of at most 200 characters.' }, 400, origin)
   }
 
   try {
@@ -82,6 +91,7 @@ export async function POST(request: Request) {
       id,
       amount_cents: amountCents,
       currency: 'EUR',
+      name,
       note,
       success_url: successUrl,
       failure_url: failureUrl,

@@ -11,6 +11,8 @@ info:
     3. myPOS redirects the browser to the requested successUrl or failureUrl and appends donationId to its query string.
     4. GET the returned statusUrl to confirm payment. The browser redirect alone does not confirm payment; paid status is set by a verified myPOS server notification. It may remain pending briefly after the success redirect.
 
+    The first verified transition to paid also triggers an internal organizer email. No extra API call is required.
+
     Browser API calls require the exact Origin header https://ycpb.netlify.app. No API key is required. CORS allows this origin only. Origin is a browser boundary, not server-to-server authentication.
 servers:
   - url: https://www.regattaportbourgas.org
@@ -38,9 +40,10 @@ paths:
               $ref: '#/components/schemas/CreateDonationCheckoutRequest'
             examples:
               customRedirects:
-                summary: Donation with a note and custom redirects
+                summary: Donation with a name, note, and custom redirects
                 value:
                   amount: '25.00'
+                  name: Ivan Petrov
                   note: Support youth sailing
                   successUrl: https://ycpb.netlify.app/donation/thank-you
                   failureUrl: https://ycpb.netlify.app/donation/try-again
@@ -68,7 +71,7 @@ paths:
                 amount: '25.00'
                 currency: EUR
         '400':
-          description: Invalid JSON body, amount, note, or redirect URL.
+          description: Invalid JSON body, amount, name, note, or redirect URL.
           content:
             application/json:
               schema:
@@ -106,6 +109,7 @@ paths:
       summary: Open the hosted checkout handoff
       description: |
         Navigate the customer's browser to checkoutUrl. This endpoint returns HTML with a signed, auto-submitting form for myPOS. Do not fetch it as JSON or use it as an iframe API.
+        The myPOS cart contains one item labelled 50 Години Яхт Клуб "Порт Бургас" at the requested donation amount. The optional note is stored in the database only.
       parameters:
         - $ref: '#/components/parameters/DonationId'
       responses:
@@ -204,10 +208,14 @@ components:
               maximum: 999999.99
               multipleOf: 0.01
               examples: [25, 25.5]
+        name:
+          type: [string, 'null']
+          maxLength: 200
+          description: Optional donor name. Blank or omitted values are stored as null. When supplied, it is used to prefill the myPOS customer name and is retained in the database. Otherwise, the server tries to save CustomerFirstNames and CustomerFamilyName from the signed myPOS purchase notification; those fields are not guaranteed to be present.
         note:
           type: [string, 'null']
           maxLength: 500
-          description: Optional donation note, saved with the request and passed to myPOS.
+          description: Optional donation note, saved in the database only. It is not sent to myPOS or shown on the checkout page.
         successUrl:
           type: string
           format: uri
