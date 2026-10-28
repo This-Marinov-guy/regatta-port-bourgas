@@ -13,7 +13,7 @@ info:
 
     The first verified transition to paid also triggers an internal organizer email. No extra API call is required.
 
-    Browser API calls require the exact Origin header https://ycpb.netlify.app. No API key is required. CORS allows this origin only. Origin is a browser boundary, not server-to-server authentication.
+    Browser API calls from https://ycpb.netlify.app include the Origin header automatically. Frontend code cannot set it manually. No API key is required. CORS allows this origin only. Origin is a browser boundary, not server-to-server authentication. Swagger UI is hosted on a different origin, so its "Try it out" requests are rejected; run the integration from the ycpb.netlify.app site.
 servers:
   - url: https://www.regattaportbourgas.org
     description: Production
@@ -30,8 +30,6 @@ paths:
         Saves a pending donation request and returns a browser checkout link.
         The amount is in EUR, not cents. Only amount is required in the JSON body.
         The browser supplies Origin automatically; calls from another or missing origin are rejected.
-      parameters:
-        - $ref: '#/components/parameters/Origin'
       requestBody:
         required: true
         content:
@@ -134,7 +132,6 @@ paths:
         Poll this endpoint after the customer returns from myPOS. The success redirect can arrive before the signed payment notification. A cancelled checkout remains pending unless myPOS sends a rollback notification.
       parameters:
         - $ref: '#/components/parameters/DonationId'
-        - $ref: '#/components/parameters/Origin'
       responses:
         '200':
           description: Current status of the donation.
@@ -174,15 +171,6 @@ paths:
                 $ref: '#/components/schemas/Error'
 components:
   parameters:
-    Origin:
-      name: Origin
-      in: header
-      required: true
-      description: Browser origin of the calling website. Browsers set this header automatically for cross-origin requests.
-      schema:
-        type: string
-        const: https://ycpb.netlify.app
-      example: https://ycpb.netlify.app
     DonationId:
       name: donationId
       in: path

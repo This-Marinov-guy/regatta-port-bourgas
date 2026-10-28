@@ -7,7 +7,7 @@ Apply `supabase/migrations/20261028120000_create_donations.sql` and `supabase/mi
 
 ## Create checkout
 
-From `https://ycpb.netlify.app`, send a JSON `POST` to `/api/donations/checkout` on this app's host:
+From `https://ycpb.netlify.app`, send a JSON `POST` to `/api/donations/checkout` on this app's host. The browser sets `Origin: https://ycpb.netlify.app` automatically for this cross-origin request; do not set it in frontend code. The Swagger UI is hosted on the API domain, so its "Try it out" requests are rejected by the origin check.
 
 ```json
 {
