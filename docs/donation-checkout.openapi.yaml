@@ -1,0 +1,277 @@
+openapi: 3.1.1
+info:
+  title: Regatta Port Bourgas Donation Checkout API
+  version: 1.0.0
+  description: |
+    Create a EUR donation checkout for the ycpb.netlify.app website and check whether it was paid.
+
+    Integration flow:
+    1. POST /api/donations/checkout from https://ycpb.netlify.app.
+    2. Navigate the customer's browser to the returned checkoutUrl. It serves an HTML form that submits the signed payment request to myPOS.
+    3. myPOS redirects the browser to the requested successUrl or failureUrl and appends donationId to its query string.
+    4. GET the returned statusUrl to confirm payment. The browser redirect alone does not confirm payment; paid status is set by a verified myPOS server notification. It may remain pending briefly after the success redirect.
+
+    Browser API calls require the exact Origin header https://ycpb.netlify.app. No API key is required. CORS allows this origin only. Origin is a browser boundary, not server-to-server authentication.
+servers:
+  - url: https://www.regattaportbourgas.org
+    description: Production
+tags:
+  - name: Donations
+    description: Public donation checkout integration
+paths:
+  /api/donations/checkout:
+    post:
+      tags: [Donations]
+      operationId: createDonationCheckout
+      summary: Create a donation checkout
+      description: |
+        Saves a pending donation request and returns a browser checkout link.
+        The amount is in EUR, not cents. Only amount is required in the JSON body.
+        The browser supplies Origin automatically; calls from another or missing origin are rejected.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDonationCheckoutRequest'
+            examples:
+              customRedirects:
+                summary: Donation with a note and custom redirects
+                value:
+                  amount: '25.00'
+                  note: Support youth sailing
+                  successUrl: https://ycpb.netlify.app/donation/thank-you
+                  failureUrl: https://ycpb.netlify.app/donation/try-again
+              minimum:
+                summary: Only the required amount
+                value:
+                  amount: '25.00'
+      responses:
+        '201':
+          description: Donation request saved; checkout is ready for browser navigation.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDonationCheckoutResponse'
+              example:
+                donationId: 123e4567-e89b-42d3-a456-426614174000
+                checkoutUrl: https://www.regattaportbourgas.org/api/donations/123e4567-e89b-42d3-a456-426614174000/checkout
+                statusUrl: https://www.regattaportbourgas.org/api/donations/123e4567-e89b-42d3-a456-426614174000/status
+                status: pending
+                amount: '25.00'
+                currency: EUR
+        '400':
+          description: Invalid JSON body, amount, note, or redirect URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Origin is missing or is not https://ycpb.netlify.app.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Origin is not allowed.
+        '413':
+          description: Request body exceeds 8192 characters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Unable to save the donation checkout.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Donation payments are disabled or the myPOS configuration is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/donations/{donationId}/checkout:
+    get:
+      tags: [Donations]
+      operationId: openDonationCheckout
+      summary: Open the hosted checkout handoff
+      description: |
+        Navigate the customer's browser to checkoutUrl. This endpoint returns HTML with a signed, auto-submitting form for myPOS. Do not fetch it as JSON or use it as an iframe API.
+      parameters:
+        - $ref: '#/components/parameters/DonationId'
+      responses:
+        '200':
+          description: HTML page that submits the signed checkout form to myPOS.
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Checkout ID not found.
+        '409':
+          description: Checkout is no longer pending.
+        '503':
+          description: Donation checkout is unavailable.
+  /api/donations/{donationId}/status:
+    get:
+      tags: [Donations]
+      operationId: getDonationStatus
+      summary: Check donation payment status
+      description: |
+        Poll this endpoint after the customer returns from myPOS. The success redirect can arrive before the signed payment notification. A cancelled checkout remains pending unless myPOS sends a rollback notification.
+      parameters:
+        - $ref: '#/components/parameters/DonationId'
+        - $ref: '#/components/parameters/Origin'
+      responses:
+        '200':
+          description: Current status of the donation.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationStatusResponse'
+              example:
+                donationId: 123e4567-e89b-42d3-a456-426614174000
+                status: paid
+                amount: '25.00'
+                currency: EUR
+                paidAt: '2026-10-28T12:30:00.000Z'
+                createdAt: '2026-10-28T12:28:00.000Z'
+        '403':
+          description: Origin is missing or is not https://ycpb.netlify.app.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Donation ID is invalid or not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Payment status could not be read.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  parameters:
+    Origin:
+      name: Origin
+      in: header
+      required: true
+      description: Browser origin of the calling website. Browsers set this header automatically for cross-origin requests.
+      schema:
+        type: string
+        const: https://ycpb.netlify.app
+      example: https://ycpb.netlify.app
+    DonationId:
+      name: donationId
+      in: path
+      required: true
+      description: UUID returned by the create checkout call, or appended to the browser return URL.
+      schema:
+        type: string
+        format: uuid
+      example: 123e4567-e89b-42d3-a456-426614174000
+  schemas:
+    CreateDonationCheckoutRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          description: Positive EUR amount, at most two decimal places, from 0.01 to 999999.99. A decimal string is recommended to avoid floating-point formatting issues.
+          oneOf:
+            - type: string
+              pattern: '^(?=.*[1-9])[0-9]{1,6}(\.[0-9]{1,2})?$'
+              examples: ['25.00', '0.50']
+            - type: number
+              minimum: 0.01
+              maximum: 999999.99
+              multipleOf: 0.01
+              examples: [25, 25.5]
+        note:
+          type: [string, 'null']
+          maxLength: 500
+          description: Optional donation note, saved with the request and passed to myPOS.
+        successUrl:
+          type: string
+          format: uri
+          pattern: '^https://ycpb\.netlify\.app(?:/|\?|#|$)'
+          description: Browser redirect after myPOS reports success. Must be on https://ycpb.netlify.app. Defaults to https://ycpb.netlify.app/?donation=success. The API appends donationId to the query string.
+        failureUrl:
+          type: string
+          format: uri
+          pattern: '^https://ycpb\.netlify\.app(?:/|\?|#|$)'
+          description: Browser redirect after cancellation or failure. Must be on https://ycpb.netlify.app. Defaults to https://ycpb.netlify.app/?donation=failure. The API appends donationId to the query string.
+    CreateDonationCheckoutResponse:
+      type: object
+      required: [donationId, checkoutUrl, statusUrl, status, amount, currency]
+      properties:
+        donationId:
+          type: string
+          format: uuid
+        checkoutUrl:
+          type: string
+          format: uri
+          description: Navigate the customer's browser to this URL.
+        statusUrl:
+          type: string
+          format: uri
+          description: GET from the allowed origin to confirm payment.
+        status:
+          type: string
+          const: pending
+        amount:
+          type: string
+          pattern: '^[0-9]+\.[0-9]{2}$'
+          description: Normalized EUR amount with exactly two decimal places.
+        currency:
+          type: string
+          const: EUR
+    DonationStatusResponse:
+      type: object
+      required: [donationId, status, amount, currency, paidAt, createdAt]
+      properties:
+        donationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, paid, rolled_back]
+          description: Only a verified myPOS notification can set paid. rolled_back means myPOS reversed the checkout.
+        amount:
+          type: string
+          pattern: '^[0-9]+\.[0-9]{2}$'
+        currency:
+          type: string
+          const: EUR
+        paidAt:
+          type: [string, 'null']
+          format: date-time
+          description: Timestamp of the first paid notification, or null. It may remain populated if status later becomes rolled_back.
+        createdAt:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+      example:
+        error: Donation checkout is unavailable.

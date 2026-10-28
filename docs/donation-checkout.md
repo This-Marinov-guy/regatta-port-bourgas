@@ -1,5 +1,7 @@
 # Donation checkout API
 
+The machine-readable OpenAPI specification is in [`donation-checkout.openapi.yaml`](donation-checkout.openapi.yaml).
+
 Apply `supabase/migrations/20261028120000_create_donations.sql` before deploying the API. Donations use `MYPOS_CONFIGURATION_PACK_2` and `MYPOS_KEY_INDEX_2`, with the shared `MYPOS_ENVIRONMENT`, `NEXT_PUBLIC_SITE_URL`, and Supabase service-role settings described in `docs/registration-processing.md`. Registration payments continue using the original myPOS configuration.
 
 ## Create checkout
