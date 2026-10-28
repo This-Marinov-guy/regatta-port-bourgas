@@ -1,5 +1,7 @@
+import { NextResponse } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { donationBaseUrl, donationCheckoutPage, isDonationId } from '@/lib/donations'
+import { getDonationStripe } from '@/lib/donations/stripe'
 import {
   assertMyposConfigured,
   assertMyposReturnUrl,
@@ -11,7 +13,6 @@ export const runtime = 'nodejs'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    assertMyposConfigured('donations')
     const { id } = await params
     if (!isDonationId(id)) return new Response('Checkout not found.', { status: 404 })
     const supabase = createSupabaseServiceClient()
@@ -21,6 +22,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (error) throw error
     if (!data) return new Response('Checkout not found.', { status: 404 })
     if (data.status !== 'pending') return new Response('This checkout is no longer pending.', { status: 409 })
+
+    if (data.order_id.startsWith('cs_')) {
+      const session = await getDonationStripe().checkout.sessions.retrieve(data.order_id)
+      if (session.status !== 'open' || !session.url ||
+          session.client_reference_id !== id || session.metadata?.donationId !== id ||
+          session.amount_total !== data.amount_cents || session.currency?.toUpperCase() !== data.currency) {
+        return new Response('This checkout is no longer available.', { status: 409 })
+      }
+      return NextResponse.redirect(session.url, { status: 303, headers: { 'Cache-Control': 'no-store' } })
+    }
+
+    // Existing pending myPOS donations can still complete after the provider change.
+    assertMyposConfigured('donations')
 
     const baseUrl = donationBaseUrl(request)
     const okUrl = `${baseUrl}/api/donations/${id}/return?result=success`
